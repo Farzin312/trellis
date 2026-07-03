@@ -61,7 +61,7 @@ embeddings (`ollama pull nomic-embed-text`).
 per task. LLM-as-judge evaluations. Prompt playground.
 
 **License:** Elastic License 2.0 (ELv2). Free to self-host with all features.
-NOT OSI-certified. See [CREDITS.md](../CREDITS.md) for details.
+NOT OSI-certified. See [docs/credits.md](credits.md) for details.
 
 **Start:**
 ```bash

@@ -85,7 +85,7 @@ use incremental mode (`--incremental`) and `enableFindRelatedTests` to only
 mutate code touched by the current PR.
 
 **License:** Apache-2.0. Created by the Stryker Mutator team.
-See [CREDITS.md](../CREDITS.md).
+See [docs/credits.md](credits.md).
 
 ---
 
@@ -132,7 +132,7 @@ empty arrays, single items, zero values, very large values, negative values.
 **What it catches:** Edge cases example-based tests miss. Especially valuable
 for AI-generated code where the agent may not think of all boundary conditions.
 
-**License:** MIT. Created by Nicolas Dubien. See [CREDITS.md](../CREDITS.md).
+**License:** MIT. Created by Nicolas Dubien. See [docs/credits.md](credits.md).
 
 ---
 
@@ -177,7 +177,7 @@ failures, time per task. LLM-as-judge evaluations. Prompt playground.
 and free to self-host with ALL features included (unlike Langfuse which gates
 LLM-as-judge behind paid tier). It is NOT OSI-certified open source. If your
 project requires strict OSI-only licenses, replace with Langfuse (MIT core,
-but fewer free features). See [DESIGN.md](./DESIGN.md) and [CREDITS.md](../CREDITS.md).
+but fewer free features). See [DESIGN.md](./DESIGN.md) and [docs/credits.md](credits.md).
 
 **When it runs:**
 - Always-on in the background once instrumented

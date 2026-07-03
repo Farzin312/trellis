@@ -1,7 +1,7 @@
 # Arize Phoenix — Self-Hosted Agent Observability
 #
 # Elastic License 2.0 (ELv2). Free to self-host with all features.
-# NOT OSI-certified open source. See CREDITS.md for details.
+# NOT OSI-certified open source. See docs/credits.md for details.
 #
 # Usage:
 #   docker compose -f docker-compose.phoenix.yml up -d

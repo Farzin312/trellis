@@ -139,7 +139,40 @@ Not everyone needs everything on day one.
 | **2 - Intelligence** | + Graphify graph + Bounds + StrykerJS + fast-check | 3 min | Growing teams (recommended) |
 | **3 - Full Power** | + Handoff loops + migration evals + Zod/tRPC + Phoenix | 10 min | Complex platforms |
 
-See **[TIERS.md](TIERS.md)** for full details.
+### Tier comparison
+
+| Dimension              | Tier 1    | Tier 2                | Tier 3                            |
+|------------------------|-----------|-----------------------|-----------------------------------|
+| SDD pipeline           | Yes       | Yes                   | Yes                               |
+| Cross-tool commands    | 4 platforms | 4 platforms         | 4 platforms                       |
+| Mandate file sync      | CI gate   | CI gate               | CI gate                           |
+| Knowledge graph        | No        | Graphify (always-on)  | Graphify (always-on)              |
+| Boundary enforcement   | No        | Bounds (CI gate)      | Bounds (CI gate)                  |
+| Mutation testing       | No        | StrykerJS             | StrykerJS                         |
+| Property testing       | No        | fast-check            | fast-check                        |
+| Golden tests           | No        | Yes                   | Yes                               |
+| Agent handoff loops    | No        | No                    | Yes                               |
+| Migration evals        | Lint only | Lint + RLS/FK         | Lint + RLS/FK + round-trip + data |
+| Type-safe contracts    | No        | No                    | Zod + tRPC                        |
+| Agent observability    | No        | No                    | Arize Phoenix (self-hosted)       |
+| External dependencies  | Node      | Node + Python         | Node + Python + Docker            |
+| Setup time             | 1 min     | 3 min                 | 10 min                            |
+
+### Which tier should I use?
+
+- **Solo dev, small project, learning the system:** start Tier 1, upgrade when
+  the codebase hits ~10K LOC or you add a second agent.
+- **Growing team, multiple agents, external APIs:** Tier 2. This is the
+  recommended default for any production project.
+- **Complex platform (marketplace, payments, multi-service):** Tier 3. The
+  handoff loops, migration evals, and observability pay for themselves the
+  first time an agent chain catches a bad migration before prod.
+
+You can upgrade tiers at any time by running the init script with additional
+flags. No tier downgrades data — removing a tool just means its checks stop
+running.
+
+See [docs/credits.md](docs/credits.md) for tool licenses and attributions.
 
 ### How to upgrade tiers
 
@@ -391,9 +424,6 @@ trellis/
 ├── AGENTS.md                     ← cross-tool mandate (THE entry point)
 ├── CLAUDE.md                     ← synced copy for Claude Code
 ├── README.md                     ← you are here
-├── TIERS.md                      ← tier definitions
-├── CREDITS.md                    ← tool credits + licenses
-├── CONTRIBUTING.md               ← how to extend Trellis
 ├── init.sh                       ← clone-and-run setup
 ├── cli.mjs                       ← CLI entry point
 ├── package.json                  ← npm scripts + dev deps
@@ -412,6 +442,8 @@ trellis/
 │   ├── README-FOR-AGENTS.md     ← AI agent entry point
 │   ├── STRUCTURE.md             ← doc rules
 │   ├── DESIGN.md                ← stack-agnostic philosophy
+│   ├── credits.md               ← tool credits + licenses
+│   ├── contributing.md          ← how to extend Trellis
 │   ├── evals.md                 ← complete eval guide
 │   ├── evolution.md             ← self-evolution engine
 │   ├── coding-standards.md      ← code quality canon

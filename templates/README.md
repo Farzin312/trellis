@@ -34,7 +34,7 @@ If no stack is detected, no config files are copied. The project brings its own.
 1. Create `templates/<stack-name>/` with the config files.
 2. Add detection logic to `scripts/adapt-to-project.mjs`.
 3. Document the eval equivalents (test runner, mutation testing, property testing).
-4. Update `CREDITS.md` if new tools are referenced.
+4. Update `docs/credits.md` if new tools are referenced.
 
 ## Eval Equivalents by Stack
 

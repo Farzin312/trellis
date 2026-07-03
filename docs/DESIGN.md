@@ -38,13 +38,13 @@ Files that MUST stay agnostic:
 - `.specify/memory/constitution.md`
 - All scripts under `scripts/` (except stack-specific helpers)
 - `.agents/handoffs/registry.yaml`
-- `README.md`, `TIERS.md`, this file
+- `README.md`, this file
 
 Files that MAY reference specific stacks:
 - `.env.example` (shows examples, clearly marked)
 - `docs/ponytail-setup.md` (references the Ponytail project by name)
-- `CREDITS.md` (names every tool we use)
-- `docker-compose.phoenix.yml` (names Phoenix image)
+- `docs/credits.md` (names every tool we use)
+- `docker-compose.phoenix.yml` at root (names Phoenix image)
 - User project code (app/, lib/, etc. — not framework files)
 
 ---

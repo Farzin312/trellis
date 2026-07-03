@@ -194,4 +194,4 @@ agents more effective, safer, and more maintainable.
 ## Trellis's Own License
 
 Trellis is MIT licensed. Use it, fork it, modify it, sell it. No attribution
-required (but appreciated). See [LICENSE](LICENSE).
+required (but appreciated). See [LICENSE](../LICENSE).

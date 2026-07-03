@@ -11,8 +11,8 @@ checked against this principle.
 
 ## Before You Contribute
 
-1. Read [docs/DESIGN.md](./DESIGN.md) — the 5 design principles.
-2. Read [MASTERPLAN.md](./MASTERPLAN.md) — the current build status.
+1. Read [DESIGN.md](./DESIGN.md) — the 5 design principles.
+2. Read [MASTERPLAN.md](../MASTERPLAN.md) — the current build status.
 3. Run `node scripts/check-agnostic.mjs` — your changes must pass this.
 
 ## What You Can Contribute
@@ -55,4 +55,4 @@ Trellis uses its own SDD pipeline for framework changes:
 ## Credit
 
 Contributors are credited in release notes. Significant contributions get a
-mention in CREDITS.md.
+mention in docs/credits.md.
