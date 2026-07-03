@@ -20,7 +20,12 @@
     "eval": "node scripts/run-evals.mjs",
     "evolve": "node scripts/adapt-to-project.mjs",
     "handoffs:validate": "node scripts/handoff-engine.mjs validate",
-    "handoffs:list": "node scripts/handoff-engine.mjs list"
+    "handoffs:list": "node scripts/handoff-engine.mjs list",
+    "skills:generate": "node scripts/generate-skills.mjs",
+    "skills:health": "node scripts/evolve-skills.mjs",
+    "services:start": "node scripts/services.mjs start all",
+    "services:stop": "node scripts/services.mjs stop all",
+    "services:status": "node scripts/services.mjs status"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^8.7.1",

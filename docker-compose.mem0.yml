@@ -42,7 +42,7 @@ services:
   mem0:
     image: mem0ai/mem0:latest
     ports:
-      - "3000:3000"
+      - "${MEM0_PORT:-8228}:3000"
     volumes:
       - mem0-data:/data
     environment:

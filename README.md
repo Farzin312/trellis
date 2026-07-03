@@ -22,17 +22,28 @@ A cloneable AI-agent-ready project scaffold with code graph, boundary enforcemen
 ```bash
 git clone https://github.com/Farzin312/trellis.git my-project
 cd my-project
-./init.sh "My Project" --with-graphify --with-bounds
+
+# All 4 agents (default)
+./init.sh "My Project"
+
+# Or pick your agents
+./init.sh "My Project" --agents=claude,copilot
 ```
 
-Or use the CLI:
+Available `--agents` values: `claude`, `codex`, `opencode`, `copilot`.
 
-```bash
-pipx install git+https://github.com/Farzin312/trellis.git
-trellis new my-project --tier 2
-```
+Which agents are you using?
 
-That gives you a working AI-ready project in under 3 minutes. No manual setup of 50+ files.
+| Agent | Why |
+|-------|-----|
+| Claude Code | Full IDE integration, subagents, best for complex work |
+| Codex CLI | Quick one-shot code generation |
+| OpenCode | Open-source, terminal-native |
+| GitHub Copilot | Deep GitHub integration |
+
+You don't need all four. Pick the ones you use. Skills, commands, and
+mandate files only mirror to your chosen platforms. Change later by
+editing `.trellis/config.json` and running `node scripts/generate-skills.mjs`.
 
 ---
 
@@ -257,63 +268,63 @@ Read **[docs/evals.md](docs/evals.md)** for the complete guide with examples.
 
 ---
 
-## Agent Handoff Loops
+## Agent Delegation (Specialist Routing)
 
-Agents don't just work in parallel — they delegate to each other mid-task:
+Agents don't just work in parallel — they delegate to specialists based on
+file patterns and task type. A static delegation matrix in AGENTS.md routes
+work deterministically:
 
 ```
-Implement agent writes a migration
+Implement phase: task touches app/api/**
     │
-    ├── implicit trigger: migration file created
+    ├── Delegation matrix says: route to api-routes skill
     │
     ▼
-migration-validator (specialist agent)
+api-routes specialist (isolated context)
     │
-    ├── runs up/down round-trip test
-    ├── checks RLS
-    ├── checks FK rules
+    ├── Receives: Task ID + file paths + FR refs ONLY
+    ├── Never receives: full artifact chain or conversation history
     │
-    ├── PASS → return control to Implement agent
+    ├── Implements the route (8-step discipline)
     │
-    └── FAIL → handoff to bug-hunter
-                    │
-                    ├── root-causes the failure
-                    ├── proposes fix
-                    └── returns to Implement agent
+    └── Returns compact summary to orchestrator
 ```
 
-Three trigger types:
-- **Explicit**: agent calls `handoff("security-review", context)`
-- **Implicit**: PreToolUse hook detects a condition
-- **Phase-boundary**: SDD transition triggers a handoff
+Three design principles:
+- **Static routing** — the matrix is a table in AGENTS.md, not a dynamic
+  engine. Deterministic, zero-token overhead.
+- **Context isolation** — sub-agents receive only what they need (~200
+  tokens), not the full conversation (~20K tokens).
+- **Verifier != executor** — the agent that writes code never reviews it.
+  Fresh sub-agent for review = unbiased verification.
 
-Loop guards prevent infinite ping-pong (max depth 5, max iterations 20).
-
-Read **[.agents/handoffs/registry.yaml](.agents/handoffs/registry.yaml)** for
-all 10 specialists and their trigger rules.
+Read **[docs/README-FOR-AGENTS.md](docs/README-FOR-AGENTS.md)** for the
+full delegation matrix and context isolation rules.
 
 ---
 
-## The Evolution Engine
+## Self-Growing Skills
 
-Agents go stale. A constitution that says "use Supabase Auth" in a project that
-migrated to Clerk is worse than no constitution.
+Skills are not static. They grow when agents discover patterns, and they
+improve when existing instructions fail in practice.
 
 ```
-Weekly cron runs Evolution Agent
+Agent completes 3+ similar tasks
     │
-    ├── Stack drift: does reality match the constitution?
-    ├── Tool versions: are commands using deprecated flags?
-    ├── Failure patterns: are agents repeating mistakes?
-    ├── Redundancy: are two agents doing the same thing?
+    ├── No existing skill covers this
     │
     ▼
-Produces report: .agents/evolution/YYYY-MM-DD-report.md
+Create .agents/skills/<name>/SKILL.md
     │
-    ▼
-Human reviews → SDD spec → ship change
-    (Evolution NEVER auto-applies — it proposes, SDD reviews)
+    ├── Run: node scripts/generate-skills.mjs
+    │   (mirrors to Claude Code, Codex, OpenCode, Copilot)
+    │
+    └── Add to delegation matrix in AGENTS.md
 ```
+
+When a skill's instructions are wrong or incomplete, any agent fixes them
+and bumps the version. The deterministic health check
+(`scripts/evolve-skills.mjs`) verifies skill integrity in CI.
 
 Read **[docs/evolution.md](docs/evolution.md)** for the full system.
 
@@ -383,7 +394,6 @@ trellis/
 ├── TIERS.md                      ← tier definitions
 ├── CREDITS.md                    ← tool credits + licenses
 ├── CONTRIBUTING.md               ← how to extend Trellis
-├── MASTERPLAN.md                 ← internal build tracker
 ├── init.sh                       ← clone-and-run setup
 ├── cli.mjs                       ← CLI entry point
 ├── package.json                  ← npm scripts + dev deps

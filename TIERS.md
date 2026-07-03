@@ -205,29 +205,6 @@ it took.
 
 ---
 
-## Ponytail Integration (all tiers)
-
-Ponytail is the lazy-senior-dev discipline. It is installed as a PLUGIN per
-agent platform, never inlined into AGENTS.md (that bloats docs and drifts from
-source). The hooks auto-inject the ruleset at session start.
-
-Install commands (documented in docs/ponytail-setup.md):
-
-  Claude Code:  claude plugin marketplace add DietrichGebert/ponytail
-                claude plugin install ponytail@ponytail
-  Codex:        codex plugin marketplace add DietrichGebert/ponytail
-                codex plugin add ponytail@ponytail
-  Copilot CLI:  copilot plugin marketplace add DietrichGebert/ponytail
-                copilot plugin install ponytail@ponytail
-  OpenCode:     (use the standalone ruleset file from the Ponytail repo)
-
-What Trellis adds: a format-only CI check (scripts/check-ponytail.mjs) that
-validates existing # ponytail: markers have a ceiling + upgrade path. It does
-NOT scan for complexity, does NOT block builds, and does NOT second-guess the
-developer. Ponytail is advisory; the reviewer (human or agent) is the gate.
-
----
-
 ## CLI Usage
 
 Trellis ships as both a cloneable template and a CLI.
@@ -237,18 +214,11 @@ As template:
   cd my-project
   ./init.sh "My Project Name" --with-graphify --with-bounds
 
-As CLI (install Trellis globally to scaffold new projects anywhere):
+As CLI:
   pipx install git+https://github.com/farzin/trellis.git
   trellis new my-project --tier 2
-  trellis init      # run init.sh with defaults
-  trellis spec      # start a new SDD spec
-  trellis graph     # rebuild the Graphify knowledge graph
-  trellis eval      # run the full eval suite (mutation + property + golden)
-  trellis check     # run all CI checks locally
 
-The CLI wraps the scripts/ directory. Each trellis subcommand maps to a script.
-This means the CLI and the npm scripts are always in sync — no separate
-codebase to maintain.
+See README.md for the full CLI command reference.
 
 ---
 

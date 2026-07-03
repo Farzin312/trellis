@@ -54,8 +54,8 @@ All API handlers use request-level observability. Structured logging via the log
 ### IX. TDD & SDD Discipline
 
 - Every implementation task has a paired `[TEST]` task. Tests first, run to failure, then pass.
-- Regression gate: `npm run test` runs the full suite. Passing count MUST NOT decrease.
 - SDD phase ordering: Specify -> Clarify -> Plan -> Tasks -> Analyze -> Implement -> Verify. No skipping forward.
+- **Trivial change escape hatch**: single-file fixes (<3 lines), config changes, dependency bumps, typo fixes, and comment additions may skip the full SDD pipeline. Fix, lint, commit. If the change touches auth, money, security, or more than one file, it is non-trivial and requires full SDD.
 - No silent re-planning during Implement. If ambiguity surfaces, return to an earlier phase.
 - ID-only cross-references across artifacts (FR-XXX, SC-XXX, BUG-NNN).
 - Pre-PR gates: `npm run lint` exits 0. `npm run build` succeeds. `npm run docs:check` passes.

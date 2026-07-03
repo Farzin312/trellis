@@ -3,18 +3,31 @@ set -euo pipefail
 
 # ai-ready-scaffold — init script
 # Run after git clone to initialize a new project from this template.
-# Usage: ./init.sh "My Project Name" [--with-graphify] [--with-bounds]
+# Usage: ./init.sh "My Project Name" [--with-graphify] [--with-bounds] [--agents=claude,copilot]
+#
+# --agents: comma-separated list of agent platforms to target.
+#           Options: claude, codex, opencode, copilot
+#           Default: all four
+#           Example: --agents=claude,copilot (skip Codex + OpenCode)
 
 PROJECT_NAME="${1:-my-app}"
 INSTALL_GRAPHIFY=false
 INSTALL_BOUNDS=false
+AGENTS=""
 
 for arg in "$@"; do
   case "$arg" in
     --with-graphify) INSTALL_GRAPHIFY=true ;;
     --with-bounds)   INSTALL_BOUNDS=true ;;
+    --agents)        shift_for_agents=true ;;
+    --agents=*)      AGENTS="${arg#--agents=}" ;;
   esac
 done
+
+# Default: all 4 agents
+if [ -z "$AGENTS" ]; then
+  AGENTS="claude,codex,opencode,copilot"
+fi
 
 echo "=========================================="
 echo "  ai-ready-scaffold — initializing"
@@ -53,13 +66,57 @@ if [ -f "package.json" ]; then
     cp templates/js-ts/vitest.config.ts vitest.config.ts 2>/dev/null || true
     cp templates/js-ts/stryker.config.json stryker.config.json 2>/dev/null || true
     echo "  [OK] JS/TS eval templates copied to project root"
+    echo "       Prerequisites: Node.js 18+ (https://nodejs.org)"
+    echo "       Tools: vitest, strykerJS, fast-check (install via: npm install)"
   fi
 elif [ -f "requirements.txt" ] || grep -q "^\[project\]" pyproject.toml 2>/dev/null; then
   if [ -d "templates/python" ]; then
     cp templates/python/pytest.ini pytest.ini 2>/dev/null || true
     cp templates/python/mutmut.ini mutmut.ini 2>/dev/null || true
     echo "  [OK] Python eval templates copied to project root"
+    echo "       Prerequisites: Python 3.10+ (https://python.org)"
+    echo "       Install tools: pip install pytest pytest-cov mutmut hypothesis ruff"
   fi
+elif [ -f "go.mod" ]; then
+  if [ -d "templates/go" ]; then
+    cp templates/go/README.md docs/eval-setup-go.md 2>/dev/null || true
+    echo "  [OK] Go eval templates documented"
+    echo "       Prerequisites: Go 1.21+ (https://go.dev/dl/)"
+    echo "       Tools: go test, go-mutesting, golangci-lint"
+    echo "       Install: go install github.com/zimmski/go-mutesting@latest"
+    echo "       Install: https://golangci-lint.run/usage/install/"
+  fi
+elif [ -f "Cargo.toml" ]; then
+  if [ -d "templates/rust" ]; then
+    cp templates/rust/README.md docs/eval-setup-rust.md 2>/dev/null || true
+    echo "  [OK] Rust eval templates documented"
+    echo "       Prerequisites: Rust stable (https://rustup.rs)"
+    echo "       Tools: cargo test, cargo-mutants, clippy"
+    echo "       Install: cargo install cargo-mutants"
+    echo "       Install: rustup component add clippy"
+  fi
+else
+  echo "  [INFO] No recognized stack detected (package.json, requirements.txt, go.mod, Cargo.toml)"
+  echo "         Eval templates available in templates/ - copy manually as needed"
+  echo "         Supported stacks: JS/TS, Python, Go, Rust"
+fi
+
+# 5b. Write agent config and generate skills to active platforms only
+mkdir -p .trellis
+ACTIVE_AGENTS_JSON=$(echo "$AGENTS" | tr ',' '\n' | sed 's/^/"/' | sed 's/$/"/' | paste -sd, - | sed 's/^/[/' | sed 's/$/]/')
+cat > .trellis/config.json << CONFIG
+{
+  "active_agents": $ACTIVE_AGENTS_JSON,
+  "active_tier": 2,
+  "_comment": "Edit this to control which agent platforms receive skills and commands."
+}
+CONFIG
+echo "  [OK] Agent config written: $AGENTS"
+
+if command -v node &>/dev/null; then
+  node scripts/generate-skills.mjs && echo "  [OK] Skills mirrored to active platforms" || echo "  [WARN] Skill generation skipped"
+else
+  echo "  [WARN] Node not found — skills not mirrored. Run 'node scripts/generate-skills.mjs' manually"
 fi
 
 # 6. Optional: install Graphify (always-on knowledge graph)
@@ -117,8 +174,10 @@ echo "Next steps:"
 echo "  1. Read AGENTS.md — it routes you to everything"
 echo "  2. Read docs/README-FOR-AGENTS.md if you are an AI agent"
 echo "  3. Read docs/STRUCTURE.md for documentation rules"
-echo "  4. Read .agents/handoffs/registry.yaml for agent handoff loops"
-echo "  5. Run 'graphify .' to build the knowledge graph"
-echo "  6. Start your first spec: see docs/sdd/sdd.md"
+echo "  4. Skills are in .agents/skills/ — mirrored to all 4 platforms"
+echo "  5. Start your first spec: see docs/sdd/sdd.md"
 echo ""
-echo "To start dev: npm run dev (configure your framework in app/)"
+echo "Trivial changes (typo, config, <3 lines): fix, lint, commit."
+echo "Non-trivial changes: run /specify and follow the SDD pipeline."
+echo ""
+echo "Supported AI agents: Claude Code | Codex CLI | OpenCode | Copilot"

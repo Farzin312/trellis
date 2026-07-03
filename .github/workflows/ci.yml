@@ -52,3 +52,9 @@ jobs:
 
       - name: Handoff registry validate
         run: node scripts/handoff-engine.mjs validate
+
+      - name: Skill health check
+        run: node scripts/evolve-skills.mjs
+
+      - name: Skill sync check
+        run: node scripts/generate-skills.mjs

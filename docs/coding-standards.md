@@ -16,9 +16,12 @@ Prefer composing small, focused functions/objects over inheritance hierarchies.
 
 Structured error handling with custom error classes. Never swallow errors silently.
 
-## 4. TypeScript Discipline
+## 4. Type Discipline
 
-No `any`. Use proper types. Centralize domain types in `types/`.
+Use your language's type system fully. No `any` (TS), no bare `dict` where
+a `TypedDict` fits (Python), no `interface{}` (Go), no `Box<dyn Any>` (Rust).
+Centralize domain types in a `types/` or `models/` directory. Match your
+language's idioms - this section adapts during init.sh to your detected stack.
 
 ## 5. Naming
 
