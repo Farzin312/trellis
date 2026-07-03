@@ -160,13 +160,21 @@ them for this framework.
 - NOTE: Graphify uses Claude for its LLM extraction, NOT Ollama. Ollama is
   listed here as an optional tool for fully local LLM workflows.
 
-### Mem0 — Agent Memory (Optional)
+### Mem0 — Agent Memory (Optional Upgrade)
 - Repo: https://github.com/mem0ai/mem0
 - License: Apache-2.0
 - Stars: 60K
-- Universal memory layer for AI agents. Consider for persistent cross-session
-  agent memory. Trellis ships its own portable context system (.agents/context/)
-  which covers most needs without an external service.
+- Self-hostable: YES — `cd server && docker compose up -d` gives a full
+  dashboard with auth and API keys. Also available in library mode
+  (`pip install mem0ai`, in-process, no server).
+- What it does: Universal memory layer for AI agents. Semantic search,
+  entity linking, temporal reasoning, multi-signal retrieval (semantic +
+  BM25 + entity). Scores 91.6 on LoCoMo benchmark.
+- How Trellis relates: Trellis ships .agents/context/ (JSON files) as the
+  zero-dependency default. Mem0 is the upgrade path for teams needing
+  semantic memory search or shared dashboards. Mem0 requires an LLM at
+  runtime (default gpt-5-mini, supports Ollama for fully local).
+- Ships as: Agent Skill (SKILL.md format). Install: `npx skills add mem0ai/mem0`
 
 ---
 
