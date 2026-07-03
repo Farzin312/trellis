@@ -1,0 +1,15 @@
+[
+  ".env.example",
+  "docs/ponytail-setup.md",
+  "CREDITS.md",
+  "docker-compose.phoenix.yml",
+  "pyproject.toml",
+  "package.json",
+  "docs/database/",
+  "docs/integrations/",
+  "docs/evals.md",
+  "docs/evolution.md",
+  "MASTERPLAN.md",
+  "TIERS.md",
+  "README.md"
+]

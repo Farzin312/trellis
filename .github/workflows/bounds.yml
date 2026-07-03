@@ -1,0 +1,31 @@
+name: Bounds
+
+on:
+  pull_request:
+    paths: ['lib/**', 'app/**', '.bounds/**']
+  push:
+    branches: [main]
+    paths: ['lib/**', 'app/**', '.bounds/**']
+
+jobs:
+  bounds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pipx
+        run: pip install pipx && pipx ensurepath
+
+      - name: Install Bounds
+        run: pipx install "git+https://github.com/Farzin312/bounds.git"
+
+      - name: Freshness gate
+        run: bounds calibrate --check || true
+
+      - name: Preflight (advisory until god-node cleanup)
+        run: bounds preflight --ci || true

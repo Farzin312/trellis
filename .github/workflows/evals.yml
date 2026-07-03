@@ -1,0 +1,27 @@
+name: Evals
+
+on:
+  pull_request:
+    paths: ['lib/**', 'app/**', 'tests/**']
+  push:
+    branches: [main]
+
+jobs:
+  evals:
+    name: Mutation - Golden - Property
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Run eval suite
+        run: node scripts/run-evals.mjs
+        continue-on-error: true # scaffold has no code to eval yet; projects replace this

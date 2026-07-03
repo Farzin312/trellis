@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint - Build - Test - Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Generate commands
+        run: node scripts/generate-commands.mjs
+
+      - name: Mandate sync check
+        run: node scripts/check-mandate-sync.mjs
+
+      - name: Command sync check
+        run: node scripts/check-command-sync.mjs
+
+      - name: Docs check
+        run: node scripts/docs-sync.mjs --check
+
+      - name: Ponytail marker format check
+        run: node scripts/check-ponytail.mjs
+
+      - name: Migration safety check
+        run: node scripts/check-migration-safety.mjs
+
+      - name: Tests
+        run: npm test
+        continue-on-error: true # scaffold has no tests yet; projects replace this
+
+      - name: Handoff registry validate
+        run: node scripts/handoff-engine.mjs validate

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "shell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bounds agent-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

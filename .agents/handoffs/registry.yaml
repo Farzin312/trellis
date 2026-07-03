@@ -1,0 +1,277 @@
+# Agent Handoff Registry
+#
+# Defines specialist agents that can be called mid-task via handoff().
+# A handoff is a TOOL the LLM calls to delegate control (not just data) to a
+# specialist. The specialist can itself hand off further, or return control.
+#
+# Three trigger types:
+#   explicit      — agent calls handoff("<name>", context) directly
+#   implicit      — PreToolUse hook detects a condition (e.g., migration created)
+#   phase-boundary — SDD phase transition triggers a mandatory handoff
+#
+# Loop guards (enforced by scripts/handoff-engine.mjs):
+#   max_depth: 5       — no more than 5 nested handoffs in a single chain
+#   max_iterations: 20  — no more than 20 total handoffs across all chains
+#   deadlock_detection: true — if two agents hand off to each other 3x, break
+#
+# This file is the single source of truth. The handoff engine reads it at
+# startup. To add a specialist, copy the template at the bottom.
+
+version: "1.0"
+loop_guards:
+  max_depth: 5
+  max_iterations: 20
+  deadlock_detection: true
+  deadlock_threshold: 3
+
+# ─────────────────────────────────────────────────────────────────────────
+# SPECIALISTS
+# ─────────────────────────────────────────────────────────────────────────
+
+specialists:
+  # ── SDD PHASE SPECIALISTS ───────────────────────────────────────────
+
+  - name: api-routes
+    description: "Designs and implements API routes following the 8-step discipline"
+    triggers:
+      - type: explicit
+        when: "Plan or Implement phase touches app/api/**"
+    input_contract:
+      task_id: "TXXX"
+      done_when: "contracts.md section OR route implementation complete"
+      file_paths: ["app/api/**/route.ts"]
+      refs: ["FR-XXX", "SC-XXX"]
+    output_contract:
+      return_type: "findings | code"
+      must_include: ["route handlers", "JSDoc for API reference"]
+    fallback: null  # no delegation from this specialist
+
+  - name: db-migrations
+    description: "Designs and writes database migrations with RLS + FK safety"
+    triggers:
+      - type: explicit
+        when: "Plan or Implement phase touches supabase/migrations/**"
+      - type: implicit
+        when: "migration file created"
+        hook: "PreToolUse"
+        detect: "file_path matches supabase/migrations/.*\\.sql"
+    input_contract:
+      task_id: "TXXX"
+      done_when: "data-model.md OR migration SQL complete with RLS"
+      file_paths: ["supabase/migrations/*.sql"]
+      refs: ["FR-XXX"]
+    output_contract:
+      return_type: "schema_delta | migration_sql"
+      must_include: ["up/down SQL", "RLS policies", "FK rules"]
+    on_complete:
+      # Phase-boundary trigger: after a migration is written, validate it
+      handoff: migration-validator
+      context: "migration files written by db-migrations"
+
+  - name: frontend-ui
+    description: "Implements server/client components following design system"
+    triggers:
+      - type: explicit
+        when: "Implement phase touches app/** or components/** (non-API)"
+    input_contract:
+      task_id: "TXXX"
+      done_when: "component(s) render correctly with tests"
+      file_paths: ["app/**", "components/**"]
+      refs: ["FR-XXX"]
+    output_contract:
+      return_type: "code"
+      must_include: ["Server Components by default", "design system tokens"]
+    fallback: null
+
+  - name: security-review
+    description: "Audits auth, money, RLS, and audit-log surfaces"
+    triggers:
+      - type: explicit
+        when: "Plan phase has AUTH/money risks, or Analyze phase touches auth"
+      - type: phase-boundary
+        when: "Analyze phase starts"
+        mandatory: false  # advisory; orchestrator decides
+    input_contract:
+      task_id: "all"
+      done_when: "security findings merged into analysis.md"
+      file_paths: []  # reads full chain
+      refs: ["AUTH-XXX", "SC-XXX"]
+    output_contract:
+      return_type: "findings"
+      must_include: ["RLS check", "money-path audit", "rate-limit check"]
+
+  # ── IMPLICIT TRIGGER SPECIALISTS ────────────────────────────────────
+
+  - name: migration-validator
+    description: "Runtime eval of a migration: up/down round-trip, RLS, FK rules"
+    triggers:
+      - type: implicit
+        when: "migration file created or modified"
+        hook: "PreToolUse"
+        detect: "file_path matches supabase/migrations/.*\\.sql"
+      - type: phase-boundary
+        when: "Implement phase completes a migration task"
+    input_contract:
+      migration_files: ["supabase/migrations/<name>.sql"]
+      done_when: "all migration checks pass"
+    output_contract:
+      return_type: "pass_fail"
+      must_include:
+        - "up/down round-trip result"
+        - "RLS enabled on new tables"
+        - "FK delete rules match baseline"
+        - "data preservation check (if data-altering)"
+    on_fail:
+      handoff: bug-hunter
+      context: "migration validation failed"
+
+  - name: bug-hunter
+    description: "Root-causes test failures and proposes fixes"
+    triggers:
+      - type: implicit
+        when: "test suite fails"
+        hook: "PostToolUse"
+        detect: "test exit code != 0"
+      - type: explicit
+        when: "agent encounters unexpected test failure"
+    input_contract:
+      failing_tests: ["test file paths"]
+      diff: "git diff of changes that caused failure"
+      done_when: "root cause identified and fix proposed"
+    output_contract:
+      return_type: "root_cause | fix_proposal"
+      must_include: ["root cause with file:line", "proposed fix", "regression risk"]
+    on_complete:
+      # Return control to the caller with the fix proposal
+      return: caller
+
+  - name: docs-maintenance
+    description: "Updates docs to match code changes (doc-drift prevention)"
+    triggers:
+      - type: implicit
+        when: "code change touches a documented surface"
+        hook: "PreToolUse"
+        detect: "file_path referenced in docs/systems/**/*.md"
+      - type: phase-boundary
+        when: "Implement phase completes"
+    input_contract:
+      changed_files: ["list of modified files"]
+      done_when: "all doc references updated in same change-set"
+    output_contract:
+      return_type: "doc_updates"
+      must_include: ["updated file:function maps", "breadcrumb fixes"]
+    on_complete:
+      handoff: docs-sync
+      context: "run npm run docs:sync"
+
+  - name: docs-sync
+    description: "Runs the docs:sync pipeline and verifies output"
+    triggers:
+      - type: explicit
+        when: "docs have been updated"
+    input_contract:
+      done_when: "npm run docs:check exits 0"
+    output_contract:
+      return_type: "pass_fail"
+      must_include: ["docs:check exit code"]
+
+  # ── QUALITY EVAL SPECIALISTS ────────────────────────────────────────
+
+  - name: quality-gates
+    description: "Pre-merge correctness sweep: lint, build, test, mutation"
+    triggers:
+      - type: phase-boundary
+        when: "Verify phase starts"
+        mandatory: true
+    input_contract:
+      done_when: "all quality gates pass"
+    output_contract:
+      return_type: "pass_fail"
+      must_include:
+        - "lint exit 0"
+        - "build success"
+        - "test suite passes (count not decreased)"
+        - "mutation score meets threshold"
+        - "docs:check passes"
+    on_fail:
+      handoff: bug-hunter
+      context: "quality gate failed"
+
+  - name: ponytail-review
+    description: "Flags potential over-engineering as a PR discussion point"
+    triggers:
+      - type: phase-boundary
+        when: "Review phase"
+        mandatory: false  # advisory only
+    input_contract:
+      changed_files: ["list of modified files"]
+      done_when: "over-engineering flags generated (non-blocking)"
+    output_contract:
+      return_type: "advisory_flags"
+      must_include: ["one-implementation abstractions", "premature config", "unjustified file size"]
+    # NOTE: This specialist is ADVISORY. It does not block merges. The reviewer
+    # (human or agent) decides whether to act on the flags. Ponytail is a
+    # default posture, not a hard gate.
+
+# ─────────────────────────────────────────────────────────────────────────
+# PHASE-BOUNDARY SCHEDULE
+# ─────────────────────────────────────────────────────────────────────────
+# Maps SDD phase transitions to mandatory or advisory handoffs.
+# The handoff engine checks this table when a phase completes.
+
+phase_boundary_schedule:
+  specify:
+    on_complete: null  # hand off to clarify (user-driven, not auto)
+  clarify:
+    on_complete: null  # hand off to plan (user-driven)
+  plan:
+    on_complete:
+      - specialist: null  # tasks phase is user-driven
+  tasks:
+    on_complete:
+      - specialist: null  # checklist is user-driven
+  analyze:
+    on_complete:
+      - specialist: security-review
+        mandatory: false
+  implement:
+    on_complete:
+      - specialist: docs-maintenance
+        mandatory: true
+      - specialist: quality-gates
+        mandatory: true
+  verify:
+    on_complete:
+      - specialist: quality-gates
+        mandatory: true
+
+# ─────────────────────────────────────────────────────────────────────────
+# TEMPLATE FOR NEW SPECIALISTS
+# ─────────────────────────────────────────────────────────────────────────
+# Copy this block to add a new specialist:
+#
+#  - name: <unique-name>
+#    description: "<what it does>"
+#    triggers:
+#      - type: explicit | implicit | phase-boundary
+#        when: "<condition>"
+#        # for implicit:
+#        hook: "PreToolUse | PostToolUse"
+#        detect: "<detection pattern>"
+#        # for phase-boundary:
+#        mandatory: true | false
+#    input_contract:
+#      task_id: "TXXX"
+#      done_when: "<completion criteria>"
+#      file_paths: ["<paths>"]
+#      refs: ["FR-XXX"]
+#    output_contract:
+#      return_type: "findings | code | pass_fail | advisory_flags"
+#      must_include: ["<required outputs>"]
+#    on_complete:
+#      handoff: <next-specialist-name> | return: caller
+#      context: "<context for the next specialist>"
+#    on_fail:
+#      handoff: bug-hunter
+#      context: "<what failed>"
+#    fallback: null | <alternative-specialist>

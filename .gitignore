@@ -1,0 +1,20 @@
+node_modules/
+.next/
+.vercel/
+*.tsbuildinfo
+.env*
+.env.local
+!.env.example
+
+# Generated artifacts
+graphify-out/
+.bounds/cache.db
+.baselines/*.baseline.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/

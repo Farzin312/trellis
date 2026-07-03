@@ -1,0 +1,31 @@
+{
+  "name": "ai-ready-scaffold",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloneable AI-agent-ready project scaffold: SDD pipeline, code graph, boundary enforcement, evals, handoff loops, migration safety — all free, all cross-tool.",
+  "license": "MIT",
+  "scripts": {
+    "init": "bash init.sh",
+    "lint": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs",
+    "test": "vitest run",
+    "test:mutation": "stryker run",
+    "test:watch": "vitest",
+    "docs:sync": "node scripts/docs-sync.mjs",
+    "docs:check": "node scripts/docs-sync.mjs --check",
+    "check:mandates": "node scripts/check-mandate-sync.mjs",
+    "check:commands": "node scripts/check-command-sync.mjs",
+    "check:breadcrumbs": "node scripts/check-doc-breadcrumbs.mjs",
+    "check:migrations": "node scripts/check-migration-safety.mjs",
+    "check:graph": "node scripts/check-graph-freshness.mjs",
+    "bounds:validate": "bounds validate --quick",
+    "bounds:preflight": "bounds preflight --ci",
+    "eval": "node scripts/run-evals.mjs"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^8.7.1",
+    "@stryker-mutator/vitest-runner": "^8.7.1",
+    "fast-check": "^3.23.2",
+    "vitest": "^4.1.4",
+    "zod": "^3.25.0"
+  }
+}

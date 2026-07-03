@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bounds agent-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep|Glob|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bounds agent-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

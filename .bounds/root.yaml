@@ -1,0 +1,19 @@
+version: '1'
+project: __PROJECT_SLUG__
+languages:
+  - typescript
+subsystems: []
+entry_points: []
+agentsync:
+  invocation: strict
+sdd:
+  enabled: true
+  agent: generic
+  phases:
+    - specify
+    - clarify
+    - plan
+    - tasks
+    - analyze
+    - implement
+    - verify
