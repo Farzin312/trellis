@@ -47,7 +47,22 @@ if command -v node &>/dev/null; then
   node scripts/check-mandate-sync.mjs --fix && echo "  [OK] Mandate files synced" || echo "  [WARN] Mandate sync skipped"
 fi
 
-# 5. Optional: install Graphify (always-on knowledge graph)
+# 5. Copy stack-appropriate eval templates
+if [ -f "package.json" ]; then
+  if [ -d "templates/js-ts" ]; then
+    cp templates/js-ts/vitest.config.ts vitest.config.ts 2>/dev/null || true
+    cp templates/js-ts/stryker.config.json stryker.config.json 2>/dev/null || true
+    echo "  [OK] JS/TS eval templates copied to project root"
+  fi
+elif [ -f "requirements.txt" ] || grep -q "^\[project\]" pyproject.toml 2>/dev/null; then
+  if [ -d "templates/python" ]; then
+    cp templates/python/pytest.ini pytest.ini 2>/dev/null || true
+    cp templates/python/mutmut.ini mutmut.ini 2>/dev/null || true
+    echo "  [OK] Python eval templates copied to project root"
+  fi
+fi
+
+# 6. Optional: install Graphify (always-on knowledge graph)
 if [ "$INSTALL_GRAPHIFY" = true ]; then
   echo "  Installing Graphify..."
   if command -v uv &>/dev/null; then
@@ -76,9 +91,8 @@ if [ "$INSTALL_BOUNDS" = true ]; then
   fi
 fi
 
-# 7. Install npm dev dependencies
+# 7. Install npm dev dependencies (JS/TS only)
 if [ -f "package.json" ]; then
-  echo "  Installing dev dependencies..."
   npm install --silent 2>/dev/null || echo "  [WARN] npm install failed — run manually"
 fi
 

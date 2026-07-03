@@ -37,8 +37,14 @@ function runStep(name, command, required = true) {
   }
 }
 
-// Step 1: Unit + integration tests
-runStep('Test suite (vitest)', 'npx vitest run');
+// Step 1: Unit + integration tests (JS/TS only — other stacks use their own runner)
+if (existsSync(join(root, 'package.json'))) {
+  runStep('Test suite (vitest)', 'npx vitest run');
+} else {
+  console.log('\n── Test suite ──');
+  console.log('SKIP: no package.json (non-JS project)');
+  console.log('       Python: pytest | Go: go test ./... | Rust: cargo test');
+}
 
 // Step 2: Docs check
 runStep('Docs sync check', 'node scripts/docs-sync.mjs --check', false);
@@ -51,14 +57,15 @@ if (existsSync(join(root, 'supabase', 'migrations'))) {
 // Step 4: Ponytail format check (always advisory)
 runStep('Ponytail marker format', 'node scripts/check-ponytail.mjs', false);
 
-// Step 5: Mutation testing (optional, slow — skip if not configured)
+// Step 5: Mutation testing (JS/TS only)
 const strykerConfig = join(root, 'stryker.config.json');
 if (existsSync(strykerConfig)) {
   runStep('Mutation testing (stryker)', 'npx stryker run', false);
 } else {
   console.log('\n── Mutation testing ──');
   console.log('SKIP: no stryker.config.json found');
-  console.log('       Create one to enable mutation testing: https://stryker-mutator.io/docs/');
+  console.log('       JS/TS: copied from templates/js-ts/ during init');
+  console.log('       Python: mutmut | Go: go-mutesting | Rust: cargo-mutants');
 }
 
 // Step 6: Golden tests

@@ -431,6 +431,11 @@ trellis/
 │   ├── handoff-engine.mjs       ← validate/replay handoff registry
 │   └── run-evals.mjs            ← full eval suite runner
 │
+├── templates/                    ← per-stack config templates (copied by init.sh)
+│   ├── js-ts/                   ← vitest + stryker configs
+│   ├── python/                  ← pytest + mutmut configs
+│   ├── go/                      ← go test + go-mutesting docs
+│   └── rust/                    ← cargo test + cargo-mutants docs
 tests/golden/                 ← per-spec locked suites (created by project)
 └── docker-compose.phoenix.yml    ← Arize Phoenix self-hosted
 ```

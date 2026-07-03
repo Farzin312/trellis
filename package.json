@@ -6,20 +6,21 @@
   "license": "MIT",
   "scripts": {
     "init": "bash init.sh",
-    "lint": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs",
-    "test": "vitest run",
-    "test:mutation": "stryker run",
-    "test:watch": "vitest",
+    "lint": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic",
+    "test": "node scripts/run-evals.mjs",
     "docs:sync": "node scripts/docs-sync.mjs",
     "docs:check": "node scripts/docs-sync.mjs --check",
     "check:mandates": "node scripts/check-mandate-sync.mjs",
     "check:commands": "node scripts/check-command-sync.mjs",
     "check:breadcrumbs": "node scripts/check-doc-breadcrumbs.mjs",
+    "check:agnostic": "node scripts/check-agnostic.mjs",
     "check:migrations": "node scripts/check-migration-safety.mjs",
     "check:graph": "node scripts/check-graph-freshness.mjs",
-    "bounds:validate": "bounds validate --quick",
-    "bounds:preflight": "bounds preflight --ci",
-    "eval": "node scripts/run-evals.mjs"
+    "check:all": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic && npm run check:migrations && node scripts/run-evals.mjs",
+    "eval": "node scripts/run-evals.mjs",
+    "evolve": "node scripts/adapt-to-project.mjs",
+    "handoffs:validate": "node scripts/handoff-engine.mjs validate",
+    "handoffs:list": "node scripts/handoff-engine.mjs list"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^8.7.1",
@@ -27,5 +28,8 @@
     "fast-check": "^3.23.2",
     "vitest": "^4.1.4",
     "zod": "^3.25.0"
-  }
+  },
+  "optionalDependencies": {},
+  "_comment_devDeps": "DevDeps are for JS/TS adopting projects. Non-JS projects can remove them. Framework scripts (scripts/*.mjs) only require Node.js.",
+  "_comment_templates": "Per-stack config templates live in templates/. init.sh copies the matching ones."
 }
