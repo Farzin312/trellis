@@ -37,13 +37,24 @@ function runStep(name, command, required = true) {
   }
 }
 
-// Step 1: Unit + integration tests (JS/TS only — other stacks use their own runner)
-if (existsSync(join(root, 'package.json'))) {
+// Step 1: Unit + integration tests
+const hasPackageJson = existsSync(join(root, 'package.json'));
+const hasRequirementsTxt = existsSync(join(root, 'requirements.txt'));
+const hasGoMod = existsSync(join(root, 'go.mod'));
+const hasCargoToml = existsSync(join(root, 'Cargo.toml'));
+
+if (hasPackageJson) {
   runStep('Test suite (vitest)', 'npx vitest run');
+} else if (hasRequirementsTxt) {
+  runStep('Test suite (pytest)', 'python -m pytest -q');
+} else if (hasGoMod) {
+  runStep('Test suite (go test)', 'go test ./...');
+} else if (hasCargoToml) {
+  runStep('Test suite (cargo test)', 'cargo test');
 } else {
   console.log('\n── Test suite ──');
-  console.log('SKIP: no package.json (non-JS project)');
-  console.log('       Python: pytest | Go: go test ./... | Rust: cargo test');
+  console.log('SKIP: no recognized project manifest');
+  console.log('       Expected: package.json, requirements.txt, go.mod, or Cargo.toml');
 }
 
 // Step 2: Docs check
@@ -57,15 +68,28 @@ if (existsSync(join(root, 'supabase', 'migrations'))) {
 // Step 4: Ponytail format check (always advisory)
 runStep('Ponytail marker format', 'node scripts/check-ponytail.mjs', false);
 
-// Step 5: Mutation testing (JS/TS only)
+// Step 5: Mutation testing (language-specific)
 const strykerConfig = join(root, 'stryker.config.json');
-if (existsSync(strykerConfig)) {
-  runStep('Mutation testing (stryker)', 'npx stryker run', false);
+const mutmutConfig = join(root, 'mutmut.ini');
+
+if (strykerConfig) {
+  runStep('Mutation testing (StrykerJS)', 'npx stryker run', false);
+} else if (mutmutConfig) {
+  runStep('Mutation testing (mutmut)', 'mutmut run', false);
+} else if (hasGoMod) {
+  console.log('\n── Mutation testing ──');
+  console.log('INFO: Go mutation testing via go-mutesting (install separately)');
+  console.log('      See templates/go/README.md');
+} else if (hasCargoToml) {
+  console.log('\n── Mutation testing ──');
+  console.log('INFO: Rust mutation testing via cargo-mutants (install separately)');
+  console.log('      See templates/rust/README.md');
 } else {
   console.log('\n── Mutation testing ──');
-  console.log('SKIP: no stryker.config.json found');
-  console.log('       JS/TS: copied from templates/js-ts/ during init');
-  console.log('       Python: mutmut | Go: go-mutesting | Rust: cargo-mutants');
+  console.log('SKIP: no mutation testing config found');
+  console.log('       JS/TS: templates/js-ts/stryker.config.json');
+  console.log('       Python: templates/python/mutmut.ini');
+  console.log('       Go: go-mutesting | Rust: cargo-mutants');
 }
 
 // Step 6: Golden tests
