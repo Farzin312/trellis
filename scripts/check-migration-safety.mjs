@@ -2,24 +2,17 @@
 /**
  * check-migration-safety.mjs
  *
- * Multi-tool migration eval suite. Detects which migration tool a project uses,
- * then runs the appropriate checks.
- *
- * Detection: reads scripts/migration-adapters.json for directory/file patterns.
- * Each adapter declares whether RLS and FK checks are applicable.
+ * Multi-tool migration eval suite. Detects which migration tool(s) a project
+ * uses via config markers + directory patterns, then runs the appropriate
+ * checks for each detected tool.
  *
  * Checks (where applicable to the detected tool):
  *   1. Unique version numbers (no duplicates)
- *   2. RLS enabled on new tables
+ *   2. RLS enabled on new tables (SQL-based tools only)
  *   3. FK delete rules (warns on CASCADE without justification)
- *   4. (SQL-based tools only) up/down round-trip safety review
  *
- * Supported: supabase, prisma, drizzle, flyway, alembic, rails, django,
- * knex, golang-migrate, typeorm, goose, atlas, sequelize, node-pg-migrate,
- * liquibase (limited).
- *
- * Not supported: custom tools. The script reports which tool was detected
- * (or none) so you know exactly what coverage you have.
+ * Supported: 15 tools. See scripts/migration-adapters.json for the full list
+ * and detection rules. Run --list-adapters to see all.
  *
  * Usage:
  *   node scripts/check-migration-safety.mjs
@@ -44,165 +37,171 @@ if (!existsSync(adaptersFile)) {
 const { adapters, defaults } = JSON.parse(readFileSync(adaptersFile, 'utf8'));
 
 if (args.includes('--list-adapters')) {
-  console.log('Supported migration tools:');
+  console.log('Supported migration tools:\n');
+  console.log('  Tool'.padEnd(22) + 'Display'.padEnd(26) + 'Up/Down'.padEnd(10) + 'Status');
+  console.log('  ' + '─'.repeat(70));
   for (const [key, adapter] of Object.entries(adapters)) {
-    console.log(`  ${key.padEnd(20)} ${adapter.displayName.padEnd(25)} ${adapter.status}`);
+    const upDown = adapter.supportsUpDown === true ? 'yes' :
+                   adapter.supportsUpDown === 'partial' ? 'partial' : 'no';
+    console.log(
+      `  ${key.padEnd(22)}${adapter.displayName.padEnd(26)}${upDown.padEnd(10)}${adapter.status}`
+    );
   }
+  console.log('\n  RLS checkable: ' + Object.entries(adapters).filter(([,a]) => a.rlsCheckable).map(([k]) => k).join(', '));
   process.exit(0);
 }
 
 // ── Detection ──────────────────────────────────────────────────────────
 
-function detectMigrationTool() {
+function detectMigrationTools() {
+  const detected = [];
   for (const [key, adapter] of Object.entries(adapters)) {
-    const dirs = [adapter.detect.dir, ...(adapter.detect.fallbackDirs || [])];
+    const dirs = adapter.detect.dirs || [];
+    const hasConfigMarker = (adapter.detect.configMarkers || []).some(m =>
+      existsSync(join(root, m))
+    );
+
     for (const dir of dirs) {
       const fullPath = join(root, dir);
-      if (existsSync(fullPath) && statSync(fullPath).isDirectory()) {
-        // Verify matching files exist
-        const files = readdirSync(fullPath).filter(f => {
-          const pattern = adapter.detect.filePattern.replace(/\*/g, '');
-          return f.includes(pattern.split('/')[0]) || f.endsWith(adapter.detect.filePattern.replace('*', ''));
+      if (!existsSync(fullPath) || !statSync(fullPath).isDirectory()) continue;
+
+      const files = collectMigrationFiles(fullPath, adapter.detect.filePattern);
+      if (files.length > 0) {
+        detected.push({
+          key,
+          adapter,
+          dir: fullPath,
+          files,
+          detectedVia: hasConfigMarker ? 'config marker + directory' : 'directory pattern'
         });
-        if (files.length > 0 || adapter.detect.filePattern.includes('/')) {
-          return { key, adapter, dir: fullPath, files };
-        }
+        break; // one detection per tool
       }
     }
   }
-  return null;
+  return detected;
 }
 
-const detected = detectMigrationTool();
-
-if (!detected) {
-  console.log('SKIP: no migration tool detected');
-  console.log('      Supported tools:');
-  for (const [key, adapter] of Object.entries(adapters)) {
-    console.log(`        ${key}: ${adapter.detect.dir}/`);
-  }
-  console.log(`      ${defaults.message}`);
-  process.exit(0);
-}
-
-console.log(`Detected migration tool: ${detected.adapter.displayName} (${detected.key})`);
-console.log(`  Directory: ${detected.dir.replace(root, '.')}`);
-console.log(`  Status: ${detected.adapter.status}`);
-
-if (detected.adapter.status === 'limited') {
-  console.log(`  Note: ${detected.adapter.note}`);
-}
-
-// ── Gather migration files ─────────────────────────────────────────────
-
-function getMigrationFiles(dir, filePattern) {
+function collectMigrationFiles(dir, filePattern) {
   const results = [];
   const allItems = readdirSync(dir, { withFileTypes: true });
 
-  // Handle patterns like "*/migration.sql" (Prisma) — recurse one level
   if (filePattern.includes('/')) {
-    const [subPattern, fileName] = filePattern.split('/');
+    // Nested pattern (e.g., Prisma: */migration.sql)
+    const [_, fileName] = filePattern.split('/');
     for (const item of allItems) {
       if (item.isDirectory()) {
-        const subDir = join(dir, item.name);
-        const targetFile = join(subDir, fileName);
-        if (existsSync(targetFile)) {
-          results.push(targetFile);
-        }
+        const targetFile = join(dir, item.name, fileName);
+        if (existsSync(targetFile)) results.push(targetFile);
       }
     }
   } else {
-    // Flat pattern like "*.sql" or "*.py" or "*.js" or "V*__*.sql"
+    // Flat pattern (e.g., *.sql, *.py, V*__*.sql)
     const ext = '.' + filePattern.split('.').pop();
-    const prefix = filePattern.split('*')[0];
+    const prefix = filePattern.replace(/\*.*/g, ''); // everything before first *
     for (const item of allItems) {
-      if (item.isFile()) {
-        if (item.name.endsWith(ext) || (prefix && item.name.startsWith(prefix))) {
-          results.push(join(dir, item.name));
-        }
-      }
+      if (!item.isFile()) continue;
+      const matches = (prefix && item.name.startsWith(prefix)) ||
+                      (!prefix && item.name.endsWith(ext));
+      if (matches) results.push(join(dir, item.name));
     }
   }
   return results.sort();
 }
 
-const migrationFiles = getMigrationFiles(detected.dir, detected.adapter.detect.filePattern);
+const detectedTools = detectMigrationTools();
 
-if (migrationFiles.length === 0) {
-  console.log('SKIP: migration tool detected but no migration files found');
+if (detectedTools.length === 0) {
+  console.log('SKIP: no migration tool detected');
+  console.log('      Checked for: ' + Object.values(adapters).map(a => a.detect.dirs?.[0]).filter(Boolean).join(', '));
+  console.log(`\n      ${defaults.message}`);
+  console.log('      Run: node scripts/check-migration-safety.mjs --list-adapters');
   process.exit(0);
 }
 
-console.log(`  Files: ${migrationFiles.length}`);
+// ── Run checks for each detected tool ──────────────────────────────────
 
-// ── Run checks ─────────────────────────────────────────────────────────
+let totalErrors = 0;
+let totalWarnings = 0;
 
-let errors = 0;
-let warnings = 0;
-const versionPattern = new RegExp(detected.adapter.versionPattern);
-
-// Check 1: Unique version numbers
-const versions = {};
-for (const file of migrationFiles) {
-  const filename = file.split('/').pop();
-  const match = filename.match(versionPattern);
-  if (match) {
-    const version = match[1];
-    if (versions[version]) {
-      console.error(`FAIL: duplicate migration version ${version}`);
-      console.error(`       ${versions[version].split('/').pop()} and ${filename}`);
-      errors++;
-    }
-    versions[version] = file;
+for (const tool of detectedTools) {
+  console.log(`\n${tool.adapter.displayName} (${tool.key})`);
+  console.log(`  Detected via: ${tool.detectedVia}`);
+  console.log(`  Directory: ${tool.dir.replace(root, '.')}`);
+  console.log(`  Files: ${tool.files.length}`);
+  if (tool.adapter.status === 'limited') {
+    console.log(`  Note: ${tool.adapter.note}`);
   }
-}
-console.log(`  [Check 1] Unique versions: ${errors === 0 ? 'PASS' : 'FAIL'} (${Object.keys(versions).length} versions)`);
 
-// Check 2: RLS on new tables (if applicable)
-if (detected.adapter.rlsCheckable) {
-  for (const file of migrationFiles) {
-    const content = readFileSync(file, 'utf8');
+  let errors = 0;
+  let warnings = 0;
+  const versionPattern = new RegExp(tool.adapter.versionPattern);
 
-    // Find CREATE TABLE statements
-    const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?(\w+)/gi;
-    let match;
-    while ((match = createTableRegex.exec(content)) !== null) {
-      const tableName = match[1];
-      const rlsRegex = new RegExp(
-        `ALTER\\s+TABLE\\s+(?:public\\.)?${tableName}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`,
-        'i'
-      );
-      if (!rlsRegex.test(content)) {
-        const relFile = file.replace(root + '/', '');
-        console.warn(`WARN: ${relFile} creates table ${tableName} without ENABLE ROW LEVEL SECURITY`);
-        warnings++;
+  // Check 1: Unique version numbers
+  const versions = {};
+  for (const file of tool.files) {
+    const filename = file.split('/').pop();
+    const match = filename.match(versionPattern);
+    if (match) {
+      const version = match[1];
+      if (versions[version]) {
+        console.error(`  FAIL: duplicate version ${version} (${versions[version].split('/').pop()} and ${filename})`);
+        errors++;
+      }
+      versions[version] = file;
+    }
+  }
+  console.log(`  [1] Unique versions: ${errors === 0 ? 'PASS' : `${errors} duplicates`} (${Object.keys(versions).length} versions)`);
+
+  // Check 2: RLS on new tables
+  if (tool.adapter.rlsCheckable) {
+    for (const file of tool.files) {
+      const content = readFileSync(file, 'utf8');
+      const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?(\w+)/gi;
+      let match;
+      while ((match = createTableRegex.exec(content)) !== null) {
+        const tableName = match[1];
+        const rlsRegex = new RegExp(
+          `ALTER\\s+TABLE\\s+(?:public\\.)?${tableName}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`,
+          'i'
+        );
+        if (!rlsRegex.test(content)) {
+          // Special case: node-pg-migrate uses pgm.enableRls()
+          const pgmRegex = new RegExp(`pgm\\.enableRls\\s*\\(\\s*['\"]${tableName}['\"]`, 'i');
+          if (!pgmRegex.test(content)) {
+            console.warn(`  WARN: ${file.split('/').pop()} creates ${tableName} without RLS`);
+            warnings++;
+          }
+        }
       }
     }
+    console.log(`  [2] RLS on new tables: ${warnings === 0 ? 'PASS' : `${warnings} warnings`}`);
+  } else {
+    console.log(`  [2] RLS: SKIP (${tool.adapter.rlsSyntax})`);
   }
-  console.log(`  [Check 2] RLS on new tables: ${warnings === 0 ? 'PASS' : `${warnings} warnings`}`);
-} else {
-  console.log(`  [Check 2] RLS: SKIP (${detected.adapter.note})`);
-}
 
-// Check 3: FK CASCADE warnings
-for (const file of migrationFiles) {
-  const content = readFileSync(file, 'utf8');
-  const cascadeRegex = /ON\s+DELETE\s+CASCADE/gi;
-  if (cascadeRegex.test(content) && !content.includes('-- trellis: allow-cascade')) {
-    const relFile = file.replace(root + '/', '');
-    console.warn(`WARN: ${relFile} uses ON DELETE CASCADE — verify this is intentional`);
-    console.warn(`       If intentional, add '-- trellis: allow-cascade' to the migration`);
-    warnings++;
+  // Check 3: FK CASCADE warnings
+  let cascadeWarnings = 0;
+  for (const file of tool.files) {
+    const content = readFileSync(file, 'utf8');
+    if (/ON\s+DELETE\s+CASCADE/gi.test(content) && !content.includes('-- trellis: allow-cascade')) {
+      console.warn(`  WARN: ${file.split('/').pop()} uses ON DELETE CASCADE`);
+      cascadeWarnings++;
+      warnings++;
+    }
   }
+  console.log(`  [3] FK CASCADE: ${cascadeWarnings === 0 ? 'PASS' : `${cascadeWarnings} warnings`}`);
+
+  totalErrors += errors;
+  totalWarnings += warnings;
 }
-console.log(`  [Check 3] FK CASCADE check: complete`);
 
 // Summary
-console.log('');
-if (errors === 0) {
-  console.log(`PASS: ${detected.adapter.displayName} migration safety — ${migrationFiles.length} files checked`);
+console.log('\n' + '═'.repeat(60));
+if (totalErrors === 0) {
+  console.log(`PASS: ${detectedTools.length} tool(s) checked, ${detectedTools.flatMap(t => t.files).length} files total`);
+  if (totalWarnings > 0) console.log(`      ${totalWarnings} warnings (non-blocking)`);
   process.exit(0);
 } else {
-  console.error(`FAIL: ${errors} errors, ${warnings} warnings`);
+  console.error(`FAIL: ${totalErrors} errors, ${totalWarnings} warnings`);
   process.exit(1);
 }

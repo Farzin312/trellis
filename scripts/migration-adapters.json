@@ -1,264 +1,276 @@
 {
+  "$schema": "Trellis migration adapter registry. Extensible — add custom tools here.",
   "adapters": {
     "supabase": {
-      "displayName": "Supabase",
+      "displayName": "Supabase CLI",
       "detect": {
-        "dir": "supabase/migrations",
+        "dirs": ["supabase/migrations"],
         "filePattern": "*.sql",
-        "fallbackDirs": ["supabase/migrations"]
+        "configMarkers": ["supabase/config.toml"]
       },
+      "versionPattern": "^(\\d{14})",
       "supportsUpDown": false,
-      "upDownMechanism": "Single forward SQL files. No native rollback.",
-      "versionPattern": "^(\\d+)",
-      "rlsSyntax": "ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;",
-      "fkSyntax": "FOREIGN KEY (<col>) REFERENCES <table>(<col>) ON DELETE <RESTRICT|CASCADE|SET NULL>",
+      "upDownNote": "Forward-only SQL files. Manual repair via `supabase migration repair`.",
       "rlsCheckable": true,
+      "rlsSyntax": "Raw SQL: ALTER TABLE <t> ENABLE ROW LEVEL SECURITY; CREATE POLICY ...",
       "fkCheckable": true,
+      "fkSyntax": "Raw SQL: FOREIGN KEY (col) REFERENCES table(col)",
       "status": "supported",
-      "note": "PostgreSQL under the hood. RLS is a PG feature."
+      "note": "PostgreSQL under the hood. Pure SQL migration files."
     },
     "prisma": {
-      "displayName": "Prisma",
+      "displayName": "Prisma Migrate",
       "detect": {
-        "dir": "prisma/migrations",
+        "dirs": ["prisma/migrations"],
         "filePattern": "*/migration.sql",
-        "fallbackDirs": ["prisma"]
+        "configMarkers": ["prisma/schema.prisma", "prisma/migrations/migration_lock.toml"]
       },
-      "supportsUpDown": false,
-      "upDownMechanism": "Forward only. Prisma handles rollback by reverting the schema.prisma file.",
       "versionPattern": "^(\\d{14})",
-      "rlsSyntax": "Native RLS not in migration.sql directly; declared in schema.prisma via @@policy or raw SQL via prisma.executeRaw.",
-      "fkSyntax": "FOREIGN KEY constraints auto-generated from relation() directives in schema.prisma.",
+      "supportsUpDown": false,
+      "upDownNote": "Forward-only. Rollback requires manual `prisma migrate diff` to generate reverse SQL.",
       "rlsCheckable": false,
+      "rlsSyntax": "Not expressible in Prisma schema DSL. Must use raw SQL in migration.sql.",
       "fkCheckable": true,
+      "fkSyntax": "Declarative: @relation(fields: [], references: []) in schema.prisma generates FK in SQL.",
       "status": "supported",
-      "note": "Migrations are generated from schema.prisma. RLS requires custom SQL or Prisma's preview @@policy feature."
+      "note": "Migrations generated from schema.prisma. Each migration is a folder with migration.sql."
     },
     "drizzle": {
-      "displayName": "Drizzle ORM",
+      "displayName": "Drizzle Kit",
       "detect": {
-        "dir": "drizzle",
+        "dirs": ["drizzle", "migrations"],
         "filePattern": "*.sql",
-        "fallbackDirs": ["drizzle", "migrations"]
+        "configMarkers": ["drizzle.config.ts", "drizzle.config.json", "drizzle/meta/_journal.json"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "Journal-based. drizzle/meta/_journal.json tracks applied migrations.",
-      "versionPattern": "(\\d{4}_\\d{2}_\\d{2}_\\d{2}_\\d{2}_\\d{2})|(\\d+)",
-      "rlsSyntax": "Standard PostgreSQL ALTER TABLE ENABLE ROW LEVEL SECURITY in the .sql files.",
-      "fkSyntax": "references() in schema definition generates FK constraints in migration SQL.",
+      "versionPattern": "^(\\d+)",
+      "supportsUpDown": false,
+      "upDownNote": "Forward-only (as of 2025). Drizzle recommends dropping and re-baselining.",
       "rlsCheckable": true,
+      "rlsSyntax": "Raw SQL in .sql files (TS schema has no RLS primitive).",
       "fkCheckable": true,
+      "fkSyntax": "Declarative: references(() => users.id) in TS schema generates FK in SQL.",
       "status": "supported",
-      "note": "PostgreSQL, MySQL, SQLite supported. RLS is PG-only."
+      "note": "PostgreSQL, MySQL, SQLite. Journal-based tracking via meta/_journal.json."
     },
     "flyway": {
       "displayName": "Flyway",
       "detect": {
-        "dir": "db/migration",
+        "dirs": ["db/migration", "src/main/resources/db/migration"],
         "filePattern": "V*__*.sql",
-        "fallbackDirs": ["src/main/resources/db/migration", "db/migration"]
+        "configMarkers": ["flyway.toml", "flyway.conf"]
       },
-      "supportsUpDown": false,
-      "upDownMechanism": "Forward only. Undo requires Flyway Teams (paid) or manual scripts.",
       "versionPattern": "^V(\\d+[._\\d]*)",
-      "rlsSyntax": "Standard PostgreSQL ALTER TABLE ENABLE ROW LEVEL SECURITY.",
-      "fkSyntax": "Standard SQL FK declarations.",
+      "supportsUpDown": false,
+      "upDownNote": "Forward-only in community edition. Undo (U prefix) requires Flyway Teams (paid).",
       "rlsCheckable": true,
+      "rlsSyntax": "Raw SQL in .sql files.",
       "fkCheckable": true,
+      "fkSyntax": "Raw SQL: ADD CONSTRAINT fk_... FOREIGN KEY (col) REFERENCES ...",
       "status": "supported",
       "note": "Java/JVM ecosystem. Versioned (V) and repeatable (R) migrations."
     },
     "alembic": {
       "displayName": "Alembic (SQLAlchemy)",
       "detect": {
-        "dir": "alembic/versions",
+        "dirs": ["alembic/versions", "migrations/versions"],
         "filePattern": "*.py",
-        "fallbackDirs": ["migrations/versions", "alembic/versions"]
+        "configMarkers": ["alembic.ini", "alembic/env.py"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "upgrade() and downgrade() functions in each migration file.",
       "versionPattern": "^([a-f0-9]{12})",
-      "rlsSyntax": "op.execute('ALTER TABLE <table> ENABLE ROW LEVEL SECURITY') in upgrade() function.",
-      "fkSyntax": "op.create_foreign_key() or raw SQL in op.execute().",
+      "supportsUpDown": true,
+      "upDownNote": "Native. Each file has upgrade() and downgrade() functions. Revision graph via down_revision.",
       "rlsCheckable": true,
+      "rlsSyntax": "op.execute('ALTER TABLE <t> ENABLE ROW LEVEL SECURITY') in upgrade() function.",
       "fkCheckable": true,
+      "fkSyntax": "op.create_foreign_key('name', 'src', 'ref', ['col'], ['ref_col'], ondelete='CASCADE').",
       "status": "supported",
-      "note": "Python/SQLAlchemy. Each .py file has revision ID. Migrations chain via down_revision."
+      "note": "Python/SQLAlchemy. Revision IDs are 12-char hex hashes."
     },
     "rails": {
       "displayName": "Rails Active Record",
       "detect": {
-        "dir": "db/migrate",
+        "dirs": ["db/migrate"],
         "filePattern": "*.rb",
-        "fallbackDirs": ["db/migrate"]
+        "configMarkers": ["config/database.yml", "db/schema.rb", "db/structure.sql"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "self.up and self.down (or change method with auto-reversal).",
       "versionPattern": "^(\\d{14})",
-      "rlsSyntax": "Not native. Requires raw SQL via execute('ALTER TABLE...') or the pg_relational gem.",
-      "fkSyntax": "add_foreign_key :table, :reference_table or t.references in create_table.",
+      "supportsUpDown": true,
+      "upDownNote": "Native. `change` method (auto-reversible) or explicit `up`/`down` methods.",
       "rlsCheckable": false,
+      "rlsSyntax": "No native DSL. Use execute('ALTER TABLE... ENABLE ROW LEVEL SECURITY').",
       "fkCheckable": true,
+      "fkSyntax": "t.references :user, foreign_key: true or add_foreign_key :posts, :users.",
       "status": "supported",
-      "note": "Ruby on Rails. RLS requires custom SQL — flagged but not checked."
+      "note": "Ruby on Rails. RLS requires custom SQL."
     },
     "django": {
       "displayName": "Django Migrations",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations"],
         "filePattern": "*.py",
-        "fallbackDirs": ["*/migrations", "migrations"]
+        "configMarkers": ["manage.py"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "forwards() and backwards() methods in each Migration class.",
       "versionPattern": "^(\\d{4})",
-      "rlsSyntax": "Not native. Requires RunSQL migration operation with ALTER TABLE.",
-      "fkSyntax": "migrations.AddField with to= or CreateModel with ForeignKey field.",
+      "supportsUpDown": "partial",
+      "upDownNote": "Forward-primary with limited reverse. Django infers reverse for most ops. RunSQL supports reverse_sql. Not all operations are reversible.",
       "rlsCheckable": false,
+      "rlsSyntax": "No native DSL. Use migrations.RunSQL(sql='ALTER TABLE...', reverse_sql='ALTER TABLE...').",
       "fkCheckable": true,
+      "fkSyntax": "models.ForeignKey(..., on_delete=models.CASCADE) on model, auto in migration.",
       "status": "supported",
-      "note": "Python/Django. RLS requires RunSQL."
+      "note": "Python/Django. Per-app migrations/<NNNN>_<name>.py."
     },
     "knex": {
       "displayName": "Knex.js",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations", "db/migrations"],
         "filePattern": "*.js",
-        "fallbackDirs": ["db/migrations", "migrations"]
+        "configMarkers": ["knexfile.js", "knexfile.ts", "knexfile.cjs"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "exports.up and exports.down functions.",
       "versionPattern": "^(\\d{14})",
-      "rlsSyntax": "schema.raw('ALTER TABLE <table> ENABLE ROW LEVEL SECURITY').",
-      "fkSyntax": "table.foreign('column').references('id').inTable('other_table').",
+      "supportsUpDown": true,
+      "upDownNote": "Native. Each file exports { up(knex), down(knex) }.",
       "rlsCheckable": false,
+      "rlsSyntax": "No native DSL. Use knex.raw('ALTER TABLE... ENABLE ROW LEVEL SECURITY').",
       "fkCheckable": true,
+      "fkSyntax": "table.foreign('col').references('id').inTable('users').onDelete('CASCADE').",
       "status": "supported",
       "note": "Node.js. RLS via raw SQL only."
     },
     "golang-migrate": {
       "displayName": "golang-migrate",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations", "db/migrations"],
         "filePattern": "*_up.sql",
-        "fallbackDirs": ["db/migrations", "migrations"]
+        "configMarkers": []
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "Paired files: NNN_description.up.sql and NNN_description.down.sql.",
       "versionPattern": "^(\\d+)",
-      "rlsSyntax": "Standard PostgreSQL ALTER TABLE ENABLE ROW LEVEL SECURITY in .up.sql.",
-      "fkSyntax": "Standard SQL FK declarations.",
+      "supportsUpDown": true,
+      "upDownNote": "Native. Paired files: NNN_description.up.sql and NNN_description.down.sql (mandatory).",
       "rlsCheckable": true,
+      "rlsSyntax": "Raw SQL in .up.sql files.",
       "fkCheckable": true,
+      "fkSyntax": "Raw SQL: ADD CONSTRAINT ... FOREIGN KEY ...",
       "status": "supported",
       "note": "Go ecosystem. Up/down file pairs."
     },
     "typeorm": {
       "displayName": "TypeORM",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations", "src/migrations"],
         "filePattern": "*.ts",
-        "fallbackDirs": ["src/migrations", "migrations"]
+        "configMarkers": ["data-source.ts"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "up(queryRunner) and down(queryRunner) methods.",
       "versionPattern": "^(\\d+)",
-      "rlsSyntax": "queryRunner.query('ALTER TABLE... ENABLE ROW LEVEL SECURITY').",
-      "fkSyntax": "queryRunner or entity @ManyToOne/@OneToMany relations.",
+      "supportsUpDown": true,
+      "upDownNote": "Native. Each class implements up(queryRunner) and down(queryRunner).",
       "rlsCheckable": false,
+      "rlsSyntax": "No native DSL. Use queryRunner.query('ALTER TABLE... ENABLE ROW LEVEL SECURITY').",
       "fkCheckable": true,
+      "fkSyntax": "Entity @ManyToOne/@JoinColumn. In migrations: queryRunner.query('ALTER TABLE... ADD CONSTRAINT... FOREIGN KEY...').",
       "status": "supported",
-      "note": "Node.js/TypeScript. RLS via raw query."
+      "note": "Node.js/TypeScript. Files use hyphen separator: <TIMESTAMP>-<PascalCaseName>.ts."
     },
     "goose": {
       "displayName": "Goose",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations", "db/migrations"],
         "filePattern": "*.sql",
-        "fallbackDirs": ["db/migrations", "migrations"]
+        "configMarkers": []
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "-- +goose Up / -- +goose Down annotations in SQL files.",
       "versionPattern": "^(\\d+)",
-      "rlsSyntax": "Standard SQL ALTER TABLE in the +goose Up section.",
-      "fkSyntax": "Standard SQL FK declarations.",
+      "supportsUpDown": true,
+      "upDownNote": "Native. SQL files use -- +goose Up / -- +goose Down annotations.",
       "rlsCheckable": true,
+      "rlsSyntax": "Raw SQL in the +goose Up section.",
       "fkCheckable": true,
+      "fkSyntax": "Raw SQL in the +goose Up section.",
       "status": "supported",
       "note": "Go. SQL with annotation-based up/down sections."
     },
     "atlas": {
-      "displayName": "Atlas",
+      "displayName": "Atlas (Ariga)",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations"],
         "filePattern": "*.sql",
-        "fallbackDirs": ["migrations"]
+        "configMarkers": ["atlas.hcl", "migrations/atlas.sum"]
       },
+      "versionPattern": "^(\\d{14})",
       "supportsUpDown": false,
-      "upDownMechanism": "Declarative schema-first. Atlas computes diff automatically.",
-      "versionPattern": "^(\\d{8}_)",
-      "rlsSyntax": "Standard SQL in schema definition or migration files.",
-      "fkSyntax": "Standard SQL.",
+      "upDownNote": "Versioned mode: forward-only. Declarative mode (HCL): computes diff. Not a first-class down migration.",
       "rlsCheckable": true,
+      "rlsSyntax": "HCL has RLS DSL: policy {} blocks in schema definition. SQL mode: raw ALTER TABLE.",
       "fkCheckable": true,
+      "fkSyntax": "HCL: foreign_key {} block. SQL mode: standard FOREIGN KEY.",
       "status": "supported",
-      "note": "Go. Schema-as-code. Can generate migrations from HCL or SQL."
+      "note": "Go. Schema-as-code. HCL is the only format with a first-class RLS DSL alongside node-pg-migrate."
     },
     "sequelize": {
       "displayName": "Sequelize",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations"],
         "filePattern": "*.js",
-        "fallbackDirs": ["db/migrations", "migrations"]
+        "configMarkers": [".sequelizerc", "config/config.json"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "up(queryInterface, Sequelize) and down(queryInterface, Sequelize).",
       "versionPattern": "^(\\d{14})",
-      "rlsSyntax": "queryInterface.sequelize.query('ALTER TABLE...').",
-      "fkSyntax": "queryInterface.addConstraint with type: 'foreign key'.",
+      "supportsUpDown": true,
+      "upDownNote": "Native. Each file exports { up(queryInterface, Sequelize), down(queryInterface, Sequelize) }.",
       "rlsCheckable": false,
+      "rlsSyntax": "No native DSL. Use queryInterface.sequelize.query('ALTER TABLE... ENABLE ROW LEVEL SECURITY').",
       "fkCheckable": true,
+      "fkSyntax": "queryInterface.addConstraint('posts', { type: 'foreign key', fields: ['user_id'], references: { table: 'users', field: 'id' } }).",
       "status": "supported",
-      "note": "Node.js. RLS via raw query."
+      "note": "Node.js. Files use hyphen separator: YYYYMMDDHHmmss-<name>.js."
     },
     "node-pg-migrate": {
       "displayName": "node-pg-migrate",
       "detect": {
-        "dir": "migrations",
+        "dirs": ["migrations"],
         "filePattern": "*.js",
-        "fallbackDirs": ["migrations"]
+        "configMarkers": ["package.json"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "pgm.up and pgm.down in exports.",
       "versionPattern": "^(\\d+)",
-      "rlsSyntax": "pgm.exec('ALTER TABLE...') or pgm.alterTable with RLS option.",
-      "fkSyntax": "pgm.addConstraint or pgm.createTable with references.",
+      "supportsUpDown": true,
+      "upDownNote": "Native. Each file exports { up(pgm), down(pgm) }.",
       "rlsCheckable": true,
+      "rlsSyntax": "STAR FEATURE: pgm.enableRls('table_name') and pgm.createPolicy(...). Only tool with a dedicated RLS DSL API.",
       "fkCheckable": true,
+      "fkSyntax": "pgm.addConstraint('posts', 'fk_user', 'FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE').",
       "status": "supported",
-      "note": "Node.js. PostgreSQL-native."
+      "note": "Node.js. PostgreSQL-native. The ONLY tool with first-class RLS DSL methods."
     },
     "liquibase": {
       "displayName": "Liquibase",
-      "createTable": "CREATE TABLE creates a new table.",
       "detect": {
-        "dir": "db/changelog",
+        "dirs": ["db/changelog", "src/main/resources/db/changelog"],
         "filePattern": "*.xml",
-        "fallbackDirs": ["src/main/resources/db/changelog", "db/changelog"]
+        "configMarkers": ["liquibase.properties", "db.changelog-master.xml", "db.changelog-master.yaml"]
       },
-      "supportsUpDown": true,
-      "upDownMechanism": "rollback tags in changesets.",
       "versionPattern": "^([a-f0-9]+-)",
-      "rlsSyntax": "<sql>ALTER TABLE...</sql> in a changeset.",
-      "fkSyntax": "<addForeignKeyConstraint> changeset type.",
+      "supportsUpDown": true,
+      "upDownNote": "Native rollback. rollback tag/SQL per changeset. Commands: rollback, rollbackCount, rollbackToDate.",
       "rlsCheckable": true,
+      "rlsSyntax": "Raw SQL via <sql> changeset: ALTER TABLE... ENABLE ROW LEVEL SECURITY. No dedicated RLS changeset type.",
       "fkCheckable": true,
+      "fkSyntax": "Declarative: <addForeignKeyConstraint baseTableName='...' referencedTableName='...' onDelete='CASCADE'/>.",
       "status": "limited",
-      "note": "Java/JVM. XML/YAML/JSON changelogs. Trellis parses XML changesets for FK declarations only."
+      "note": "Java/JVM. XML/YAML/JSON/SQL changelogs. Trellis parses XML changesets for FK declarations."
     }
   },
   "defaults": {
     "status": "not-supported",
-    "message": "No migration tool detected. Migration safety checks are skipped. Add a migration tool directory (e.g., supabase/migrations, prisma/migrations, db/migration) or create custom tooling."
+    "message": "No migration tool detected. Migration safety checks are skipped. Add a migration tool directory (see --list-adapters for supported paths) or create custom tooling."
+  },
+  "disambiguation": {
+    "description": "When only .sql files exist with no config markers, use these heuristics:",
+    "rules": [
+      "V\\d+__.*\\.sql → Flyway",
+      "\\d{14}_.*\\.sql + supabase/ dir → Supabase",
+      "\\d{4}_.*\\.sql + meta/_journal.json → Drizzle",
+      "\\d{14}_.*\\.sql + atlas.sum → Atlas",
+      "Paired *.up.sql + *.down.sql → golang-migrate",
+      "Single *.sql with -- +goose → Goose",
+      "Single *.sql, no annotations, no markers → Custom/raw SQL (fallback)"
+    ]
   }
 }
