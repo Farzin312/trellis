@@ -1,7 +1,7 @@
 # __PROJECT_NAME__ — Documentation Index
 
 > Parent: [root `README.md`](../README.md)
-> Children: [`STRUCTURE.md`](./STRUCTURE.md), [`SYSTEM.md`](./SYSTEM.md), [`README-FOR-AGENTS.md`](./README-FOR-AGENTS.md), [`coding-standards.md`](./coding-standards.md), [`skills.md`](./skills.md), [`language-support.md`](./language-support.md), [`_subsystem-template.md`](./_subsystem-template.md), [`sdd/sdd.md`](./sdd/sdd.md), [`bug-fixes/_template.md`](./bug-fixes/_template.md)
+> Children: [`STRUCTURE.md`](./STRUCTURE.md), [`SYSTEM.md`](./SYSTEM.md), [`README-FOR-AGENTS.md`](./README-FOR-AGENTS.md), [`coding-standards.md`](./coding-standards.md), [`skills.md`](./skills.md), [`language-support.md`](./language-support.md), [`self-hosted-services.md`](./self-hosted-services.md), [`_subsystem-template.md`](./_subsystem-template.md), [`sdd/sdd.md`](./sdd/sdd.md), [`bug-fixes/_template.md`](./bug-fixes/_template.md)
 
 This is the single entry point for documentation. If you don't know where to look, start here.
 
@@ -41,6 +41,7 @@ AGENTS.md                       ← cross-tool AI agent mandate
 |----------|-----|
 | How do I create skills for AI agents? | [`skills.md`](./skills.md) |
 | What languages and tools are supported? | [`language-support.md`](./language-support.md) |
+| How do I set up self-hosted services? | [`self-hosted-services.md`](./self-hosted-services.md) |
 | How does the whole system fit together? | [`SYSTEM.md`](./SYSTEM.md) |
 | How does the SDD spec workflow work? | [`sdd/sdd.md`](./sdd/sdd.md) |
 | What conventions does this repo follow? | [`coding-standards.md`](./coding-standards.md), [`AGENTS.md`](../AGENTS.md) |

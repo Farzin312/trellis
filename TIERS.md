@@ -167,7 +167,13 @@ TYPE SAFETY:
 OBSERVABILITY:
 - Arize Phoenix (Apache 2.0, self-hosted) — fully open-source agent tracing +
   LLM-as-judge evals. Traces every agent turn: token cost, tool calls,
-  failures, time per task.
+  failures, time per task. See docker-compose.phoenix.yml.
+
+OPTIONAL MEMORY UPGRADE:
+- Mem0 (Apache 2.0, self-hosted) — semantic search, entity linking, temporal
+  reasoning for agent memory. Upgrade from .agents/context/ JSON files when
+  teams need capabilities JSON cannot provide. See docker-compose.mem0.yml
+  and docs/self-hosted-services.md.
 
 Tools installed: node, python, postgres client, docker (for Phoenix self-host).
 Time to set up: 5-10 minutes (includes Phoenix docker compose).

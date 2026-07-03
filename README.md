@@ -437,7 +437,8 @@ trellis/
 │   ├── go/                      ← go test + go-mutesting docs
 │   └── rust/                    ← cargo test + cargo-mutants docs
 tests/golden/                 ← per-spec locked suites (created by project)
-└── docker-compose.phoenix.yml    ← Arize Phoenix self-hosted
+├── docker-compose.phoenix.yml    ← Arize Phoenix (observability, self-hosted)
+└── docker-compose.mem0.yml       ← Mem0 (agent memory upgrade, self-hosted)
 ```
 
 ---

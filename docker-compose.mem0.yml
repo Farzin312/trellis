@@ -1,0 +1,94 @@
+# Mem0 — Self-Hosted Agent Memory (Optional Upgrade)
+#
+# Apache-2.0. Free to self-host with all features included.
+#
+# Mem0 provides semantic search, entity linking, and temporal reasoning for
+# agent memory. This is an UPGRADE from Trellis's default .agents/context/
+# JSON files. Use it when your team needs:
+#   - Semantic search across decisions and learnings ("find auth decisions")
+#   - Entity linking across memory fragments
+#   - Temporal reasoning ("what changed last month")
+#   - A shared web dashboard for agent memory
+#
+# PREREQUISITES:
+#   1. Docker Desktop (macOS/Windows) or Docker Engine (Linux) installed
+#      - Verify: docker --version && docker compose version
+#      - Install: https://docs.docker.com/get-docker/
+#   2. An LLM accessible from this machine. Mem0 needs an LLM to function.
+#      Options (all free for local use):
+#      a) Ollama (recommended for fully local): https://ollama.com
+#         After installing: ollama pull llama3.1
+#         Set OLLAMA_API_BASE in the environment below.
+#      b) OpenAI API key (gpt-5-mini is the default)
+#      c) Anthropic API key
+#      d) Azure OpenAI
+#      e) AWS Bedrock
+#   3. An embedding model. Default: text-embedding-3-small (OpenAI).
+#      For local: Qwen 600M via Ollama.
+#
+# USAGE:
+#   docker compose -f docker-compose.mem0.yml up -d
+#   Mem0 Dashboard: http://localhost:3000
+#
+# On first launch, visit the dashboard to create an admin account and
+# generate your first API key. Set AUTH_DISABLED=true below ONLY for
+# local development.
+#
+# To stop:  docker compose -f docker-compose.mem0.yml down
+# To reset: docker compose -f docker-compose.mem0.yml down -v
+#           (the -v flag deletes all stored memories)
+
+services:
+  mem0:
+    image: mem0ai/mem0:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - mem0-data:/data
+    environment:
+      # ── Authentication ──────────────────────────────────
+      # Auth is ON by default. Set to 'true' ONLY for local dev.
+      AUTH_DISABLED: ${AUTH_DISABLED:-false}
+
+      # ── LLM Provider (choose ONE) ───────────────────────
+      # Option A: Ollama (fully local, recommended)
+      # Uncomment and install Ollama from https://ollama.com
+      # LLM_PROVIDER: ollama
+      # OLLAMA_API_BASE: http://host.docker.internal:11434
+      # LLM_MODEL: llama3.1
+
+      # Option B: OpenAI (default)
+      # Requires OPENAI_API_KEY in your .env.local
+      LLM_PROVIDER: openai
+      LLM_MODEL: ${MEM0_LLM_MODEL:-gpt-5-mini}
+
+      # Option C: Anthropic
+      # LLM_PROVIDER: anthropic
+      # LLM_MODEL: claude-sonnet-4-20250514
+
+      # ── Embedding Provider ──────────────────────────────
+      # Default: OpenAI text-embedding-3-small
+      EMBEDDING_MODEL: ${MEM0_EMBEDDING_MODEL:-text-embedding-3-small}
+      # For local embeddings via Ollama:
+      # EMBEDDING_PROVIDER: ollama
+      # EMBEDDING_MODEL: nomic-embed-text
+
+      # ── Vector Store ────────────────────────────────────
+      # Default: Qdrant (bundled in this compose)
+      VECTOR_STORE: qdrant
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  mem0-data:
+  qdrant-data:
