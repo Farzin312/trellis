@@ -1,0 +1,24 @@
+# Arize Phoenix — Self-Hosted Agent Observability
+#
+# Elastic License 2.0 (ELv2). Free to self-host with all features.
+# NOT OSI-certified open source. See CREDITS.md for details.
+#
+# Usage:
+#   docker compose -f docker-compose.phoenix.yml up -d
+#   Phoenix UI: http://localhost:6006
+#
+# Phoenix traces agent sessions: token cost, tool calls, failures, time per task.
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006"
+    volumes:
+      - phoenix-data:/data
+    environment:
+      - PHOENIX_SQL_DATABASE_URL=sqlite:///data/phoenix.db
+    restart: unless-stopped
+
+volumes:
+  phoenix-data:

@@ -96,7 +96,7 @@ proposed change goes through SDD review (the framework reviews itself).
 
 Every PR to the Trellis framework itself (not user projects) must pass:
 1. `scripts/check-agnostic.mjs` — flags stack-specific coupling in framework files.
-2. `scripts/check-references.mjs` — flags broken or missing cross-references.
+2. `npm run docs:check` — flags broken or missing cross-references.
 3. The review command's agnostic checklist (see `.specify/templates/commands/review.md`).
 
 A PR that hardcodes "Supabase" into AGENTS.md, or "React" into coding-standards

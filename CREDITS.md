@@ -18,9 +18,8 @@ them for this framework.
   queryable knowledge graph. Always-on PreToolUse hooks nudge agents to query
   the graph before reading source files. Confidence tags (EXTRACTED / INFERRED
   / AMBIGUOUS). PostgreSQL live introspection.
-- How Trellis uses it: Tier 2+ always-on knowledge graph. Replaces
-  understand-anything. Trellis ships install commands and a freshness CI gate;
-  no modifications to Graphify itself.
+- How Trellis uses it: Tier 2+ always-on knowledge graph. Trellis ships
+  install commands and a freshness CI gate; no modifications to Graphify itself.
 
 ### Bounds — Boundary Enforcement
 - Repo: https://github.com/Farzin312/bounds

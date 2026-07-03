@@ -37,6 +37,9 @@ jobs:
       - name: Docs check
         run: node scripts/docs-sync.mjs --check
 
+      - name: Stack-agnostic check
+        run: node scripts/check-agnostic.mjs
+
       - name: Ponytail marker format check
         run: node scripts/check-ponytail.mjs
 

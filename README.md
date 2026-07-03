@@ -182,14 +182,14 @@ for the full philosophy.
 │          │    │          │    │      │    │       │    │          │
 │ What and │    │ Ask      │    │ Arch,│    │ Atomic│    │ Validate │
 │ why      │    │ questions│    │ risks│    │ tasks │    │ spec     │
-└──────────┘    └──────────┘    └──────┘    └───────┘    └─────┬────┘
-                                                                 │
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    │
-│  Verify  │◀───│ Implement│◀───│ Analyze  │◀───│  Review  │◀───┘
-│          │    │          │    │          │    │          │
-│ All      │    │ TDD:     │    │ Solution│    │ Catch    │
-│ evals    │    │ TEST     │    │ audit   │    │ drift    │
-│ run here │    │ first    │    │ (gate)  │    │          │
+└──────────┘    └──────────┘    └──────┘    └───────┘    └────┬─────┘
+                                                                │
+┌──────────┐    ┌──────────┐    ┌──────────┐                   │
+│  Verify  │◀───│ Implement│◀───│ Analyze  │◀───┌──────────┐    │
+│          │    │          │    │          │    │  Review  │◀───┘
+│ All      │    │ TDD:     │    │ Solution│    │          │
+│ evals    │    │ TEST     │    │ audit   │    │ Catch    │
+│ run here │    │ first    │    │ (gate)  │    │ drift    │
 └──────────┘    └──────────┘    └──────────┘    └──────────┘
 ```
 
@@ -290,7 +290,7 @@ Three trigger types:
 Loop guards prevent infinite ping-pong (max depth 5, max iterations 20).
 
 Read **[.agents/handoffs/registry.yaml](.agents/handoffs/registry.yaml)** for
-all 8 specialists and their trigger rules.
+all 10 specialists and their trigger rules.
 
 ---
 
@@ -409,7 +409,7 @@ trellis/
 │   └── sdd/sdd.md               ← SDD policy
 │
 ├── .agents/                      ← agent configs
-│   ├── handoffs/registry.yaml   ← 8 specialists + trigger rules
+│   ├── handoffs/registry.yaml   ← 10 specialists + trigger rules
 │   └── context/                 ← portable cross-session memory
 │
 ├── .bounds/                      ← boundary enforcement config

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "trellis-scaffold"
+version = "1.0.0"
+description = "AI-agent-ready project scaffold: SDD, code graph, boundary enforcement, evals, handoff loops, evolution engine"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "Farzin" }]
+keywords = ["scaffold", "ai-agents", "sdd", "code-graph", "evals", "evolution", "migration-safety"]
+
+[project.scripts]
+trellis = "trellis.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Farzin312/trellis"
+Repository = "https://github.com/Farzin312/trellis"
+
+[tool.setuptools]
+packages = ["trellis"]
