@@ -83,8 +83,19 @@ Use a fresh sub-agent for review.
 
 ## Knowledge graph (Tier 2+)
 
-If Graphify is installed: query the graph BEFORE reading source files.
-`graphify query "<question>"`. The graph covers code, SQL schemas, docs.
+If Graphify is installed: query the graph BEFORE reading source files. The graph
+covers code, SQL schemas, and docs (`graphify-out/graph.json`).
+
+- **Query** (do this first): `graphify query "<question>"` — natural-language answer.
+- **Explain a node**: `graphify explain "<name>"` — a node plus its neighbors.
+- **Trace a path**: `graphify path "A" "B"` — shortest path between two nodes.
+- **Build** (first time / from CLI): `trellis graph` (`graphify .`).
+- **Refresh after code edits**: `trellis graph --update` (`graphify update .`) —
+  incremental, **no LLM key needed** for a code-only change.
+- **Freshness gate**: `npm run check:graph` warns when `graph.json` is stale.
+
+Doc/paper extraction on a full build needs one LLM key
+(`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`); a code-only repo needs none.
 
 ## Boundary enforcement (Tier 2+)
 

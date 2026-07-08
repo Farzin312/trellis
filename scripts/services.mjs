@@ -3,8 +3,8 @@
  * services.mjs — Manage Trellis's optional Docker services.
  *
  * Usage:
- *   node scripts/services.mjs start [phoenix|mem0|all]   # Boot services
- *   node scripts/services.mjs stop  [phoenix|mem0|all]   # Stop services
+ *   node scripts/services.mjs start [phoenix|all]        # Boot services
+ *   node scripts/services.mjs stop  [phoenix|all]        # Stop services
  *   node scripts/services.mjs status                     # Check running services
  *   node scripts/services.mjs ports                      # Show port assignments
  *
@@ -20,18 +20,15 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
+// Mem0 is NOT managed here: it self-hosts from its own multi-service stack
+// (pip install mem0ai for in-process, or mem0's official `cd server && make
+// bootstrap`). See docs/self-hosted-services.md.
 const SERVICES = {
   phoenix: {
     compose: 'docker-compose.phoenix.yml',
     name: 'Arize Phoenix (Agent Observability)',
     port: 6006,
     url: 'http://localhost:6006',
-  },
-  mem0: {
-    compose: 'docker-compose.mem0.yml',
-    name: 'Mem0 (Agent Memory)',
-    port: 8228,
-    url: 'http://localhost:8228',
   },
 };
 
@@ -131,7 +128,7 @@ const { action, target } = getAction();
 
 if (!dockerAvailable()) {
   console.log('SKIP: Docker is not installed or not running.');
-  console.log('  Trellis works without Docker. Phoenix and Mem0 are optional.');
+  console.log('  Trellis works without Docker. Phoenix is optional.');
   console.log('  Install Docker: https://docs.docker.com/get-docker/');
   process.exit(0);
 }

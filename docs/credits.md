@@ -1,5 +1,7 @@
 # Credits & Acknowledgments
 
+> Parent: `docs/README.md`
+
 Trellis builds on the work of many open-source projects. This file credits
 every tool we use, reference, or recommend — even where we adapted or modified
 them for this framework.
@@ -164,16 +166,17 @@ them for this framework.
 - Repo: https://github.com/mem0ai/mem0
 - License: Apache-2.0
 - Stars: 60K
-- Self-hostable: YES — `cd server && docker compose up -d` gives a full
-  dashboard with auth and API keys. Also available in library mode
-  (`pip install mem0ai`, in-process, no server).
+- Self-hostable: YES — from mem0's own stack (`git clone mem0ai/mem0 && cd
+  server && make bootstrap`) gives a full dashboard with auth and API keys.
+  Also available in library mode (`pip install mem0ai`, in-process, no server).
+  Trellis does not vendor a compose file for it.
 - What it does: Universal memory layer for AI agents. Semantic search,
   entity linking, temporal reasoning, multi-signal retrieval (semantic +
   BM25 + entity). Scores 91.6 on LoCoMo benchmark.
 - How Trellis relates: Trellis ships .agents/context/ (JSON files) as the
   zero-dependency default. Mem0 is the upgrade path for teams needing
-  semantic memory search or shared dashboards. Mem0 requires an LLM at
-  runtime (default gpt-5-mini, supports Ollama for fully local).
+  semantic memory search or shared dashboards. Mem0 requires an LLM key at
+  runtime for extraction (OpenAI/Anthropic/Google; Ollama for local via the SDK).
 - Ships as: Agent Skill (SKILL.md format). Install: `npx skills add mem0ai/mem0`
 
 ---

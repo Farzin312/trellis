@@ -1,0 +1,459 @@
+# Trellis — Master Work Plan
+
+> **⚠️ THIS FILE IS TEMPORARY SCAFFOLDING. DELETE IT WHEN EVERY BOX BELOW IS CHECKED.**
+> It exists only as a reference/checklist to drive the cleanup of Trellis itself.
+> It is **not** part of the shipped scaffold. See the final section for deletion instructions.
+>
+> Generated: 2026-07-08. Owner: Farzin. Status: **not started**.
+
+---
+
+## 0. How to use this document
+
+This is a punch-list for fixing Trellis (the scaffold repo at `/Users/farzin/trellis`),
+walking **every entry in the root directory** plus cross-cutting concerns. It was produced
+from a five-angle audit (CLI/UX, dependencies, Bounds/Graphify, bloat/encapsulation,
+harness/evals/handoffs).
+
+- Work top-down by priority: **P0 (broken, blocks first-run) → P1 (correctness/truthfulness)
+  → P2 (structure/encapsulation) → P3 (new capability: metrics) → P4 (polish)**.
+- Each item has: **what's wrong · where (`file:line`) · why it matters · the fix.**
+- Check the box when done. When ALL boxes are checked, delete this file (§8).
+- Every fix that touches behavior gets a `docs/bug-fixes/YYYY-MM-DD-<slug>.md` entry per
+  the project's own rule 4 in `AGENTS.md`.
+
+**Verdict this plan is built on:** the *concept* is sound (one clone makes any repo
+AI-agent-ready across 4 tools). The *execution* has three real problems: (1) it doesn't
+fully install/run as advertised, (2) two marquee subsystems — handoffs and evals — are
+aspirational stubs, and (3) the root is cluttered and ~50% collapsible. One worry was a
+false alarm: **Gemini is NOT wired into Bounds** (see §5.4).
+
+---
+
+## 1. P0 — Broken, blocks first-run (fix these first)
+
+Nothing else matters until `trellis` actually installs and `init.sh` runs cleanly.
+
+- [x] **`cli.mjs:25` — `templateRoot` points ABOVE the repo.** `join(__dirname, '..')`
+      resolves to `/Users/farzin` (the repo's *parent*). Every subcommand (`init`, `graph`,
+      `eval`, `check`, `handoffs`) runs in the wrong directory, and `trellis new`
+      (`cli.mjs:58`) `cpSync`s the *parent* dir into the new project. **Fix:** `templateRoot = __dirname`.
+
+- [x] **No installable `trellis` command at all.** `package.json` has **no `"bin"`**, so
+      `npm install -g .` (advertised `cli.mjs:16`) creates nothing. `pyproject.toml` claims a
+      Python entry point `trellis.cli:main` and a `trellis/` package that **don't exist**, so
+      `pipx install` (advertised `cli.mjs:15`, README:23-31, README:430) fails.
+      **Fix:** add `"bin": { "trellis": "./cli.mjs" }` to `package.json`, `chmod +x cli.mjs`,
+      pick ONE install path (Node), and either delete `pyproject.toml`'s `[project.scripts]`
+      + `packages` or make it a thin pipx shim that shells to node.
+      **Done:** added `bin`, chmod +x, deleted `pyproject.toml` (single Node path).
+
+- [x] **`pyproject.toml:3` — invalid build backend.** `setuptools.backends._legacy:_Backend`
+      is not a real importable backend (confirmed traceback). **Fix:** `setuptools.build_meta`
+      (or delete the whole file if we drop the Python packaging path — recommended, since the
+      CLI is Node). **Done:** deleted the file.
+
+- [x] **`cli.mjs:60-63` — `cpSync` filter matches by basename, so exclusions are wrong.**
+      `exclude` lists `.bounds/cache.db` but the filter compares `src.split('/').pop()`
+      (basename `cache.db`), so it never excludes that path, while any nested file named
+      `.next` is wrongly excluded. **Fix:** match against the path relative to `templateRoot`,
+      not the basename. **Done + verified:** `.bounds/cache.db` excluded, `.bounds/root.yaml` kept.
+
+- [x] **`init.sh:22` — `--agents` (space form) is a silent no-op.** `--agents) shift_for_agents=true`
+      sets an unused var and never captures the next arg; only `--agents=x` works. **Fix:**
+      either support both forms or drop the space form and document only `--agents=`.
+      **Done:** dropped the space form, documented `--agents=` only.
+
+- [x] **`--tier` is silently ignored.** `cli.mjs:47` reads `--tier` but never writes it;
+      `init.sh:111` hardcodes `"active_tier": 2`. `--tier 3` does nothing. **Fix:** thread the
+      tier value into `.trellis/config.json` and gate tool install on it.
+      **Done:** cli passes `--tier=N`; init.sh writes `active_tier`, tier 1 = core-only.
+
+- [x] **`cli.mjs:47` — `--tier` as last arg returns `undefined`.** `argv[indexOf('--tier')+1]`
+      is undefined if `--tier` is trailing. **Fix:** validate + default.
+      **Done + verified:** invalid/trailing tier falls back to 2.
+
+---
+
+## 2. P0 — Interactive install wizard (the core UX ask)
+
+Today tier and agent selection are **flags a user must already know**. There is no
+stepped/interactive flow like `create-next-app`. Build one — no new deps, Node's
+`node:readline/promises`.
+
+- [x] **Add a wizard** that runs when `trellis init` / `bash init.sh` is invoked with no args
+      on a TTY. Each question maps to an existing flag/config:
+  - [x] "Project name?" → `$1` → `__PROJECT_NAME__` sed (`init.sh:43`)
+  - [x] "Which AI agents?" **(multi-select)** claude/codex/opencode/copilot →
+        `--agents=` → `.trellis/config.json active_agents` (`init.sh:106-113`)
+  - [x] "Tier? 1 Core / 2 Intelligence / 3 Full" → sets `--with-graphify`/`--with-bounds`
+        + `active_tier` (currently hardcoded)
+  - [x] "Install Graphify (knowledge graph)?" → `--with-graphify` (`init.sh:123`)
+  - [x] "Install Bounds (boundary enforcement)?" → `--with-bounds` (`init.sh:140`)
+  - [x] "Stack? auto-detect / next+supabase / python / go / rust / generic" →
+        call `adapt-to-project.mjs --stack=` (see §3, currently never called)
+- [x] **Print a plan + confirm before mutating** (name, agents, tier, tools, stack). Standard
+      scaffolder pattern; lets the user abort before the `sed`/`cp` writes run.
+      **Done + verified via PTY:** abort at confirm changes nothing.
+- [x] **End with a real "next step"** that names the installed `trellis` command
+      (`init.sh:173` currently only points at docs).
+      **Done:** `scripts/wizard.mjs` (node:readline/promises, zero new deps); init.sh
+      launches it on no-args TTY; `trellis init` launches it when `isTTY`; init.sh now
+      calls `adapt-to-project.mjs` (also covers the §3 stack-adaptation item) and its
+      final banner names `npm install -g .` → `trellis check` / `trellis spec`.
+
+---
+
+## 3. P1 — Truthfulness: advertised features that don't fire
+
+The README/CLI promise things the code doesn't do. Either wire them up or stop claiming them.
+
+- [x] **Stack auto-adaptation never runs.** README:194-217 says "init detects your stack and
+      adapts the constitution," but `init.sh` **never calls `adapt-to-project.mjs`** (only
+      `npm run evolve` does). **Fix:** call it from `init.sh` (pass the wizard's stack answer),
+      or remove the claim. **Done:** init.sh step 4b calls it (auto-detect or `--stack=`).
+
+- [x] **`trellis evolve` doesn't exist.** README CLI Reference (README:377-378) and the
+      tier-upgrade instructions (README:187) show `trellis evolve --all` / `--stack`, but
+      `cli.mjs` has **no `evolve` case**. **Fix:** add the `evolve` subcommand (shell to
+      `adapt-to-project.mjs`) or correct the README to `npm run evolve`.
+      **Done:** added `trellis evolve [--all] [--stack=x]`; README corrected to match.
+
+- [x] **`trellis spec` is a stub print.** `cli.mjs:75-79` just prints text. Either make it
+      launch the SDD flow or document it as advisory-only. **Done:** reworded as advisory.
+
+- [x] **README "Project Structure" is stale/wrong.**
+  - [x] Says "scripts (11 scripts)" (README:463) — there are **17** `.mjs` files. **Done: 18.**
+  - [x] Says "10 specialists" for the handoff registry (README:454) — verify; grep found 7
+        SDD-phase entries plus dangling `migration-validator`/`bug-hunter` refs (see §6).
+        **Done: → 7 SDD-phase specialists.**
+  - [x] `pyproject.toml` labeled "pipx CLI install" (README:430) — broken (see §1). **Done: removed.**
+  - [x] Tree formatting bug at the `tests/golden/` line (README:481, missing `├──` prefix). **Done.**
+
+- [x] **`init.sh` always prints `DONE — ready`** even when Node was missing and half the
+      generators were skipped. **Fix:** collect skipped steps and print an honest summary
+      ("Skipped: skills mirror (no node), Bounds (no pipx)"). **Done:** `SKIPPED[]` tracker.
+
+---
+
+## 4. P1 — Dependencies: "not fully downloaded / not friendly"
+
+Per-dependency status. `graphifyy` (double-y) is **correct**, not a typo — it's the real
+PyPI package (`graphify` is the CLI it installs).
+
+| Dependency | Install | Correct? | Pinned? | Failure behavior |
+|---|---|---|---|---|
+| graphifyy | `uv tool install graphifyy \|\| pip install` (`init.sh:126-128`) | ✅ | ❌ | opt-in, actionable WARN |
+| bounds | `pipx install git+github.com/Farzin312/bounds.git` (`init.sh:143`) | ✅ | ❌ (no `@tag`) | opt-in, terse WARN |
+| npm devDeps | `npm install --silent 2>/dev/null` (`init.sh:153`) | ✅ | ✅ caret | **swallows real error** |
+| Node | never installed, `command -v` gate only | assumed | ❌ no `engines` | degrades silently |
+| Python/uv/pipx | never installed | assumed | — | only checked inside `--with-*` |
+| Docker (Mem0/Phoenix/Qdrant) | `services.mjs` | ✅ | ❌ `:latest` | **cleanest** — skips w/ link |
+
+- [x] **Pin external tools:** `graphifyy==<ver>`, `bounds.git@<tag|commit>`
+      (`init.sh:126-128,143-145`); pin Docker images off `:latest` in both compose files.
+      **Done:** `graphifyy==0.9.10`, `bounds@1b5320c5…`, `phoenix:17.20.0`.
+      ✅ `mem0ai/mem0:latest` 404 **resolved** (BUG-004): the whole mem0 compose was
+      fabricated (wrong image/stack/ports); deleted it and pointed to mem0's official
+      self-host + SDK. `qdrant` pin removed with it (it only existed for the bad mem0 compose).
+- [x] **Stop swallowing npm errors:** drop `2>/dev/null` on `init.sh:153` so the reason shows.
+- [x] **Add version preflight** at the top of `init.sh`: check Node ≥18, and (if `--with-*`)
+      Python ≥3.10, uv/pipx, Docker — warn up front, not mid-run. **Done** (Node/Python/uv·pipx).
+- [x] **Add `"engines": { "node": ">=18" }`** to `package.json`. **Done (in §1).**
+- [x] **Fix Python version mismatch:** `pyproject.toml:11` says `>=3.9` but graphifyy needs
+      `>=3.10`. Bump to `>=3.10` (or delete pyproject per §1). **Done: pyproject deleted (§1).**
+
+---
+
+## 4b. User-requested (mid-session 2026-07-08) — CLI UX, curated download, Graphify coverage
+
+Not part of the original audit; requested live. All done + verified.
+
+- [x] **CLI has human + AI modes.** `--ai` / `TRELLIS_AI=1` → terse, directive,
+      token-efficient output that tells an agent exactly what each command does and what to
+      run next (`trellis help --ai`). Human mode keeps friendly output + progress feedback
+      (`▶ …` announce / `✓` done) so long commands don't look frozen. Unknown command →
+      error + help + exit 1. AGENTS.md tells agents to use `--ai`.
+- [x] **Curated download view** (not the whole dev repo). `.gitattributes export-ignore`
+      keeps `WORKPLAN.md`/`.gitattributes` out of ZIP/`git archive`; `trellis new` copy
+      filter also strips `WORKPLAN.md`. README documents the two start paths (use vs.
+      contribute). Fixed the pre-existing fake-`.git` fabrication (BUG-003).
+- [x] **Graphify covered properly.** Verified all Trellis invocations against the real
+      binary: `graphify install --project`, `graphify query "…"`, `graphify .` are ALL
+      valid. Added the missing options: `trellis graph [path] [--update]` (incremental,
+      no-LLM), the LLM-key requirement note, a missing-binary guard, and the agent query
+      verbs (`query`/`explain`/`path`) documented in `docs/README-FOR-AGENTS.md`.
+
+---
+
+## 5. P2 — Bloat & encapsulation (the "floating mess")
+
+Root has ~27 entries. Goal: collapse to ~13, of which 5 are unavoidable tool-forced dotdirs.
+
+### 5.1 The irreducible floor (MUST stay at root — each tool hard-codes the path)
+
+`.claude/` `.codex/` `.opencode/` `.github/` `.specify/` + `AGENTS.md` `CLAUDE.md`
+`README.md` `LICENSE` `.gitignore` `.env.example` `package.json` `docs/`.
+**Do NOT try to move these.** Do NOT symlink the platform dirs — symlinks break on
+Windows/CI and confuse tool discovery. (Note: `.claude/skills/` is *currently* symlinked
+into `.agents/skills/` via `generate-skills.mjs:35` — see §5.3, this is the Windows risk.)
+
+### 5.2 Move all plumbing under `.trellis/`
+
+These are pure Trellis internals; only Trellis's own scripts reference their location.
+
+- [ ] `scripts/` → `.trellis/scripts/`
+- [ ] `templates/` → `.trellis/templates/`
+- [ ] `tests/` (golden) → `.trellis/tests/`
+- [ ] `cli.mjs`, `init.sh` → `.trellis/` (bootstrap; run once)
+- [ ] `docker-compose.mem0.yml`, `docker-compose.phoenix.yml` → `.trellis/services/`
+- [ ] `.agents/` **source** tree → `.trellis/agents/` (skills/handoffs/context sources)
+- [ ] Update the ~15 internal path constants that reference these: all `npm run` script paths
+      in `package.json`, `init.sh` `sed`/`cp` targets (`init.sh:43-48,64-102,105-120`),
+      `generate-skills.mjs:30`, `generate-commands.mjs`, `run-evals.mjs`. Mechanical, no
+      behavior change. Verify with `npm run check` + `npm test` after.
+
+### 5.3 Generated mirrors: keep at root, git-ignore them
+
+`.claude/skills` `.codex/agents` `.opencode/command` `.github/agents` and the platform
+command dirs are **generated** from `.agents/skills/` + `.specify/templates/commands/`
+(`generate-skills.mjs:35-37`, `generate-commands.mjs:24-29`). After moving the sources
+(§5.2):
+
+- [ ] Switch Claude skills from **symlink → copy** (`generate-skills.mjs:35`) for Windows
+      safety, OR document macOS/Linux-only.
+- [ ] Add generated mirror dirs to `.gitignore` (they regenerate via `npm run skills:generate`).
+      Repo then tracks only the `.trellis/` source, not four copies.
+
+### 5.4 Gemini — false alarm, one-line cleanup
+
+- [ ] **Delete the parenthetical** "(Gemini dropped as legacy.)" at **README.md:388**. That is
+      the *only* `gemini` reference repo-wide. It is **not** a Bounds option — `.bounds/root.yaml`
+      has no AI-provider setting at all. Nothing else to do.
+
+### 5.5 Bounds ↔ Graphify — complementary, keep both
+
+Not redundant: **Graphify** → `graphify-out/` (a *map* for navigation/queries);
+**Bounds** → `.bounds/` (hand-authored *contracts* enforced in CI). Different outputs,
+lifecycles, consumers. The only overlap is that each re-parses source with its own
+tree-sitter, but they are **separate external pip packages** — you cannot dedupe the parse
+from this repo. **No action** beyond noting it. (A shared parse layer would require changing
+the upstream tools — out of scope.)
+
+---
+
+## 6. P2 — Harness: evals, handoffs, skills, hooks (the "make AI better" substance)
+
+This is where the promise is thinnest. Decide per subsystem: **make it real, or stop
+advertising it.**
+
+### 6.1 Evals aren't evals
+
+- [ ] `run-evals.mjs` runs static checks (vitest, docs-sync, migration-safety, ponytail
+      markers, stryker). There are **zero test files in the repo**, so every "test"/"mutation"
+      step no-ops or SKIPs. **Fix:** either ship real example tests + golden suites so the
+      pipeline demonstrates itself, or rename these "checks" and reserve "evals" for §6.2/§7.
+- [ ] `docs/evals.md` advertises a Level-3 "Agent Quality / Phoenix" eval that **does not
+      exist** in the runner. Wire it (see §7) or mark aspirational.
+
+### 6.2 Agent-transfer evals — MISSING (user explicitly asked)
+
+- [ ] **There is no eval for agent handoff/transfer quality.** Ironically the registry already
+      defines `input_contract` / `output_contract` / `must_include` per specialist
+      (`registry.yaml:39-46,99-101`) — exactly the assertions a transfer eval would check —
+      but **nothing consumes them**. **Build** a transfer eval that, per handoff:
+      (a) asserts the target specialist exists, (b) asserts the returned payload satisfies
+      `output_contract.must_include`, (c) asserts the passed context satisfies `input_contract`.
+      Emit pass/fail to the metrics ledger (§7).
+
+### 6.3 Handoff engine is inert
+
+- [ ] `handoff-engine.mjs:9` self-labels "REFERENCE IMPLEMENTATION." No control transfers.
+- [ ] `validate` is a no-op: the `on_complete` target check is an empty loop with a dead regex
+      (`handoff-engine.mjs:93-98`), so dangling targets (`migration-validator`, `bug-hunter` at
+      `registry.yaml:66,124,196`) are **never caught**. **Fix:** implement real
+      target-existence validation.
+- [ ] `replay` reads `.agents/context/handoff_log.json` which is **never written** (dir has
+      only `README.md`). **Fix:** write the log on each handoff, or remove `replay`.
+- [ ] **Decision needed:** is the handoff engine meant to be a runtime, or just a
+      registry/contract the native platforms dispatch? If the latter, rename it and delete the
+      dead `replay`/log machinery. Don't ship half a runtime.
+
+### 6.4 Skills — dedupe coupling
+
+- [ ] 9 source skills, all mirrored to 4 platforms (verified). But `quality-gates` Gate 9
+      re-runs the ponytail marker check (`quality-gates/SKILL.md:52`, overlaps `ponytail-review`)
+      and Gate 8 calls the **broken** `handoff-engine validate` (`SKILL.md:49`), coupling a
+      skill to dead code. **Fix:** drop the duplicate ponytail gate; drop or fix the
+      handoff-validate call.
+- [ ] `evolve-skills.mjs:269` redundancy check only compares **description keywords**, so
+      functional overlap (like the above) goes undetected. **Fix:** flag overlapping gate
+      *actions*, not just descriptions.
+- [ ] `speckit.*` command mirrors exist on codex/opencode/copilot but have **no source in
+      `.agents/skills/`** (they generate from `.specify/templates/commands/`). Confirm the sync
+      checker (`check-skill-sync.mjs`) accounts for both generators so it doesn't false-flag.
+
+### 6.5 Hooks — under-used
+
+- [ ] Only **one** hook is wired: `bounds agent-hook` (Claude `settings.json` UserPromptSubmit +
+      PreToolUse; Codex `hooks.json` PreToolUse). `.claude/hooks/` is otherwise empty. The
+      registry advertises implicit `PreToolUse`/`PostToolUse` triggers (`registry.yaml:56,109,133`)
+      that aren't connected. **Add** high-value hooks:
+  - [ ] `SubagentStop` → run the review gate on the sub-agent's output.
+  - [ ] `Stop` / `SessionEnd` → append token/cost metrics to the ledger (§7).
+  - [ ] Post-`/verify` → freeze golden suite.
+
+---
+
+## 7. P3 — NEW CAPABILITY: metrics (tokens · performance evals · per-agent cost)
+
+Requested: **keep metrics of tokens spent; keep performance-eval metrics separately; record
+which agent and a cost indicator.** The infra partially exists — `docker-compose.phoenix.yml`
+already traces "token cost, tool calls, failures, time per task" (`phoenix.yml:10`) — but
+**nothing emits to it**, and it's Tier-3/Docker-only. Ship a lightweight, always-on, cross-tool
+local ledger; keep Phoenix as the Tier-3 upgrade.
+
+### 7.0 Build vs buy — decide this BEFORE writing code
+
+**Do not build a metrics engine.** The industry standard is **OpenTelemetry GenAI semantic
+conventions**; reuse it as the wire format instead of inventing one.
+
+- [ ] **Claude Code exports telemetry natively** — no custom code needed for the Claude
+      platform. Set `CLAUDE_CODE_ENABLE_TELEMETRY=1` + the OTLP exporter env vars; it emits
+      token counts, cost, and model/session metadata over OpenTelemetry.
+      **Confirm the exact env var names against current Claude Code docs before wiring.**
+- [ ] **Dashboards already exist and self-host for free** — receive Claude's OTel export:
+      **Arize Phoenix** (already in this repo) and **Langfuse** (open-source; ships per-model
+      cost maps, session views, dashboards out of the box). Also **OpenLLMetry/Traceloop** as
+      an OTel SDK if we ever need to instrument non-Claude code.
+- [ ] **What we actually build is small** — the *only* gap none of the above fills is a
+      **zero-dep, no-Docker, cross-tool, offline** view: Codex/OpenCode/Copilot don't all
+      export cleanly, and Phoenix/Langfuse need a running collector. So the custom piece is
+      just the thin `runs.jsonl` ledger + `model-pricing.json` + a `trellis metrics` reader
+      (~150 lines), NOT a platform.
+- **Verdict to record in `docs/metrics.md`:** *buy the pipeline (OTel + Phoenix/Langfuse),
+  build only the thin local reader + pricing table.* This is the ponytail answer — we own the
+  smallest surface that can't be bought, and defer the heavy tracing to Tier-3 Docker tools.
+
+### 7.1 Cost/usage ledger (always-on, no Docker)
+
+- [ ] Create `.trellis/metrics/runs.jsonl` (git-ignored). One JSON line per turn/task:
+      `{ ts, agent, model, phase_or_task, tokens_in, tokens_out, est_cost_usd, tool_calls,
+      duration_ms, result }`.
+- [ ] `scripts/model-pricing.json` — a `{ model: { input_per_mtok, output_per_mtok } }` table so
+      `est_cost_usd` is computed **offline and cross-tool** (works for Claude/Codex/OpenCode/
+      Copilot without any vendor API).
+- [ ] Feed it from where the data is available:
+  - [ ] **Claude Code:** a `Stop`/`SubagentStop` hook parses the session transcript
+        (`~/.claude/projects/.../*.jsonl`) for usage and appends a record (tag `agent: claude`).
+  - [ ] **Eval runner:** `run-evals.mjs` appends its own duration/result rows.
+  - [ ] Other platforms: append best-effort (duration + result) where token counts aren't
+        exposed; the pricing table still lets us estimate from token counts when present.
+- [ ] `trellis metrics` subcommand → summarize `runs.jsonl`: total tokens, total est. cost,
+      cost **grouped by agent** and by phase, tool-call counts. This is the "which agent + cost
+      indicator" the user asked for.
+
+### 7.2 Performance evals — kept SEPARATE
+
+- [ ] Create `.trellis/metrics/evals.jsonl` (distinct file from cost). One line per eval run:
+      `{ ts, eval_name, agent, score, passed, detail }`. Populated by the agent-transfer eval
+      (§6.2), the skill-regression eval, and golden-test outcomes. Keeping cost and quality in
+      separate ledgers is deliberate — they answer different questions ("what did it cost?" vs
+      "did it work well?").
+
+### 7.3 Phoenix path (Tier 3)
+
+- [ ] Document + wire an opt-in exporter: when `PHOENIX_SERVER_URL` is set (`.env.example:29`),
+      also POST spans to Phoenix. Until then, the JSONL ledger is the source of truth. Update
+      `docs/evals.md` Level 3 to reflect what actually ships.
+
+### 7.4 Discoverability — how a Trellis USER understands metrics (without bloat)
+
+The metrics are worthless if a user can't find them or trust the numbers. Make the surface
+tiny and self-explaining:
+
+- [ ] **One command is the front door:** `trellis metrics` prints the organized session view —
+      total tokens, total est. cost, **cost grouped by agent**, cost by SDD phase, tool-call
+      counts, and the last N sessions. This is "how to find it."
+- [ ] **One doc explains the model:** `docs/metrics.md` covering (a) how token counts are
+      captured per platform (native OTel for Claude, best-effort elsewhere), (b) **where data
+      lives** — `.trellis/metrics/*.jsonl`, git-ignored, so it never touches the user's source
+      tree, (c) the **cost model**: which `model-pricing.json` rates were used, dated, with a
+      one-line "how to update prices," (d) how to read one session record, (e) how to switch on
+      Phoenix/Langfuse for the full dashboard.
+- [ ] **No-bloat guarantee (state it explicitly in the doc):** the entire metrics feature is
+      *one git-ignored dir + one doc + one command*. Nothing is added to the user's app code,
+      no always-on daemon, no required Docker. Opt into Phoenix only at Tier 3.
+- [ ] **Cost transparency:** every `est_cost_usd` row carries the `model` and the pricing
+      version it was computed against, so the number is auditable, not a black box.
+
+---
+
+## 8. P3 — Marketing (how this gets understood and adopted)
+
+A framework that scales LLM-assisted projects has to *show* it, not just claim it. Keep this
+as a plan section — build after the product actually works (§1–§7), so the demos are real.
+
+- [ ] **Value narrative for "scaling with LLMs":** lead with the failure modes Trellis kills —
+      context drift, hallucinated patterns, forbidden imports, silent regressions, and
+      **runaway token cost** — each paired with the Trellis mechanism that prevents it (graph,
+      bounds, golden evals, transfer evals, the metrics ledger). Extend the existing
+      WITHOUT/WITH block (README:54-75) with the cost/metrics dimension.
+- [ ] **Animations / terminal recordings** (asciinema → GIF or animated SVG, embed in README):
+  - [ ] the install **wizard** (§2) — the "it's as easy as create-next-app" proof
+  - [ ] a full **spec → implement → verify** run
+  - [ ] an **agent handoff** with the transfer eval passing (§6.2)
+  - [ ] `trellis metrics` showing **cost-by-agent** on a real session (§7.4)
+- [ ] **Market with real numbers, not vibes:** once the metrics ledger exists, publish a
+      before/after (cost + quality) from an actual run. The ledger is the marketing asset —
+      "here's what an SDD run costs across agents" is a claim competitors can't fake.
+- [ ] **Comparison table:** Trellis vs "just an AGENTS.md" (build on the README:52 framing) and
+      vs raw agent use — columns for drift prevention, boundary enforcement, evals, cost
+      visibility, cross-tool support.
+- [ ] **Tighten the one-liner + hero** (README:16) so the first sentence names the outcome
+      (ship faster with LLMs without the drift/cost blowup), not the feature list.
+
+---
+
+## 9. P4 — Polish / smaller truthfulness fixes
+
+- [ ] `.env.example` is hardcoded **Next.js/Supabase/Stripe** (`.env.example:9-24`) despite the
+      "stack-agnostic" claim. **Fix:** ship a minimal generic `.env.example` and move the
+      Next/Supabase/Stripe block into the JS/TS stack template.
+- [ ] `.bounds/root.yaml:3-4` hardcodes `languages: [typescript]`. **Fix:** have `init.sh`/the
+      wizard set this from the detected/selected stack.
+- [x] ~~`docker-compose.mem0.yml:31` header comment says Dashboard `:3000`~~ **Moot —
+      file deleted (BUG-004).** The whole mem0 compose was fabricated; replaced with
+      pointers to mem0's official self-host (dashboard :3000, API :8888) + the SDK.
+- [ ] Confirm every README doc-link resolves (spot-checked: `docs/DESIGN.md`, `docs/evals.md`,
+      `docs/evolution.md`, `docs/credits.md`, `docs/contributing.md`, `docs/self-hosted-services.md`,
+      `docs/ponytail-setup.md` all exist). Run `npm run check:breadcrumbs` after any doc moves.
+- [ ] After all structural moves (§5), run `npm run lint && npm run docs:check && npm test`
+      and fix any drift the checks surface.
+
+---
+
+## 10. Suggested sequencing
+
+1. **§1 + §2** — make it install and onboard (unblocks everything).
+2. **§3 + §4** — make it truthful and dependency-friendly.
+3. **§5** — encapsulate the clutter.
+4. **§6** — make handoffs/evals real (or cut them).
+5. **§7** — add the metrics/cost/agent capability (buy the pipeline, build the thin reader).
+6. **§9** — polish.
+7. **§8** — marketing LAST: record the demos only once §1–§7 actually work, so nothing faked.
+
+---
+
+## 11. ✅ When every box above is checked — DELETE THIS FILE
+
+This document is reference scaffolding, not part of the shipped product. Once the punch-list
+is complete:
+
+1. Confirm `npm run lint && npm run docs:check && npm test` all pass.
+2. Confirm the root no longer references `WORKPLAN.md` anywhere (`grep -rn WORKPLAN .`).
+3. **Delete it:** `git rm WORKPLAN.md && git commit -m "chore: remove completed work plan"`.
+
+Do **not** ship Trellis with this file present — it would confuse anyone who clones the
+scaffold into thinking their fresh project has 40 open TODOs. Its job ends when Trellis is
+fixed.

@@ -97,8 +97,12 @@ Default posture: start lazy. Stdlib first. One line over fifty. No unrequested a
 - `npm run check` — all drift checks
 - `npm run skills:generate` — mirror skills to all active agent platforms
 - `npm run skills:health` — check skill integrity, platform sync, redundancy
-- `npm run services:start` — boot optional Docker services (Phoenix, Mem0)
+- `npm run services:start` — boot optional Docker services (Phoenix)
 - `npm run services:stop` — stop all Docker services
 - `npm run services:status` — check which services are running
 - `bounds validate --quick` — boundary drift check
-- `graphify .` — rebuild knowledge graph
+- `graphify .` — rebuild knowledge graph (or `trellis graph [--update]`)
+
+**AI agents:** run the `trellis` CLI with `--ai` (or `TRELLIS_AI=1`) for terse,
+directive, token-efficient output. `trellis help --ai` lists every command, what it
+does, and what to run next.

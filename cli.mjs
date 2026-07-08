@@ -2,98 +2,212 @@
 /**
  * trellis CLI
  *
- * Usage:
- *   trellis init                    — run init.sh with defaults
- *   trellis new <name> [--tier N]   — scaffold a new project from this template
- *   trellis spec                    — start a new SDD spec (interactive)
- *   trellis graph                   — rebuild the Graphify knowledge graph
- *   trellis eval                    — run the full eval suite
- *   trellis check                   — run all CI checks locally
- *   trellis handoffs list           — list configured handoff specialists
- *   trellis handoffs validate       — validate the handoff registry
+ * Two output modes:
+ *   - human (default on a TTY): friendly, with progress feedback
+ *   - ai    (`--ai` or TRELLIS_AI=1): terse, structured, token-efficient —
+ *           tells an agent exactly what each command does and what to run next
  *
- * Install: pipx install git+https://github.com/farzin/trellis.git
- * Or:      npm install -g . (after cloning)
+ * Commands:
+ *   trellis new <name> [--tier 1|2|3]  — scaffold a clean new project from this template
+ *   trellis init                       — set up THIS repo (interactive on a TTY)
+ *   trellis graph [path] [--update]    — build/refresh the Graphify knowledge graph
+ *   trellis eval                       — run the eval suite
+ *   trellis check                      — lint + docs + evals (run before commit)
+ *   trellis handoffs list|validate     — handoff registry ops
+ *   trellis evolve [--all] [--stack=x] — re-adapt to the project stack
+ *   trellis spec                       — advisory: how to start an SDD spec
+ *   trellis help [--ai]                — this help
+ *
+ * Install: npm install -g . (after cloning)
  */
 
 import { execSync } from 'child_process';
 import { existsSync, mkdirSync, cpSync } from 'fs';
-import { join, dirname, resolve } from 'path';
+import { join, dirname, resolve, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const templateRoot = join(__dirname, '..');
+const templateRoot = __dirname;
 
-const [cmd, ...rest] = process.argv.slice(2);
+// AI mode: explicit flag or env var. Strip --ai before parsing the command.
+const AI = process.argv.includes('--ai') || process.env.TRELLIS_AI === '1';
+const argv = process.argv.slice(2).filter((a) => a !== '--ai');
+const [cmd, ...rest] = argv;
 const sub = rest[0];
 
-function run(cmd, opts = {}) {
+function run(command, opts = {}) {
   try {
-    execSync(cmd, { cwd: templateRoot, stdio: 'inherit', ...opts });
+    execSync(command, { cwd: templateRoot, stdio: 'inherit', ...opts });
   } catch {
-    console.error(`Command failed: ${cmd}`);
+    console.error(AI ? `FAIL: ${command}` : `Command failed: ${command}`);
     process.exit(1);
   }
 }
 
+function has(bin) {
+  try {
+    execSync(`command -v ${bin}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Progress feedback so long commands don't look frozen.
+function announce(msg) {
+  if (AI) console.log(`RUN: ${msg}`);
+  else console.log(`\n▶ ${msg}…`);
+}
+
+function ok(msg) {
+  if (AI) console.log(`OK: ${msg}`);
+  else console.log(`✓ ${msg}`);
+}
+
+const HUMAN_HELP = `Trellis CLI — AI-agent-ready project scaffold
+
+Usage:
+  trellis new <name> [--tier 1|2|3]   Scaffold a clean new project (default tier: 2)
+  trellis init                        Set up THIS repo (interactive on a TTY)
+  trellis graph [path] [--update]     Build/refresh the Graphify knowledge graph
+  trellis eval                        Run the eval suite
+  trellis check                       Lint + docs + evals (run before commit)
+  trellis handoffs list|validate      List / validate the handoff registry
+  trellis evolve [--all] [--stack=x]  Re-adapt to the project stack
+  trellis spec                        How to start an SDD spec (advisory)
+  trellis help [--ai]                 This help
+
+AI agents: add --ai (or set TRELLIS_AI=1) for terse, machine-readable output.
+`;
+
+// Terse, directive, low-token. Every line: command -> effect -> next action.
+const AI_HELP = `TRELLIS CLI [ai]. cwd-aware. exit!=0 = failure.
+new <name> [--tier 1|2|3]   scaffold ./<name> (clean copy + init). tier2+ adds graphify+bounds.
+init                        set up THIS repo. TTY=interactive wizard; non-TTY=defaults.
+graph [path] [--update]     build/refresh graphify-out/graph.json. --update=incremental,no-LLM.
+                            doc/paper extraction needs one of ANTHROPIC_API_KEY|OPENAI_API_KEY|GEMINI_API_KEY; code-only needs none.
+                            after build, query: graphify query "<q>" | graphify explain "<node>" | graphify path "A" "B"
+eval                        run scripts/run-evals.mjs.
+check                       npm lint + docs:check + evals. run before every commit.
+handoffs list|validate      ops on .agents/handoffs/registry.yaml.
+evolve [--all] [--stack=x]  re-adapt constitution+AGENTS.md to stack; --all also runs skill-health.
+spec                        NOT runnable here. run /specify inside the AI assistant.
+`;
+
+function help() {
+  process.stdout.write(AI ? AI_HELP : HUMAN_HELP);
+}
+
 switch (cmd) {
   case 'init':
-    console.log('Running init.sh...');
-    run('bash init.sh "Trellis Project"');
+    if (process.stdin.isTTY) {
+      run('node scripts/wizard.mjs');
+    } else {
+      announce('Setting up this repo (non-interactive defaults)');
+      run('bash init.sh "Trellis Project"');
+    }
     break;
 
   case 'new': {
-    const projectName = sub || 'my-project';
-    const tierFlag = process.argv.includes('--tier') ? process.argv[process.argv.indexOf('--tier') + 1] : '2';
+    const projectName = sub && !sub.startsWith('--') ? sub : 'my-project';
+    let tierFlag = '2';
+    const tEq = rest.find((a) => a.startsWith('--tier='));
+    const tSpace = rest.indexOf('--tier');
+    if (tEq) tierFlag = tEq.slice('--tier='.length);
+    else if (tSpace !== -1) tierFlag = rest[tSpace + 1];
+    if (!['1', '2', '3'].includes(tierFlag)) tierFlag = '2';
+
     const target = resolve(projectName);
     if (existsSync(target)) {
-      console.error(`Directory already exists: ${target}`);
+      console.error(AI ? `FAIL: directory exists: ${target}` : `Directory already exists: ${target}`);
       process.exit(1);
     }
-    console.log(`Creating new project: ${projectName} (Tier ${tierFlag})`);
+    announce(`Creating new project: ${projectName} (Tier ${tierFlag})`);
     mkdirSync(target, { recursive: true });
 
-    // Copy the template (excluding .git, node_modules)
-    const exclude = new Set(['.git', 'node_modules', '.next', 'graphify-out', '.bounds/cache.db']);
+    // Curated copy: users get a clean project, NOT the whole dev repo. Exclusions
+    // match paths RELATIVE to templateRoot (so ".bounds/cache.db" excludes only
+    // that file, and top-level ".next" only — a nested foo/.next is kept).
+    // WORKPLAN.md and other dev-only scaffolding never ship to a new project.
+    const exclude = new Set([
+      '.git', 'node_modules', '.next', 'graphify-out', '.bounds/cache.db', 'WORKPLAN.md',
+    ]);
     cpSync(templateRoot, target, {
       recursive: true,
       filter: (src) => {
-        const name = src.split('/').pop();
-        return !exclude.has(name);
+        const rel = relative(templateRoot, src);
+        return rel === '' || !exclude.has(rel);
       },
     });
 
-    // Run init.sh in the new project
-    const flags = [];
+    // Run init.sh in the new project. Tier drives which optional tools install.
+    const flags = [`--tier=${tierFlag}`];
     if (tierFlag === '2' || tierFlag === '3') flags.push('--with-graphify', '--with-bounds');
-    console.log(`Running init.sh in ${target}...`);
-    execSync(`bash init.sh "${projectName}" ${flags.join(' ')}`, { cwd: target, stdio: 'inherit' });
-    console.log(`\nDone! Project created at: ${target}`);
+    execSync(`bash init.sh "${projectName}" ${flags.join(' ')}`, {
+      cwd: target,
+      stdio: 'inherit',
+      env: { ...process.env, ...(AI ? { TRELLIS_AI: '1' } : {}) },
+    });
+    ok(AI ? `project at ${target}` : `Done! Project created at: ${target}`);
     break;
   }
 
   case 'spec':
-    console.log('Starting new SDD spec...');
-    console.log('Run /specify <feature description> in your AI assistant.');
-    console.log('Or use: node scripts/generate-commands.mjs to ensure commands are synced.');
+    // Advisory only: the SDD flow is driven by the /specify slash command inside
+    // your AI assistant. This CLI cannot launch that interactive flow itself.
+    if (AI) {
+      console.log('SPEC: not runnable from CLI. run `/specify <feature>` in the assistant. see docs/sdd/sdd.md.');
+    } else {
+      console.log('SDD is driven from your AI assistant, not this CLI.');
+      console.log('Run  /specify <feature description>  in Claude Code / Codex / OpenCode / Copilot.');
+      console.log('See docs/sdd/sdd.md for the full pipeline.');
+    }
     break;
 
-  case 'graph':
-    if (!existsSync(join(templateRoot, 'graphify-out'))) {
-      console.log('Building knowledge graph...');
+  case 'evolve': {
+    // Re-adapt the framework to the current stack. `--all` also refreshes skill
+    // health. `--stack=<x>` adapts to an explicit stack. Passes flags through.
+    const all = rest.includes('--all');
+    const evolveArgs = rest.filter((a) => a !== '--all');
+    announce('Re-adapting to the project stack');
+    run(`node scripts/adapt-to-project.mjs ${evolveArgs.join(' ')}`.trim());
+    if (all) {
+      announce('Running skill-health checks');
+      run('node scripts/evolve-skills.mjs');
     }
-    run('graphify .');
     break;
+  }
+
+  case 'graph': {
+    if (!has('graphify')) {
+      console.error(AI
+        ? 'MISSING: graphify. install: `uv tool install graphifyy==0.9.10` (or `pip install graphifyy`), then `graphify install --project`.'
+        : "'graphify' not found. Install: uv tool install graphifyy (or pip install graphifyy), then: graphify install --project");
+      process.exit(1);
+    }
+    const update = rest.includes('--update');
+    const pathArg = rest.find((a) => !a.startsWith('--')) || '.';
+    announce(update ? 'Updating knowledge graph (incremental, no LLM)' : 'Building knowledge graph');
+    if (!AI) {
+      console.log('  Note: doc/paper extraction needs an LLM key (ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY).');
+      console.log('        A code-only repo needs no key.');
+    }
+    run(update ? `graphify update ${pathArg}` : `graphify ${pathArg}`);
+    ok('Graph at graphify-out/graph.json. Query: graphify query "how does X work?"');
+    break;
+  }
 
   case 'eval':
+    announce('Running eval suite');
     run('node scripts/run-evals.mjs');
     break;
 
   case 'check':
-    console.log('Running all CI checks...');
+    announce('Running all CI checks (lint + docs + evals)');
     run('npm run lint');
     run('npm run docs:check');
     run('node scripts/run-evals.mjs');
+    ok('All checks passed');
     break;
 
   case 'handoffs':
@@ -102,23 +216,18 @@ switch (cmd) {
     } else if (sub === 'validate') {
       run('node scripts/handoff-engine.mjs validate');
     } else {
-      console.error('Usage: trellis handoffs [list|validate]');
+      console.error(AI ? 'USAGE: trellis handoffs list|validate' : 'Usage: trellis handoffs [list|validate]');
       process.exit(1);
     }
     break;
 
-  default:
-    console.log(`Trellis CLI — AI-agent-ready project scaffold
-
-Usage:
-  trellis init                    Run init.sh with defaults
-  trellis new <name> [--tier N]   Scaffold a new project (default tier: 2)
-  trellis spec                    Start a new SDD spec
-  trellis graph                   Rebuild the Graphify knowledge graph
-  trellis eval                    Run the full eval suite
-  trellis check                   Run all CI checks locally
-  trellis handoffs list           List configured handoff specialists
-  trellis handoffs validate       Validate the handoff registry
-`);
+  case 'help':
+  case undefined:
+    help();
     break;
+
+  default:
+    console.error(AI ? `UNKNOWN: ${cmd}. run \`trellis help --ai\`.` : `Unknown command: ${cmd}\n`);
+    help();
+    process.exit(1);
 }

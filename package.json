@@ -4,6 +4,12 @@
   "private": true,
   "description": "Cloneable AI-agent-ready project scaffold: SDD pipeline, code graph, boundary enforcement, evals, handoff loops, migration safety — all free, all cross-tool.",
   "license": "MIT",
+  "bin": {
+    "trellis": "./cli.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "init": "bash init.sh",
     "lint": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic",

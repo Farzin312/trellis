@@ -45,6 +45,14 @@ You don't need all four. Pick the ones you use. Skills, commands, and
 mandate files only mirror to your chosen platforms. Change later by
 editing `.trellis/config.json` and running `node scripts/generate-skills.mjs`.
 
+### Two ways to start (what you actually get)
+
+- **Use it** — `trellis new <name>` (or download the ZIP + `./init.sh`). You get a
+  **clean scaffold**: dev-only files (like the build `WORKPLAN.md`) are stripped via
+  `export-ignore` / the `new` copy filter. Your tree is your project, not the Trellis repo.
+- **Contribute to Trellis** — `git clone` the full repo; you get everything, including
+  the dev scaffolding.
+
 ---
 
 ## What Problem Does Trellis Solve?
@@ -183,8 +191,8 @@ See [docs/credits.md](docs/credits.md) for tool licenses and attributions.
 # Upgrade to Tier 2 later
 ./init.sh "My Project" --with-graphify --with-bounds
 
-# Upgrade to Tier 3
-trellis evolve --all   # wire up handoffs + observability
+# Re-adapt after upgrading (stack + skill health)
+trellis evolve --all
 ```
 
 ---
@@ -374,8 +382,9 @@ trellis eval                    # Run the full eval suite
 trellis check                   # Run all CI checks locally
 trellis handoffs list           # List configured handoff specialists
 trellis handoffs validate       # Validate the handoff registry
-trellis evolve --all            # Run the full evolution audit
-trellis evolve --stack          # Check for stack drift only
+trellis evolve                  # Re-adapt the framework to the current stack
+trellis evolve --all            # Re-adapt + run skill-health checks
+trellis evolve --stack=<x>      # Adapt to an explicit stack (e.g. nextjs,supabase)
 ```
 
 ---
@@ -426,8 +435,7 @@ trellis/
 ├── README.md                     ← you are here
 ├── init.sh                       ← clone-and-run setup
 ├── cli.mjs                       ← CLI entry point
-├── package.json                  ← npm scripts + dev deps
-├── pyproject.toml                ← pipx CLI install
+├── package.json                  ← npm scripts + dev deps + `trellis` bin
 │
 ├── .specify/                     ← SDD pipeline
 │   ├── memory/constitution.md   ← 11 constitutional principles
@@ -451,7 +459,7 @@ trellis/
 │   └── sdd/sdd.md               ← SDD policy
 │
 ├── .agents/                      ← agent configs
-│   ├── handoffs/registry.yaml   ← 10 specialists + trigger rules
+│   ├── handoffs/registry.yaml   ← 7 SDD-phase specialists + trigger rules
 │   └── context/                 ← portable cross-session memory
 │
 ├── .bounds/                      ← boundary enforcement config
@@ -460,7 +468,8 @@ trellis/
 ├── .opencode/                    ← OpenCode commands
 ├── .github/                      ← Copilot + CI workflows
 │
-├── scripts/                      ← all automation (11 scripts)
+├── scripts/                      ← all automation (18 scripts)
+│   ├── wizard.mjs              ← interactive install wizard
 │   ├── generate-commands.mjs    ← emit 4-platform command mirrors
 │   ├── check-mandate-sync.mjs   ← AGENTS.md ↔ CLAUDE.md sync gate
 │   ├── check-command-sync.mjs   ← command mirror sync gate
@@ -478,9 +487,8 @@ trellis/
 │   ├── python/                  ← pytest + mutmut configs
 │   ├── go/                      ← go test + go-mutesting docs
 │   └── rust/                    ← cargo test + cargo-mutants docs
-tests/golden/                 ← per-spec locked suites (created by project)
-├── docker-compose.phoenix.yml    ← Arize Phoenix (observability, self-hosted)
-└── docker-compose.mem0.yml       ← Mem0 (agent memory upgrade, self-hosted)
+├── tests/golden/                 ← per-spec locked suites (created by project)
+└── docker-compose.phoenix.yml    ← Arize Phoenix (observability, self-hosted)
 ```
 
 ---
