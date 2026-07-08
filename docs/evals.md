@@ -48,7 +48,7 @@ mutation score is lying — it executes code without asserting behavior.
 
 **When it runs:**
 - CI: `.github/workflows/evals.yml` on every PR touching lib/ or app/
-- Local: `npm run test:mutation` or `trellis eval`
+- Local: `npx stryker run` or `trellis eval`
 - SDD: the `verify` phase requires a mutation score check
 
 **What it catches that coverage misses:**
@@ -288,10 +288,10 @@ trellis eval
 # or: node .trellis/scripts/run-evals.mjs
 
 # Run specific evals
-npm run test:mutation           # StrykerJS only
+npx stryker run                 # StrykerJS only
 npm test                        # Unit + property tests (fast-check)
 npx vitest run .trellis/tests/golden     # Golden tests only
-npm run check                   # All framework health checks
+npm run check:all               # All framework health checks
 
 # Run the full eval suite (evals + framework checks)
 trellis check

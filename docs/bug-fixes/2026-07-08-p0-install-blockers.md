@@ -15,7 +15,7 @@ files:
   - init.sh
   - package.json
   - pyproject.toml
-fixed_by: Claude (WORKPLAN §1)
+fixed_by: Claude (Trellis P0 install fix work)
 ---
 
 ## Summary
@@ -61,5 +61,5 @@ install path removes the dual-packaging drift that caused the pyproject failure.
 
 ## References
 
-- Spec: WORKPLAN.md §1 (P0 — make it install)
+- Spec: Trellis P0 install fix work (original WORKPLAN §1, now completed and deleted)
 - Related bugs: none

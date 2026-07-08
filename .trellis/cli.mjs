@@ -12,6 +12,7 @@
  *   trellis init                       — set up THIS repo (interactive on a TTY)
  *   trellis graph [path] [--update]    — build/refresh the Graphify knowledge graph
  *   trellis eval                       — run the eval suite
+ *   trellis golden [freeze <NNN>|list|verify] — golden test management
  *   trellis metrics [--recent|--raw]   — token cost summary by agent/phase
  *   trellis check                      — lint + docs + evals (run before commit)
  *   trellis handoffs list|validate     — handoff registry ops
@@ -72,6 +73,7 @@ Usage:
   trellis init                        Set up THIS repo (interactive on a TTY)
   trellis graph [path] [--update]     Build/refresh the Graphify knowledge graph
   trellis eval                        Run the eval suite
+  trellis golden [freeze|list|verify] Golden test management
   trellis metrics [--recent|--raw]    Token cost summary by agent/phase
   trellis check                       Lint + docs + evals (run before commit)
   trellis handoffs list|validate      List / validate the handoff registry
@@ -90,6 +92,7 @@ graph [path] [--update]     build/refresh graphify-out/graph.json. --update=incr
                             doc/paper extraction needs one of ANTHROPIC_API_KEY|OPENAI_API_KEY|GEMINI_API_KEY; code-only needs none.
                             after build, query: graphify query "<q>" | graphify explain "<node>" | graphify path "A" "B"
 eval                        run .trellis/scripts/run-evals.mjs.
+golden [freeze <NNN>|list|verify]  manage golden test suites.
 metrics [--recent|--raw]    summarize .trellis/metrics/runs.jsonl: cost by agent, phase, totals.
 check                       npm lint + docs:check + evals. run before every commit.
 handoffs list|validate      ops on .trellis/agents/handoffs/registry.yaml.
@@ -131,8 +134,8 @@ switch (cmd) {
     // Curated copy: users get a clean project, NOT the whole dev repo. Exclusions
     // match paths RELATIVE to templateRoot (so ".bounds/cache.db" excludes only
     // that file, and top-level ".next" only — a nested foo/.next is kept).
-    // WORKPLAN.md, .gitattributes (dev-only), and generated mirror dirs
-    // (they regenerate via npm run skills:generate) never ship to a new project.
+    // Dev-only files and generated mirror dirs (they regenerate via
+    // `npm run skills:generate`) never ship to a new project.
     const exclude = new Set([
       '.git', 'node_modules', '.next', 'graphify-out', '.bounds/cache.db', 'WORKPLAN.md',
       '.gitattributes',
@@ -209,6 +212,11 @@ switch (cmd) {
   case 'eval':
     announce('Running eval suite');
     run('node .trellis/scripts/run-evals.mjs');
+    break;
+
+  case 'golden':
+    announce('Golden test operations');
+    run(`node .trellis/scripts/golden-tests.mjs ${rest.join(' ') || 'list'}`);
     break;
 
   case 'metrics': {

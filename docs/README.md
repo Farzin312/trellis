@@ -1,7 +1,7 @@
 # __PROJECT_NAME__ — Documentation Index
 
 > Parent: [root `README.md`](../README.md)
-> Children: [`STRUCTURE.md`](./STRUCTURE.md), [`SYSTEM.md`](./SYSTEM.md), [`README-FOR-AGENTS.md`](./README-FOR-AGENTS.md), [`coding-standards.md`](./coding-standards.md), [`skills.md`](./skills.md), [`language-support.md`](./language-support.md), [`self-hosted-services.md`](./self-hosted-services.md), [`_subsystem-template.md`](./_subsystem-template.md), [`sdd/sdd.md`](./sdd/sdd.md), [`bug-fixes/_template.md`](./bug-fixes/_template.md)
+> Children: [`STRUCTURE.md`](./STRUCTURE.md), [`SYSTEM.md`](./SYSTEM.md), [`DESIGN.md`](./DESIGN.md), [`README-FOR-AGENTS.md`](./README-FOR-AGENTS.md), [`coding-standards.md`](./coding-standards.md), [`skills.md`](./skills.md), [`language-support.md`](./language-support.md), [`evals.md`](./evals.md), [`metrics.md`](./metrics.md), [`evolution.md`](./evolution.md), [`self-hosted-services.md`](./self-hosted-services.md), [`ponytail-setup.md`](./ponytail-setup.md), [`credits.md`](./credits.md), [`contributing.md`](./contributing.md), [`_subsystem-template.md`](./_subsystem-template.md), [`sdd/sdd.md`](./sdd/sdd.md), [`bug-fixes/_template.md`](./bug-fixes/_template.md)
 
 This is the single entry point for documentation. If you don't know where to look, start here.
 
@@ -14,8 +14,18 @@ docs/
 ├── README.md                  ← you are here (human entry point)
 ├── README-FOR-AGENTS.md       ← AI agent entry point
 ├── STRUCTURE.md               ← documentation rules (single source of truth)
+├── SYSTEM.md                  ← full system architecture diagram
+├── DESIGN.md                  ← design decisions + framework-agnostic allowlist
 ├── coding-standards.md        ← what "good code" means
+├── evals.md                   ← the eval system (mutation, golden, Phoenix)
+├── metrics.md                 ← token cost & per-agent metrics ledger
+├── evolution.md               ← self-evolution engine
+├── skills.md                  ← how skills work + how to create them
+├── language-support.md        ← supported stacks + eval tooling per language
+├── self-hosted-services.md    ← Phoenix, Mem0, and other optional services
 ├── ponytail-setup.md          ← ponytail plugin install guide
+├── credits.md                 ← tool credits + licenses
+├── contributing.md            ← how to extend Trellis
 ├── _subsystem-template.md     ← copy when creating a subsystem doc
 ├── sdd/
 │   └── sdd.md                 ← Spec-Driven Development policy
@@ -43,11 +53,16 @@ AGENTS.md                       ← cross-tool AI agent mandate
 | What languages and tools are supported? | [`language-support.md`](./language-support.md) |
 | How do I set up self-hosted services? | [`self-hosted-services.md`](./self-hosted-services.md) |
 | How does the whole system fit together? | [`SYSTEM.md`](./SYSTEM.md) |
+| What design decisions were made? | [`DESIGN.md`](./DESIGN.md) |
 | How does the SDD spec workflow work? | [`sdd/sdd.md`](./sdd/sdd.md) |
+| How does the eval system work? | [`evals.md`](./evals.md) |
+| How do I track token costs per agent? | [`metrics.md`](./metrics.md) |
 | What conventions does this repo follow? | [`coding-standards.md`](./coding-standards.md), [`AGENTS.md`](../AGENTS.md) |
 | How should documentation be structured? | [`STRUCTURE.md`](./STRUCTURE.md) |
 | Where is the function I need? | The owning subsystem doc at [`systems/`](./systems/) |
 | How do I install Ponytail? | [`ponytail-setup.md`](./ponytail-setup.md) |
+| What tools does Trellis use? | [`credits.md`](./credits.md) |
+| How do I contribute to Trellis? | [`contributing.md`](./contributing.md) |
 
 ## The 4-doc pattern
 

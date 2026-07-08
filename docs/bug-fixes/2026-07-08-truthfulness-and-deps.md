@@ -15,8 +15,8 @@ files:
   - init.sh
   - README.md
   - docker-compose.mem0.yml
-  - docker-compose.phoenix.yml
-fixed_by: Claude (WORKPLAN §3 + §4)
+  - .trellis/services/docker-compose.phoenix.yml
+fixed_by: Claude (Trellis truthfulness + dependency fix work)
 ---
 
 ## Summary
@@ -60,7 +60,7 @@ one-line and auditable.
 
 ## References
 
-- Spec: WORKPLAN.md §3 (truthfulness) + §4 (dependencies)
+- Spec: Trellis truthfulness + dependency fix work (original WORKPLAN §3 + §4, now completed and deleted)
 - Related bugs: BUG-001
 - Known blocker surfaced: `mem0ai/mem0:latest` is a Docker Hub 404 (image does not
   exist) — pinning is moot until the correct image/build source is decided.

@@ -51,8 +51,8 @@ editing `.trellis/config.json` and running `node .trellis/scripts/generate-skill
 ### Two ways to start (what you actually get)
 
 - **Use it** — `trellis new <name>` (or download the ZIP + `./.trellis/init.sh`). You get a
-  **clean scaffold**: dev-only files (like the build `WORKPLAN.md`) are stripped via
-  `export-ignore` / the `new` copy filter. Your tree is your project, not the Trellis repo.
+  **clean scaffold**: dev-only files are stripped via `export-ignore` / the `new` copy filter.
+  Your tree is your project, not the Trellis repo.
 - **Contribute to Trellis** — `git clone` the full repo; you get everything, including
   the dev scaffolding.
 
@@ -489,7 +489,7 @@ trellis/
 │   └── sdd/sdd.md               ← SDD policy
 │
 ├── .trellis/                     ← Trellis internals (scripts, agents, templates)
-│   ├── scripts/                  ← all automation (18 scripts)
+│   ├── scripts/                  ← all automation (19 scripts)
 │   │   ├── wizard.mjs            ← interactive install wizard
 │   │   ├── generate-commands.mjs ← emit 4-platform command mirrors
 │   │   ├── check-mandate-sync.mjs← AGENTS.md ↔ CLAUDE.md sync gate
