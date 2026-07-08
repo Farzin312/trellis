@@ -80,9 +80,9 @@ document is the reference.
 ### Migration Safety
 
 Trellis supports 15 migration tools via the adapter system. See
-`scripts/migration-adapters.json` and run:
+`.trellis/scripts/migration-adapters.json` and run:
 ```bash
-node scripts/check-migration-safety.mjs --list-adapters
+node .trellis/.trellis/scripts/check-migration-safety.mjs --list-adapters
 ```
 
 ### Boundary Enforcement
@@ -174,7 +174,7 @@ analysis until Bounds adds Go support.
 | Coverage | cargo-tarpaulin | Works |
 
 Rust is fully functional. Migration safety needs a Rust adapter added to
-`scripts/migration-adapters.json` (sqlx-macros, refinery, or Diesel).
+`.trellis/scripts/migration-adapters.json` (sqlx-macros, refinery, or Diesel).
 
 ### Java
 
@@ -233,14 +233,14 @@ a message explaining what was skipped, why, and what to do about it.
 
 To add support for a new language:
 
-1. **Migration adapter**: Add an entry to `scripts/migration-adapters.json`
+1. **Migration adapter**: Add an entry to `.trellis/scripts/migration-adapters.json`
    if the language has a common migration tool.
 2. **Eval template**: Create `templates/<lang>/` with test runner config,
    mutation testing config, and property testing setup.
 3. **Boundary enforcement**: If Bounds supports it, wire it. If not, document
    the fallback in this file.
 4. **Linting**: Document the recommended linter in this file.
-5. **CI**: Update `scripts/adapt-to-project.mjs` to detect the language and
+5. **CI**: Update `.trellis/scripts/adapt-to-project.mjs` to detect the language and
    set the appropriate script commands.
 6. **Test**: Clone Trellis with a project in that language, run init.sh,
    verify all checks either pass or skip with a clear message.

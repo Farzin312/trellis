@@ -6,6 +6,15 @@ node_modules/
 .env.local
 !.env.example
 
+# Generated skill/command mirrors (regenerated via `npm run skills:generate`)
+# Source of truth is .trellis/agents/skills/ and .specify/templates/commands/
+.claude/skills/
+.codex/agents/
+.opencode/command/*.md
+.github/agents/*.md
+.claude/commands/speckit.*.md
+.codex/prompts/speckit.*.md
+
 # Trellis project config (user-specific agent selection)
 .trellis/config.json
 

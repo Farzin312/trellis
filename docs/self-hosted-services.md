@@ -96,13 +96,13 @@ learnings. Entity linking. Temporal reasoning. Shared web dashboard.
 
 **License:** Apache-2.0. Fully free to self-host.
 
-**Default in Trellis:** Trellis ships `.agents/context/` (plain JSON files) as
+**Default in Trellis:** Trellis ships `.trellis/agents/context/` (plain JSON files) as
 the zero-dependency default. Mem0 is the upgrade when you need capabilities
 JSON files cannot provide.
 
 ### When to upgrade to Mem0
 
-| Need | Use .agents/context/ | Use Mem0 |
+| Need | Use .trellis/agents/context/ | Use Mem0 |
 |------|---------------------|----------|
 | Save decisions and learnings | Yes | Yes |
 | Resume where last session left off | Yes | Yes |

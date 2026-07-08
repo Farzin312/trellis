@@ -2,7 +2,7 @@
 /**
  * generate-skills.mjs
  *
- * Reads SKILL.md sources from .agents/skills/ and mirrors them to the
+ * Reads SKILL.md sources from .trellis/agents/skills/ and mirrors them to the
  * agent platform directories listed in .trellis/config.json.
  *
  * Default targets (when config.json lists all 4):
@@ -16,18 +16,18 @@
  * directories receive skills.
  *
  * Usage:
- *   node scripts/generate-skills.mjs              # mirror to active agents
- *   node scripts/generate-skills.mjs --all        # mirror to ALL agents (override)
- *   node scripts/generate-skills.mjs --prune      # remove stale mirrors too
+ *   node .trellis/scripts/generate-skills.mjs              # mirror to active agents
+ *   node .trellis/scripts/generate-skills.mjs --all        # mirror to ALL agents (override)
+ *   node .trellis/scripts/generate-skills.mjs --prune      # remove stale mirrors too
  */
 
-import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync, symlinkSync, unlinkSync, rmSync, statSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
-const sourceDir = join(root, '.agents', 'skills');
+const root = join(__dirname, '..', '..');
+const sourceDir = join(root, '.trellis', 'agents', 'skills');
 const configPath = join(root, '.trellis', 'config.json');
 
 // --- Determine active agents ---
@@ -64,7 +64,7 @@ for (const agent of activeAgents) {
 }
 
 if (!existsSync(sourceDir)) {
-  console.log('SKIP: no .agents/skills/ directory');
+  console.log('SKIP: no .trellis/agents/skills/ directory');
   process.exit(0);
 }
 
@@ -73,7 +73,7 @@ const skills = readdirSync(sourceDir, { withFileTypes: true })
   .map(d => d.name);
 
 if (skills.length === 0) {
-  console.log('SKIP: no skills found in .agents/skills/');
+  console.log('SKIP: no skills found in .trellis/agents/skills/');
   process.exit(0);
 }
 
@@ -91,23 +91,13 @@ for (const skillName of skills) {
 
   for (const [agentName, target] of Object.entries(targets)) {
     if (target.format === 'dir') {
-      if (agentName === 'claude') {
-        // Claude Code: symlink the directory (preferred — live updates)
-        const claudeTarget = join(target.dir, skillName);
-        try { rmSync(claudeTarget, { recursive: true, force: true }); } catch {}
-        try {
-          symlinkSync(skillSourcePath, claudeTarget);
-        } catch {
-          // Fallback: copy if symlink fails (Windows, permissions)
-          mkdirSync(claudeTarget, { recursive: true });
-          writeFileSync(join(claudeTarget, 'SKILL.md'), content);
-        }
-      } else {
-        // Codex and other dir-based: copy directory
-        const dirTarget = join(target.dir, skillName);
-        mkdirSync(dirTarget, { recursive: true });
-        writeFileSync(join(dirTarget, 'SKILL.md'), content);
-      }
+      // All dir-based platforms (Claude, Codex): copy directory.
+      // Symlinks were used for Claude's "live update" but break on Windows/CI
+      // and confuse some tools. Copy is portable; regenerate via
+      // `npm run skills:generate` after editing skills.
+      const dirTarget = join(target.dir, skillName);
+      mkdirSync(dirTarget, { recursive: true });
+      writeFileSync(join(dirTarget, 'SKILL.md'), content);
     } else {
       // Flat format (OpenCode, Copilot): single file
       const flatTarget = join(target.dir, `${skillName}${target.suffix}`);

@@ -14,7 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const rl = createInterface({ input, output });
 
 const AGENTS = ['claude', 'codex', 'opencode', 'copilot'];
@@ -102,7 +102,7 @@ async function main() {
 
   // ── Compose init.sh invocation ──────────────────────────────────────
   const args = [
-    'init.sh',
+    '.trellis/init.sh',
     name,
     `--tier=${tierNum}`,
     `--agents=${agentList.join(',')}`,

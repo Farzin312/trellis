@@ -14,8 +14,8 @@
  *   5. (Future) regenerate table snapshots from migrations
  *
  * Usage:
- *   node scripts/docs-sync.mjs            # regenerate + fix
- *   node scripts/docs-sync.mjs --check    # read-only verification
+ *   node .trellis/scripts/docs-sync.mjs            # regenerate + fix
+ *   node .trellis/scripts/docs-sync.mjs --check    # read-only verification
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
@@ -23,7 +23,7 @@ import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const docsDir = join(root, 'docs');
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');

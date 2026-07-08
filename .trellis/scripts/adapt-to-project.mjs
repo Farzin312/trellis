@@ -10,9 +10,9 @@
  * being hardcoded to one stack.
  *
  * Usage:
- *   node scripts/adapt-to-project.mjs                    # auto-detect
- *   node scripts/adapt-to-project.mjs --stack nextjs,supabase,stripe
- *   node scripts/adapt-to-project.mjs --interactive       # prompt user
+ *   node .trellis/scripts/adapt-to-project.mjs                    # auto-detect
+ *   node .trellis/scripts/adapt-to-project.mjs --stack nextjs,supabase,stripe
+ *   node .trellis/scripts/adapt-to-project.mjs --interactive       # prompt user
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
@@ -20,7 +20,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const args = process.argv.slice(2);
 
 // ── Stack detection ────────────────────────────────────────────────────

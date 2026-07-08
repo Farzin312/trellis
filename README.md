@@ -24,10 +24,10 @@ git clone https://github.com/Farzin312/trellis.git my-project
 cd my-project
 
 # All 4 agents (default)
-./init.sh "My Project"
+./.trellis/init.sh "My Project"
 
 # Or pick your agents
-./init.sh "My Project" --agents=claude,copilot
+./.trellis/init.sh "My Project" --agents=claude,copilot
 ```
 
 Available `--agents` values: `claude`, `codex`, `opencode`, `copilot`.
@@ -43,11 +43,11 @@ Which agents are you using?
 
 You don't need all four. Pick the ones you use. Skills, commands, and
 mandate files only mirror to your chosen platforms. Change later by
-editing `.trellis/config.json` and running `node scripts/generate-skills.mjs`.
+editing `.trellis/config.json` and running `node .trellis/.trellis/scripts/generate-skills.mjs`.
 
 ### Two ways to start (what you actually get)
 
-- **Use it** — `trellis new <name>` (or download the ZIP + `./init.sh`). You get a
+- **Use it** — `trellis new <name>` (or download the ZIP + `./.trellis/init.sh`). You get a
   **clean scaffold**: dev-only files (like the build `WORKPLAN.md`) are stripped via
   `export-ignore` / the `new` copy filter. Your tree is your project, not the Trellis repo.
 - **Contribute to Trellis** — `git clone` the full repo; you get everything, including
@@ -186,10 +186,10 @@ See [docs/credits.md](docs/credits.md) for tool licenses and attributions.
 
 ```bash
 # Start at Tier 1
-./init.sh "My Project"
+./.trellis/init.sh "My Project"
 
 # Upgrade to Tier 2 later
-./init.sh "My Project" --with-graphify --with-bounds
+./.trellis/init.sh "My Project" --with-graphify --with-bounds
 
 # Re-adapt after upgrading (stack + skill health)
 trellis evolve --all
@@ -256,7 +256,7 @@ Write a spec once. Run it through any AI agent. The slash commands exist on all
 /clarify → /plan → /tasks → /checklist → /analyze → /implement → /review → /verify
 ```
 
-Every phase has a source file in `.specify/templates/commands/`. A generator
+Every phase has a source file in `.specify/.trellis/templates/commands/`. A generator
 emits mirrors to all 4 platforms. A CI gate verifies they stay in sync.
 
 ---
@@ -355,9 +355,9 @@ Agent completes 3+ similar tasks
     ├── No existing skill covers this
     │
     ▼
-Create .agents/skills/<name>/SKILL.md
+Create .trellis/agents/skills/<name>/SKILL.md
     │
-    ├── Run: node scripts/generate-skills.mjs
+    ├── Run: node .trellis/.trellis/scripts/generate-skills.mjs
     │   (mirrors to Claude Code, Codex, OpenCode, Copilot)
     │
     └── Add to delegation matrix in AGENTS.md
@@ -365,7 +365,7 @@ Create .agents/skills/<name>/SKILL.md
 
 When a skill's instructions are wrong or incomplete, any agent fixes them
 and bumps the version. The deterministic health check
-(`scripts/evolve-skills.mjs`) verifies skill integrity in CI.
+(`.trellis/scripts/evolve-skills.mjs`) verifies skill integrity in CI.
 
 Read **[docs/evolution.md](docs/evolution.md)** for the full system.
 
@@ -394,7 +394,7 @@ trellis evolve --stack=<x>      # Adapt to an explicit stack (e.g. nextjs,supaba
 Claude Code | Codex CLI | OpenCode | GitHub Copilot
 
 All four read AGENTS.md natively. Slash commands are mirrored to all four via
-the command generator. (Gemini dropped as legacy.)
+the command generator.
 
 ---
 
@@ -439,7 +439,7 @@ trellis/
 │
 ├── .specify/                     ← SDD pipeline
 │   ├── memory/constitution.md   ← 11 constitutional principles
-│   └── templates/
+│   └── .trellis/templates/
 │       ├── commands/            ← SDD phase sources (single source of truth)
 │       ├── spec-template.md
 │       ├── plan-template.md
@@ -458,37 +458,41 @@ trellis/
 │   ├── ponytail-setup.md        ← ponytail install guide
 │   └── sdd/sdd.md               ← SDD policy
 │
-├── .agents/                      ← agent configs
-│   ├── handoffs/registry.yaml   ← 7 SDD-phase specialists + trigger rules
-│   └── context/                 ← portable cross-session memory
+├── .trellis/                     ← Trellis internals (scripts, agents, templates)
+│   ├── scripts/                  ← all automation (18 scripts)
+│   │   ├── wizard.mjs            ← interactive install wizard
+│   │   ├── generate-commands.mjs ← emit 4-platform command mirrors
+│   │   ├── check-mandate-sync.mjs← AGENTS.md ↔ CLAUDE.md sync gate
+│   │   ├── check-command-sync.mjs← command mirror sync gate
+│   │   ├── check-agnostic.mjs    ← stack-agnostic enforcement
+│   │   ├── docs-sync.mjs         ← doc accuracy pipeline
+│   │   ├── check-migration-safety.mjs
+│   │   ├── check-graph-freshness.mjs
+│   │   ├── check-ponytail.mjs
+│   │   ├── adapt-to-project.mjs  ← detect + adapt to project stack
+│   │   ├── handoff-engine.mjs    ← validate/replay handoff registry
+│   │   └── run-evals.mjs         ← full eval suite runner
+│   ├── agents/                   ← agent configs (source of truth)
+│   │   ├── handoffs/registry.yaml← 7 SDD-phase specialists + trigger rules
+│   │   ├── context/              ← portable cross-session memory
+│   │   └── skills/               ← SKILL.md sources (mirrored to platforms)
+│   ├── templates/                ← per-stack config templates (copied by init.sh)
+│   │   ├── js-ts/                ← vitest + stryker configs
+│   │   ├── python/               ← pytest + mutmut configs
+│   │   ├── go/                   ← go test + go-mutesting docs
+│   │   └── rust/                 ← cargo test + cargo-mutants docs
+│   ├── tests/golden/             ← per-spec locked suites (created by project)
+│   ├── services/                 ← Docker compose files
+│   │   └── docker-compose.phoenix.yml ← Arize Phoenix (observability)
+│   ├── cli.mjs                   ← trellis CLI entry point
+│   └── init.sh                   ← bootstrap script
 │
 ├── .bounds/                      ← boundary enforcement config
 ├── .claude/                      ← Claude Code hooks + commands
 ├── .codex/                       ← Codex hooks + commands
 ├── .opencode/                    ← OpenCode commands
 ├── .github/                      ← Copilot + CI workflows
-│
-├── scripts/                      ← all automation (18 scripts)
-│   ├── wizard.mjs              ← interactive install wizard
-│   ├── generate-commands.mjs    ← emit 4-platform command mirrors
-│   ├── check-mandate-sync.mjs   ← AGENTS.md ↔ CLAUDE.md sync gate
-│   ├── check-command-sync.mjs   ← command mirror sync gate
-│   ├── check-agnostic.mjs       ← stack-agnostic enforcement
-│   ├── docs-sync.mjs            ← doc accuracy pipeline
-│   ├── check-migration-safety.mjs
-│   ├── check-graph-freshness.mjs
-│   ├── check-ponytail.mjs
-│   ├── adapt-to-project.mjs     ← detect + adapt to project stack
-│   ├── handoff-engine.mjs       ← validate/replay handoff registry
-│   └── run-evals.mjs            ← full eval suite runner
-│
-├── templates/                    ← per-stack config templates (copied by init.sh)
-│   ├── js-ts/                   ← vitest + stryker configs
-│   ├── python/                  ← pytest + mutmut configs
-│   ├── go/                      ← go test + go-mutesting docs
-│   └── rust/                    ← cargo test + cargo-mutants docs
-├── tests/golden/                 ← per-spec locked suites (created by project)
-└── docker-compose.phoenix.yml    ← Arize Phoenix (observability, self-hosted)
+└── .specify/                     ← SDD spec templates + commands
 ```
 
 ---

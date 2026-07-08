@@ -35,7 +35,7 @@ reports PASS/FAIL for each. Nothing merges until all gates pass.
    - Default threshold: 50 (adjustable per project)
    - If StrykerJS/mutmut/cargo-mutants not installed, SKIP with note
 
-5. **Migration safety** - `node scripts/check-migration-safety.mjs`
+5. **Migration safety** - `node .trellis/scripts/check-migration-safety.mjs`
    - PASS or SKIP (no migrations) = OK
    - Any FAIL = blocking
 
@@ -43,14 +43,11 @@ reports PASS/FAIL for each. Nothing merges until all gates pass.
    - No drift = PASS
    - Any broken links or missing breadcrumbs = blocking
 
-7. **Stack-agnostic** - `node scripts/check-agnostic.mjs`
+7. **Stack-agnostic** - `node .trellis/scripts/check-agnostic.mjs`
    - PASS = no hardcoded stacks in framework files
 
-8. **Handoff registry** - `node scripts/handoff-engine.mjs validate`
-   - PASS = registry valid, no duplicate specialists
-
-9. **Ponytail markers** - `node scripts/check-ponytail.mjs`
-   - PASS = all markers well-formed (advisory, always exits 0)
+8. **Handoff registry** - `node .trellis/scripts/handoff-engine.mjs validate`
+   - PASS = registry valid, no duplicate names, no dangling handoff targets
 
 ## When to Load
 
@@ -64,7 +61,6 @@ Load this skill when:
 
 - Gates 1-2, 4-8 must PASS or SKIP with clear note
 - Gate 3 must PASS (tests exist and pass) or WARN (no tests yet)
-- Gate 9 always passes (advisory only)
 - A single FAIL in any blocking gate = feature is not complete
 
 ## Test Documentation Gate (mandatory)

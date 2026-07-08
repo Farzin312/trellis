@@ -17,7 +17,7 @@ set -euo pipefail
 # No args on a TTY -> launch the interactive wizard (which re-invokes this
 # script with flags). TRELLIS_WIZARD guards against re-entry.
 if [ "$#" -eq 0 ] && [ -t 0 ] && [ -z "${TRELLIS_WIZARD:-}" ] && command -v node &>/dev/null; then
-  exec node scripts/wizard.mjs
+  exec node .trellis/scripts/wizard.mjs
 fi
 
 PROJECT_NAME="${1:-my-app}"
@@ -100,15 +100,15 @@ echo "  [OK] Project name injected"
 
 # 3. Generate platform-specific command mirrors from .specify source
 if command -v node &>/dev/null; then
-  node scripts/generate-commands.mjs && echo "  [OK] Cross-tool commands generated" || { echo "  [WARN] Command generation failed"; SKIPPED+=("cross-tool commands"); }
+  node .trellis/scripts/generate-commands.mjs && echo "  [OK] Cross-tool commands generated" || { echo "  [WARN] Command generation failed"; SKIPPED+=("cross-tool commands"); }
 else
-  echo "  [WARN] Node not found — run 'node scripts/generate-commands.mjs' manually"
+  echo "  [WARN] Node not found — run 'node .trellis/scripts/generate-commands.mjs' manually"
   SKIPPED+=("cross-tool commands (need Node)")
 fi
 
 # 4. Sync mandate files (AGENTS.md -> CLAUDE.md)
 if command -v node &>/dev/null; then
-  node scripts/check-mandate-sync.mjs --fix && echo "  [OK] Mandate files synced" || { echo "  [WARN] Mandate sync failed"; SKIPPED+=("mandate sync"); }
+  node .trellis/scripts/check-mandate-sync.mjs --fix && echo "  [OK] Mandate files synced" || { echo "  [WARN] Mandate sync failed"; SKIPPED+=("mandate sync"); }
 else
   SKIPPED+=("mandate sync (need Node)")
 fi
@@ -116,9 +116,9 @@ fi
 # 4b. Adapt the framework to the project's stack (constitution + AGENTS.md scope)
 if command -v node &>/dev/null; then
   if [ -n "$STACK" ]; then
-    node scripts/adapt-to-project.mjs --stack="$STACK" && echo "  [OK] Adapted to stack: $STACK" || { echo "  [WARN] Stack adaptation failed"; SKIPPED+=("stack adaptation"); }
+    node .trellis/scripts/adapt-to-project.mjs --stack="$STACK" && echo "  [OK] Adapted to stack: $STACK" || { echo "  [WARN] Stack adaptation failed"; SKIPPED+=("stack adaptation"); }
   else
-    node scripts/adapt-to-project.mjs && echo "  [OK] Adapted to detected stack" || { echo "  [WARN] Stack adaptation failed"; SKIPPED+=("stack adaptation"); }
+    node .trellis/scripts/adapt-to-project.mjs && echo "  [OK] Adapted to detected stack" || { echo "  [WARN] Stack adaptation failed"; SKIPPED+=("stack adaptation"); }
   fi
 else
   SKIPPED+=("stack adaptation (need Node)")
@@ -126,24 +126,24 @@ fi
 
 # 5. Copy stack-appropriate eval templates
 if [ -f "package.json" ]; then
-  if [ -d "templates/js-ts" ]; then
-    cp templates/js-ts/vitest.config.ts vitest.config.ts 2>/dev/null || true
-    cp templates/js-ts/stryker.config.json stryker.config.json 2>/dev/null || true
+  if [ -d ".trellis/templates/js-ts" ]; then
+    cp .trellis/templates/js-ts/vitest.config.ts vitest.config.ts 2>/dev/null || true
+    cp .trellis/templates/js-ts/stryker.config.json stryker.config.json 2>/dev/null || true
     echo "  [OK] JS/TS eval templates copied to project root"
     echo "       Prerequisites: Node.js 18+ (https://nodejs.org)"
     echo "       Tools: vitest, strykerJS, fast-check (install via: npm install)"
   fi
 elif [ -f "requirements.txt" ] || grep -q "^\[project\]" pyproject.toml 2>/dev/null; then
-  if [ -d "templates/python" ]; then
-    cp templates/python/pytest.ini pytest.ini 2>/dev/null || true
-    cp templates/python/mutmut.ini mutmut.ini 2>/dev/null || true
+  if [ -d ".trellis/templates/python" ]; then
+    cp .trellis/templates/python/pytest.ini pytest.ini 2>/dev/null || true
+    cp .trellis/templates/python/mutmut.ini mutmut.ini 2>/dev/null || true
     echo "  [OK] Python eval templates copied to project root"
     echo "       Prerequisites: Python 3.10+ (https://python.org)"
     echo "       Install tools: pip install pytest pytest-cov mutmut hypothesis ruff"
   fi
 elif [ -f "go.mod" ]; then
-  if [ -d "templates/go" ]; then
-    cp templates/go/README.md docs/eval-setup-go.md 2>/dev/null || true
+  if [ -d ".trellis/templates/go" ]; then
+    cp .trellis/templates/go/README.md docs/eval-setup-go.md 2>/dev/null || true
     echo "  [OK] Go eval templates documented"
     echo "       Prerequisites: Go 1.21+ (https://go.dev/dl/)"
     echo "       Tools: go test, go-mutesting, golangci-lint"
@@ -151,8 +151,8 @@ elif [ -f "go.mod" ]; then
     echo "       Install: https://golangci-lint.run/usage/install/"
   fi
 elif [ -f "Cargo.toml" ]; then
-  if [ -d "templates/rust" ]; then
-    cp templates/rust/README.md docs/eval-setup-rust.md 2>/dev/null || true
+  if [ -d ".trellis/templates/rust" ]; then
+    cp .trellis/templates/rust/README.md docs/eval-setup-rust.md 2>/dev/null || true
     echo "  [OK] Rust eval templates documented"
     echo "       Prerequisites: Rust stable (https://rustup.rs)"
     echo "       Tools: cargo test, cargo-mutants, clippy"
@@ -161,7 +161,7 @@ elif [ -f "Cargo.toml" ]; then
   fi
 else
   echo "  [INFO] No recognized stack detected (package.json, requirements.txt, go.mod, Cargo.toml)"
-  echo "         Eval templates available in templates/ - copy manually as needed"
+  echo "         Eval templates available in .trellis/templates/ - copy manually as needed"
   echo "         Supported stacks: JS/TS, Python, Go, Rust"
 fi
 
@@ -178,9 +178,9 @@ CONFIG
 echo "  [OK] Agent config written: $AGENTS"
 
 if command -v node &>/dev/null; then
-  node scripts/generate-skills.mjs && echo "  [OK] Skills mirrored to active platforms" || { echo "  [WARN] Skill generation failed"; SKIPPED+=("skills mirror"); }
+  node .trellis/scripts/generate-skills.mjs && echo "  [OK] Skills mirrored to active platforms" || { echo "  [WARN] Skill generation failed"; SKIPPED+=("skills mirror"); }
 else
-  echo "  [WARN] Node not found — skills not mirrored. Run 'node scripts/generate-skills.mjs' manually"
+  echo "  [WARN] Node not found — skills not mirrored. Run 'node .trellis/scripts/generate-skills.mjs' manually"
   SKIPPED+=("skills mirror (need Node)")
 fi
 

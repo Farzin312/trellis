@@ -5,33 +5,33 @@
   "description": "Cloneable AI-agent-ready project scaffold: SDD pipeline, code graph, boundary enforcement, evals, handoff loops, migration safety — all free, all cross-tool.",
   "license": "MIT",
   "bin": {
-    "trellis": "./cli.mjs"
+    "trellis": "./.trellis/cli.mjs"
   },
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "init": "bash init.sh",
+    "init": "bash .trellis/init.sh",
     "lint": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic",
-    "test": "node scripts/run-evals.mjs",
-    "docs:sync": "node scripts/docs-sync.mjs",
-    "docs:check": "node scripts/docs-sync.mjs --check",
-    "check:mandates": "node scripts/check-mandate-sync.mjs",
-    "check:commands": "node scripts/check-command-sync.mjs",
-    "check:breadcrumbs": "node scripts/check-doc-breadcrumbs.mjs",
-    "check:agnostic": "node scripts/check-agnostic.mjs",
-    "check:migrations": "node scripts/check-migration-safety.mjs",
-    "check:graph": "node scripts/check-graph-freshness.mjs",
-    "check:all": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic && npm run check:migrations && node scripts/run-evals.mjs",
-    "eval": "node scripts/run-evals.mjs",
-    "evolve": "node scripts/adapt-to-project.mjs",
-    "handoffs:validate": "node scripts/handoff-engine.mjs validate",
-    "handoffs:list": "node scripts/handoff-engine.mjs list",
-    "skills:generate": "node scripts/generate-skills.mjs",
-    "skills:health": "node scripts/evolve-skills.mjs",
-    "services:start": "node scripts/services.mjs start all",
-    "services:stop": "node scripts/services.mjs stop all",
-    "services:status": "node scripts/services.mjs status"
+    "test": "node .trellis/scripts/run-evals.mjs",
+    "docs:sync": "node .trellis/scripts/docs-sync.mjs",
+    "docs:check": "node .trellis/scripts/docs-sync.mjs --check",
+    "check:mandates": "node .trellis/scripts/check-mandate-sync.mjs",
+    "check:commands": "node .trellis/scripts/check-command-sync.mjs",
+    "check:breadcrumbs": "node .trellis/scripts/check-doc-breadcrumbs.mjs",
+    "check:agnostic": "node .trellis/scripts/check-agnostic.mjs",
+    "check:migrations": "node .trellis/scripts/check-migration-safety.mjs",
+    "check:graph": "node .trellis/scripts/check-graph-freshness.mjs",
+    "check:all": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic && npm run check:migrations && node .trellis/scripts/run-evals.mjs",
+    "eval": "node .trellis/scripts/run-evals.mjs",
+    "evolve": "node .trellis/scripts/adapt-to-project.mjs",
+    "handoffs:validate": "node .trellis/scripts/handoff-engine.mjs validate",
+    "handoffs:list": "node .trellis/scripts/handoff-engine.mjs list",
+    "skills:generate": "node .trellis/scripts/generate-skills.mjs",
+    "skills:health": "node .trellis/scripts/evolve-skills.mjs",
+    "services:start": "node .trellis/scripts/services.mjs start all",
+    "services:stop": "node .trellis/scripts/services.mjs stop all",
+    "services:status": "node .trellis/scripts/services.mjs status"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^8.7.1",
@@ -41,6 +41,6 @@
     "zod": "^3.25.0"
   },
   "optionalDependencies": {},
-  "_comment_devDeps": "DevDeps are for JS/TS adopting projects. Non-JS projects can remove them. Framework scripts (scripts/*.mjs) only require Node.js.",
+  "_comment_devDeps": "DevDeps are for JS/TS adopting projects. Non-JS projects can remove them. Framework scripts (.trellis/scripts/*.mjs) only require Node.js.",
   "_comment_templates": "Per-stack config templates live in templates/. init.sh copies the matching ones."
 }

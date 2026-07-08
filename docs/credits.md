@@ -173,7 +173,7 @@ them for this framework.
 - What it does: Universal memory layer for AI agents. Semantic search,
   entity linking, temporal reasoning, multi-signal retrieval (semantic +
   BM25 + entity). Scores 91.6 on LoCoMo benchmark.
-- How Trellis relates: Trellis ships .agents/context/ (JSON files) as the
+- How Trellis relates: Trellis ships .trellis/agents/context/ (JSON files) as the
   zero-dependency default. Mem0 is the upgrade path for teams needing
   semantic memory search or shared dashboards. Mem0 requires an LLM key at
   runtime for extraction (OpenAI/Anthropic/Google; Ollama for local via the SDK).

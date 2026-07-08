@@ -14,7 +14,7 @@
  *
  * Also validates # trellis: full-impl markers include a reason.
  *
- * Usage: node scripts/check-ponytail.mjs
+ * Usage: node .trellis/scripts/check-ponytail.mjs
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
@@ -22,7 +22,7 @@ import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 
 // Only scan source directories (not node_modules, docs, etc.)
 const scanDirs = ['app', 'lib', 'components', 'types', 'supabase', 'scripts'];

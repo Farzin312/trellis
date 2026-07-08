@@ -20,7 +20,7 @@ This skill governs that growth. It works on all active platforms.
 
 IMPORTANT: When you create or edit a skill, it automatically syncs to
 ALL active agent platforms via generate-skills.mjs. You do NOT need to
-manually copy to each platform. Edit once in .agents/skills/, run the
+manually copy to each platform. Edit once in .trellis/agents/skills/, run the
 generator, done.
 
 ## Which Agents Are Active?
@@ -44,8 +44,8 @@ Codex, OpenCode, and Copilot directories are left empty.
 To change active agents:
 ```bash
 # Edit .trellis/config.json, then:
-node scripts/generate-skills.mjs         # re-mirror to new set
-node scripts/generate-skills.mjs --prune  # also remove stale mirrors
+node .trellis/scripts/generate-skills.mjs         # re-mirror to new set
+node .trellis/scripts/generate-skills.mjs --prune  # also remove stale mirrors
 ```
 
 Or via init.sh:
@@ -70,7 +70,7 @@ Do NOT create a skill for:
 
 ## How to Create a New Skill
 
-1. Create `.agents/skills/<name>/SKILL.md` following this format:
+1. Create `.trellis/agents/skills/<name>/SKILL.md` following this format:
    ```
    ---
    name: <name>
@@ -98,7 +98,7 @@ Do NOT create a skill for:
 2. Keep it under 2KB (500 tokens). Skills that exceed this should
    split into references/ subdirectories for progressive disclosure.
 
-3. Run: `node scripts/generate-skills.mjs` to mirror to all platforms.
+3. Run: `node .trellis/scripts/generate-skills.mjs` to mirror to all platforms.
 
 4. Add to the delegation matrix in the SDD skill and AGENTS.md.
 
@@ -126,7 +126,7 @@ Evolve a skill when:
    ## Evolution Log
    - 1.1.0: Added step X after discovering <edge case> during <task>
    ```
-6. Run: `node scripts/generate-skills.mjs` to re-mirror.
+6. Run: `node .trellis/scripts/generate-skills.mjs` to re-mirror.
 
 ## How to Remove a Skill (Careful)
 
@@ -138,7 +138,7 @@ Evolve a skill when:
 
 ## The Deterministic Check
 
-Run: `node scripts/evolve-skills.mjs`
+Run: `node .trellis/scripts/evolve-skills.mjs`
 
 This script checks:
 - All skills have valid frontmatter (name, description, version)

@@ -4,7 +4,7 @@
  *
  * CI gate: verifies all platform command mirrors match their source.
  *
- * Usage: node scripts/check-command-sync.mjs
+ * Usage: node .trellis/scripts/check-command-sync.mjs
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
@@ -12,7 +12,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const sourceDir = join(root, '.specify', 'templates', 'commands');
 
 const checks = [
@@ -44,7 +44,7 @@ for (const cmd of commands) {
     const mirror = readFileSync(mirrorFile, 'utf8');
     if (mirror.trim() !== source.trim()) {
       console.error(`FAIL: ${platform} mirror out of sync for ${phase}`);
-      console.error(`       Run: node scripts/generate-commands.mjs`);
+      console.error(`       Run: node .trellis/scripts/generate-commands.mjs`);
       failures++;
     }
   }

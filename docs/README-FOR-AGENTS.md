@@ -28,7 +28,7 @@ for the `active_agents` list. Skills only mirror to active platforms.
 
 ## Skill catalog
 
-All skills live in `.agents/skills/` and are mirrored to all 4 platforms.
+All skills live in `.trellis/agents/skills/` and are mirrored to all 4 platforms.
 Load them when the delegation matrix says to, or when trigger conditions match.
 
 | Skill | When to load | What it does |

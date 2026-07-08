@@ -101,7 +101,7 @@ code, passing through guardrails at every step.
 ┌─────────────────────────┬─────────────────────────┬────────────────────┐
 │   CODE INTELLIGENCE     │   BOUNDARY ENFORCEMENT  │   HANDOFF LOOPS    │
 │   (Graphify)            │   (Bounds)              │                    │
-│                         │                         │   .agents/handoffs/ │
+│                         │                         │   .trellis/agents/handoffs/ │
 │   graphify-out/         │   .bounds/              │   registry.yaml    │
 │   ├── graph.json        │   ├── root.yaml         │                    │
 │   ├── graph.html        │   ├── manifests/        │   10 specialists:  │
@@ -134,7 +134,7 @@ code, passing through guardrails at every step.
 │       │     stryker.config.json ──► break threshold: 50                │
 │       │                                                                 │
 │       ├─► Golden tests (per-spec locked suites)                        │
-│       │     tests/golden/<NNN>-<slug>.test.ts                          │
+│       │     .trellis/tests/golden/<NNN>-<slug>.test.ts                          │
 │       │                                                                 │
 │       └─► Arize Phoenix (self-hosted observability)                    │
 │             docker-compose.phoenix.yml ──► localhost:6006              │
@@ -160,7 +160,7 @@ code, passing through guardrails at every step.
 │       ├─► Redundancy: are two agents doing the same thing?             │
 │       │                                                                 │
 │       ▼                                                                 │
-│   .agents/evolution/YYYY-MM-DD-report.md                               │
+│   .trellis/agents/evolution/YYYY-MM-DD-report.md                               │
 │       │                                                                 │
 │       ▼                                                                 │
 │   SDD review (the framework reviews itself)                            │
@@ -234,7 +234,7 @@ adapt-to-project.mjs + evolution checks run
         ├── Analyzes handoff registry → redundancy?
         │
         ▼
-Produces .agents/evolution/report.md
+Produces .trellis/agents/evolution/report.md
         │
         ▼
 Human reviews → creates SDD spec for proposed changes
@@ -289,7 +289,7 @@ Trellis detects your migration tool and runs appropriate checks.
 
 When a tool is not detected, the script reports which directories it checked
 and suggests creating internal tooling or adding an adapter to
-`scripts/migration-adapters.json`.
+`.trellis/scripts/migration-adapters.json`.
 
 For tools where RLS is not directly checkable (Prisma, Rails, Django, Knex,
 TypeORM, Sequelize), the check is skipped with an explanatory note. This is
@@ -346,7 +346,7 @@ Trellis's role:
 | Test quality | Coverage % | Mutation testing (StrykerJS) |
 | Edge cases | Manual | Property testing (fast-check) |
 | Regressions | Hope | Golden test suites per spec |
-| Agent memory | Session-only | Portable context (.agents/context/) |
+| Agent memory | Session-only | Portable context (.trellis/agents/context/) |
 | Migrations | Single tool | 15-tool adapter detection |
 | Staleness | Manual | Self-evolving engine |
 | Stack | One hardcoded | Agnostic + adaptive |

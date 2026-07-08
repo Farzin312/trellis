@@ -3,12 +3,12 @@
  * golden-tests.mjs
  *
  * Manages per-spec locked golden test suites. When a spec ships (verify.md
- * flips to COMPLETE), this script freezes the spec's tests into tests/golden/.
+ * flips to COMPLETE), this script freezes the spec's tests into .trellis/tests/golden/.
  *
  * Usage:
- *   node scripts/golden-tests.mjs freeze <NNN>     — freeze a spec's tests
- *   node scripts/golden-tests.mjs list             — list frozen golden suites
- *   node scripts/golden-tests.mjs verify           — run all golden suites
+ *   node .trellis/scripts/golden-tests.mjs freeze <NNN>     — freeze a spec's tests
+ *   node .trellis/scripts/golden-tests.mjs list             — list frozen golden suites
+ *   node .trellis/scripts/golden-tests.mjs verify           — run all golden suites
  */
 
 import { readdirSync, existsSync, mkdirSync, copyFileSync, readFileSync } from 'fs';
@@ -17,9 +17,9 @@ import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const specsDir = join(root, '.specify', 'specs');
-const goldenDir = join(root, 'tests', 'golden');
+const goldenDir = join(root, '.trellis', 'tests', 'golden');
 const command = process.argv[2] || 'list';
 
 mkdirSync(goldenDir, { recursive: true });
@@ -95,13 +95,13 @@ switch (command) {
 
   case 'verify': {
     if (!existsSync(goldenDir)) {
-      console.log('SKIP: no tests/golden/ directory');
+      console.log('SKIP: no .trellis/tests/golden/ directory');
       process.exit(0);
     }
     const hasPackageJson = existsSync(join(root, 'package.json'));
     try {
       if (hasPackageJson) {
-        execSync('npx vitest run tests/golden', { cwd: root, stdio: 'inherit' });
+        execSync('npx vitest run .trellis/tests/golden', { cwd: root, stdio: 'inherit' });
       } else {
         console.log('SKIP: golden tests require vitest (JS/TS projects)');
       }

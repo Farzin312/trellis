@@ -3,10 +3,10 @@
  * services.mjs — Manage Trellis's optional Docker services.
  *
  * Usage:
- *   node scripts/services.mjs start [phoenix|all]        # Boot services
- *   node scripts/services.mjs stop  [phoenix|all]        # Stop services
- *   node scripts/services.mjs status                     # Check running services
- *   node scripts/services.mjs ports                      # Show port assignments
+ *   node .trellis/scripts/services.mjs start [phoenix|all]        # Boot services
+ *   node .trellis/scripts/services.mjs stop  [phoenix|all]        # Stop services
+ *   node .trellis/scripts/services.mjs status                     # Check running services
+ *   node .trellis/scripts/services.mjs ports                      # Show port assignments
  *
  * Services are optional Tier 3 features. Most projects don't need them.
  * This script gracefully skips if Docker is not installed or not running.
@@ -18,14 +18,14 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 
 // Mem0 is NOT managed here: it self-hosts from its own multi-service stack
 // (pip install mem0ai for in-process, or mem0's official `cd server && make
 // bootstrap`). See docs/self-hosted-services.md.
 const SERVICES = {
   phoenix: {
-    compose: 'docker-compose.phoenix.yml',
+    compose: '.trellis/services/docker-compose.phoenix.yml',
     name: 'Arize Phoenix (Agent Observability)',
     port: 6006,
     url: 'http://localhost:6006',
@@ -159,8 +159,8 @@ switch (action) {
   default:
     console.log('Service status:\n');
     for (const k of keys) statusService(k);
-    console.log('\n  Ports: run "node scripts/services.mjs ports"');
-    console.log('  Start: run "node scripts/services.mjs start all"');
-    console.log('  Stop:  run "node scripts/services.mjs stop all"');
+    console.log('\n  Ports: run "node .trellis/scripts/services.mjs ports"');
+    console.log('  Start: run "node .trellis/scripts/services.mjs start all"');
+    console.log('  Stop:  run "node .trellis/scripts/services.mjs stop all"');
     break;
 }

@@ -34,7 +34,7 @@ when steps were skipped.
 - `cli.mjs` had no `evolve` case though the README documented `trellis evolve`.
 - `trellis spec` printed a misleading line implying it started something.
 - README structure block was stale: `pyproject.toml`, "11 scripts" (18), "10
-  specialists" (7 SDD-phase entries), and a broken tree row for `tests/golden/`.
+  specialists" (7 SDD-phase entries), and a broken tree row for `.trellis/tests/golden/`.
 - `graphifyy` / `bounds` / Docker images were unpinned; `npm install --silent
   2>/dev/null` hid the real failure reason; no version preflight; the final banner
   always said "DONE — ready".

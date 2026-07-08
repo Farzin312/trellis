@@ -9,7 +9,7 @@
 #   implicit      — PreToolUse hook detects a condition (e.g., migration created)
 #   phase-boundary — SDD phase transition triggers a mandatory handoff
 #
-# Loop guards (enforced by scripts/handoff-engine.mjs):
+# Loop guards (enforced by .trellis/scripts/handoff-engine.mjs):
 #   max_depth: 5       — no more than 5 nested handoffs in a single chain
 #   max_iterations: 20  — no more than 20 total handoffs across all chains
 #   deadlock_detection: true — if two agents hand off to each other 3x, break

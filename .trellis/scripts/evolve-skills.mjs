@@ -13,8 +13,8 @@
  *   6. Skills are under the 3KB token-efficiency target
  *
  * Usage:
- *   node scripts/evolve-skills.mjs           # check mode (CI gate)
- *   node scripts/evolve-skills.mjs --report  # verbose report
+ *   node .trellis/scripts/evolve-skills.mjs           # check mode (CI gate)
+ *   node .trellis/scripts/evolve-skills.mjs --report  # verbose report
  */
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
@@ -24,9 +24,9 @@ import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 
-const sourceDir = join(root, '.agents', 'skills');
+const sourceDir = join(root, '.trellis', 'agents', 'skills');
 const platforms = [
   { name: 'Claude Code', dir: join(root, '.claude', 'skills') },
   { name: 'Codex', dir: join(root, '.codex', 'agents') },
@@ -103,7 +103,7 @@ function getSkillNames(content) {
 console.log('── Skill Health Check ──\n');
 
 if (!existsSync(sourceDir)) {
-  console.log('SKIP: no .agents/skills/ directory');
+  console.log('SKIP: no .trellis/agents/skills/ directory');
   process.exit(0);
 }
 
@@ -112,7 +112,7 @@ const skills = readdirSync(sourceDir, { withFileTypes: true })
   .map(d => d.name);
 
 if (skills.length === 0) {
-  console.log('SKIP: no skills found in .agents/skills/');
+  console.log('SKIP: no skills found in .trellis/agents/skills/');
   process.exit(0);
 }
 
@@ -199,7 +199,7 @@ for (const skillName of skills) {
     if (!platformDirs[agent]) continue;
     const targetPath = platformDirs[agent](skillName);
     if (!existsSync(targetPath)) {
-      warnings.push(`${skillName} - not mirrored to ${agent}. Run: node scripts/generate-skills.mjs`);
+      warnings.push(`${skillName} - not mirrored to ${agent}. Run: node .trellis/scripts/generate-skills.mjs`);
     }
   }
 }
@@ -219,7 +219,7 @@ for (const agent of inactiveAgents) {
       skills.some(s => f.includes(s))
     );
     if (skillItems.length > 0) {
-      warnings.push(`${agent} is inactive but has ${skillItems.length} stale skill mirrors. Run: node scripts/generate-skills.mjs --prune`);
+      warnings.push(`${agent} is inactive but has ${skillItems.length} stale skill mirrors. Run: node .trellis/scripts/generate-skills.mjs --prune`);
     }
   }
 }
@@ -238,7 +238,7 @@ let refErrors = 0;
 
 for (const [skillName, data] of Object.entries(skillData)) {
   // Check if referenced files exist
-  const fileRefs = data.content.matchAll(/(?:scripts|docs|\.specify|\.agents)\/[^\s)`'"]+?(?=[\s)`'".]|$)/g);
+  const fileRefs = data.content.matchAll(/(?:scripts|docs|\.specify|\.trellis)\/[^\s)`'"]+?(?=[\s)`'".]|$)/g);
   for (const m of fileRefs) {
     const refPath = m[0].replace(/[`'"]/g, '');
     const fullPath = join(root, refPath);
@@ -258,27 +258,45 @@ if (refErrors === 0) {
   console.log(`WARN: ${refErrors} dangling references found\n`);
 }
 
-// 4. Check for redundancy (trigger keyword overlap)
+// 4. Check for redundancy (description keywords + command/action overlap)
 console.log('── Redundancy Check ──');
 let redundancyWarnings = 0;
 const skillKeywords = {};
+const skillCommands = {};
 
 for (const [skillName, data] of Object.entries(skillData)) {
   if (!data.fm?.description) continue;
   const desc = data.fm.description.toLowerCase();
   const keywords = desc.match(/\b\w{4,}\b/g) || [];
   skillKeywords[skillName] = new Set(keywords);
+
+  // Extract command/action patterns (npm run X, node .trellis/scripts/X)
+  const cmdMatches = data.content.matchAll(/(?:npm run |npx |node \S+scripts\/)(\S+)/g);
+  skillCommands[skillName] = new Set();
+  for (const m of cmdMatches) {
+    skillCommands[skillName].add(m[1]);
+  }
 }
 
 const skillNames = Object.keys(skillKeywords);
 for (let i = 0; i < skillNames.length; i++) {
   for (let j = i + 1; j < skillNames.length; j++) {
+    // Keyword overlap
     const a = skillKeywords[skillNames[i]];
     const b = skillKeywords[skillNames[j]];
     const intersection = [...a].filter(x => b.has(x));
     const smaller = Math.min(a.size, b.size);
     if (smaller > 0 && intersection.length / smaller > 0.5) {
       warnings.push(`Redundancy: '${skillNames[i]}' and '${skillNames[j]}' share ${intersection.length} keywords (${Math.round(intersection.length/smaller*100)}% overlap)`);
+      redundancyWarnings++;
+    }
+
+    // Command/action overlap (more precise - catches functional duplication)
+    const cmdsA = skillCommands[skillNames[i]] || new Set();
+    const cmdsB = skillCommands[skillNames[j]] || new Set();
+    const sharedCmds = [...cmdsA].filter(x => cmdsB.has(x));
+    if (sharedCmds.length >= 2) {
+      warnings.push(`Redundancy: '${skillNames[i]}' and '${skillNames[j]}' share ${sharedCmds.length} commands (${sharedCmds.join(', ')}) — possible functional overlap`);
       redundancyWarnings++;
     }
   }

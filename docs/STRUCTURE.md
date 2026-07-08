@@ -25,7 +25,7 @@ Every fix gets a frontmatter-categorized entry in `docs/bug-fixes/`. Auto-pulled
 
 ## Rule 5 — Parent -> children breadcrumbs
 
-Every doc opens with `> Parent:` and optional `> Children:`. All links relative. CI-enforced by `scripts/check-doc-breadcrumbs.mjs`.
+Every doc opens with `> Parent:` and optional `> Children:`. All links relative. CI-enforced by `.trellis/scripts/check-doc-breadcrumbs.mjs`.
 
 ## Rule 6 — Auto-sync (docs:sync)
 

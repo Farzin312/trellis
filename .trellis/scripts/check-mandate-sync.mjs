@@ -6,8 +6,8 @@
  * (after stripping the auto-generated header from CLAUDE.md).
  *
  * Usage:
- *   node scripts/check-mandate-sync.mjs           # check mode (CI)
- *   node scripts/check-mandate-sync.mjs --fix     # fix mode: copy AGENTS.md -> CLAUDE.md
+ *   node .trellis/scripts/check-mandate-sync.mjs           # check mode (CI)
+ *   node .trellis/scripts/check-mandate-sync.mjs --fix     # fix mode: copy AGENTS.md -> CLAUDE.md
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
@@ -15,7 +15,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const agentsFile = join(root, 'AGENTS.md');
 const claudeFile = join(root, 'CLAUDE.md');
 

@@ -12,7 +12,7 @@ checked against this principle.
 ## Before You Contribute
 
 1. Read [DESIGN.md](./DESIGN.md) — the 5 design principles.
-2. Run `node scripts/check-agnostic.mjs` — your changes must pass this.
+2. Run `node .trellis/.trellis/scripts/check-agnostic.mjs` — your changes must pass this.
 
 ## What You Can Contribute
 
@@ -40,7 +40,7 @@ Trellis uses its own SDD pipeline for framework changes:
 1. Fork and clone
 2. Create a spec: `/specify <your change>`
 3. Follow the SDD flow through verify
-4. `node scripts/check-agnostic.mjs` must pass
+4. `node .trellis/.trellis/scripts/check-agnostic.mjs` must pass
 5. `npm run docs:check` must pass
 6. Open a PR
 

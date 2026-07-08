@@ -27,7 +27,7 @@ import { join, dirname, resolve, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const templateRoot = __dirname;
+const templateRoot = join(__dirname, '..');
 
 // AI mode: explicit flag or env var. Strip --ai before parsing the command.
 const AI = process.argv.includes('--ai') || process.env.TRELLIS_AI === '1';
@@ -87,9 +87,9 @@ init                        set up THIS repo. TTY=interactive wizard; non-TTY=de
 graph [path] [--update]     build/refresh graphify-out/graph.json. --update=incremental,no-LLM.
                             doc/paper extraction needs one of ANTHROPIC_API_KEY|OPENAI_API_KEY|GEMINI_API_KEY; code-only needs none.
                             after build, query: graphify query "<q>" | graphify explain "<node>" | graphify path "A" "B"
-eval                        run scripts/run-evals.mjs.
+eval                        run .trellis/scripts/run-evals.mjs.
 check                       npm lint + docs:check + evals. run before every commit.
-handoffs list|validate      ops on .agents/handoffs/registry.yaml.
+handoffs list|validate      ops on .trellis/agents/handoffs/registry.yaml.
 evolve [--all] [--stack=x]  re-adapt constitution+AGENTS.md to stack; --all also runs skill-health.
 spec                        NOT runnable here. run /specify inside the AI assistant.
 `;
@@ -101,10 +101,10 @@ function help() {
 switch (cmd) {
   case 'init':
     if (process.stdin.isTTY) {
-      run('node scripts/wizard.mjs');
+      run('node .trellis/.trellis/scripts/wizard.mjs');
     } else {
       announce('Setting up this repo (non-interactive defaults)');
-      run('bash init.sh "Trellis Project"');
+      run('bash .trellis/init.sh "Trellis Project"');
     }
     break;
 
@@ -143,7 +143,7 @@ switch (cmd) {
     // Run init.sh in the new project. Tier drives which optional tools install.
     const flags = [`--tier=${tierFlag}`];
     if (tierFlag === '2' || tierFlag === '3') flags.push('--with-graphify', '--with-bounds');
-    execSync(`bash init.sh "${projectName}" ${flags.join(' ')}`, {
+    execSync(`bash .trellis/init.sh "${projectName}" ${flags.join(' ')}`, {
       cwd: target,
       stdio: 'inherit',
       env: { ...process.env, ...(AI ? { TRELLIS_AI: '1' } : {}) },
@@ -170,10 +170,10 @@ switch (cmd) {
     const all = rest.includes('--all');
     const evolveArgs = rest.filter((a) => a !== '--all');
     announce('Re-adapting to the project stack');
-    run(`node scripts/adapt-to-project.mjs ${evolveArgs.join(' ')}`.trim());
+    run(`node .trellis/scripts/adapt-to-project.mjs ${evolveArgs.join(' ')}`.trim());
     if (all) {
       announce('Running skill-health checks');
-      run('node scripts/evolve-skills.mjs');
+      run('node .trellis/scripts/evolve-skills.mjs');
     }
     break;
   }
@@ -199,22 +199,22 @@ switch (cmd) {
 
   case 'eval':
     announce('Running eval suite');
-    run('node scripts/run-evals.mjs');
+    run('node .trellis/scripts/run-evals.mjs');
     break;
 
   case 'check':
     announce('Running all CI checks (lint + docs + evals)');
     run('npm run lint');
     run('npm run docs:check');
-    run('node scripts/run-evals.mjs');
+    run('node .trellis/scripts/run-evals.mjs');
     ok('All checks passed');
     break;
 
   case 'handoffs':
     if (sub === 'list' || !sub) {
-      run('node scripts/handoff-engine.mjs list');
+      run('node .trellis/scripts/handoff-engine.mjs list');
     } else if (sub === 'validate') {
-      run('node scripts/handoff-engine.mjs validate');
+      run('node .trellis/scripts/handoff-engine.mjs validate');
     } else {
       console.error(AI ? 'USAGE: trellis handoffs list|validate' : 'Usage: trellis handoffs [list|validate]');
       process.exit(1);

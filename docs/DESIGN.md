@@ -25,9 +25,9 @@ eval system, and boundary enforcement are all independent of the target stack.
 ### How this is enforced
 
 Every framework file (scripts, templates, docs, configs) is checked by
-`scripts/check-agnostic.mjs`. This script scans for stack-specific identifiers
+`.trellis/scripts/check-agnostic.mjs`. This script scans for stack-specific identifiers
 and flags any that appear in framework-core files. The allowlist lives at
-`scripts/agnostic-allowlist.json` — files listed there are explicitly permitted
+`.trellis/scripts/agnostic-allowlist.json` — files listed there are explicitly permitted
 to reference specific stacks (e.g., the `.env.example` template, which shows
 Supabase as an EXAMPLE).
 
@@ -36,8 +36,8 @@ Files that MUST stay agnostic:
 - `docs/STRUCTURE.md`, `docs/coding-standards.md`, `docs/sdd/sdd.md`
 - `docs/README-FOR-AGENTS.md`, `docs/README.md`
 - `.specify/memory/constitution.md`
-- All scripts under `scripts/` (except stack-specific helpers)
-- `.agents/handoffs/registry.yaml`
+- All scripts under `.trellis/scripts/` (except stack-specific helpers)
+- `.trellis/agents/handoffs/registry.yaml`
 - `README.md`, this file
 
 Files that MAY reference specific stacks:
@@ -56,7 +56,7 @@ what it does, what stack it uses, what constraints matter. The constitution,
 coding standards, and mandate file are then ADAPTED — not rewritten from
 scratch.
 
-The adaptation is done by `scripts/adapt-to-project.mjs` (runs during init).
+The adaptation is done by `.trellis/scripts/adapt-to-project.mjs` (runs during init).
 It:
 1. Detects the stack from package.json, requirements.txt, go.mod, Cargo.toml.
 2. Updates constitution Principle I (Server Components First) to match the
@@ -95,7 +95,7 @@ proposed change goes through SDD review (the framework reviews itself).
 ## Principle 4 — The Review Catches Opinionation
 
 Every PR to the Trellis framework itself (not user projects) must pass:
-1. `scripts/check-agnostic.mjs` — flags stack-specific coupling in framework files.
+1. `.trellis/scripts/check-agnostic.mjs` — flags stack-specific coupling in framework files.
 2. `npm run docs:check` — flags broken or missing cross-references.
 3. The review command's agnostic checklist (see `.specify/templates/commands/review.md`).
 

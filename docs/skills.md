@@ -18,7 +18,7 @@ others.
 Every skill is a directory with a SKILL.md file:
 
 ```
-.agents/skills/
+.trellis/agents/skills/
 └── my-skill/
     ├── SKILL.md              ← required: frontmatter + instructions
     ├── references/           ← optional: deep docs loaded on demand
@@ -84,11 +84,11 @@ cost for the ones they use.
 
 ## Where Skills Live (Cross-Tool)
 
-Trellis uses `.agents/skills/` as the single source of truth. Each platform
+Trellis uses `.trellis/agents/skills/` as the single source of truth. Each platform
 discovers skills from its own directory, so init.sh creates symlinks or copies.
 
 ```
-.agents/skills/my-skill/SKILL.md      ← SOURCE (edit this)
+.trellis/agents/skills/my-skill/SKILL.md      ← SOURCE (edit this)
 .claude/skills/my-skill/              ← symlink for Claude Code
 .codex/agents/my-skill/               ← copy for Codex (no symlink support)
 .opencode/command/my-skill.md         ← copy for OpenCode
@@ -103,7 +103,7 @@ discovers skills from its own directory, so init.sh creates symlinks or copies.
 | Codex CLI | `.codex/agents/<name>/` or via `skills` config | SKILL.md | No (copy) |
 | OpenCode | `.opencode/command/<name>.md` | Flat markdown | No (copy) |
 | GitHub Copilot | `.github/agents/<name>.agent.md` | Agent markdown | No (copy) |
-| Any `.agents/` reader | `.agents/skills/<name>/SKILL.md` | SKILL.md | Direct |
+| Any `.agents/` reader | `.trellis/agents/skills/<name>/SKILL.md` | SKILL.md | Direct |
 
 ### The generate-commands.mjs Pattern
 
@@ -111,8 +111,8 @@ Trellis already generates slash command mirrors from `.specify/templates/command
 The same pattern extends to skills:
 
 ```bash
-# After creating a skill in .agents/skills/<name>/SKILL.md:
-node scripts/generate-skills.mjs
+# After creating a skill in .trellis/agents/skills/<name>/SKILL.md:
+node .trellis/.trellis/scripts/generate-skills.mjs
 
 # This symlinks/copies to all platform directories.
 # CI gate: check-skill-sync.mjs verifies all platforms match source.
@@ -125,10 +125,10 @@ node scripts/generate-skills.mjs
 ### 1. Create the source
 
 ```bash
-mkdir -p .agents/skills/my-skill
+mkdir -p .trellis/agents/skills/my-skill
 ```
 
-Write `.agents/skills/my-skill/SKILL.md`:
+Write `.trellis/agents/skills/my-skill/SKILL.md`:
 
 ```markdown
 ---
@@ -168,32 +168,32 @@ Load when:
 ### 2. Add references (optional)
 
 ```bash
-mkdir -p .agents/skills/my-skill/references
+mkdir -p .trellis/agents/skills/my-skill/references
 ```
 
-Write `.agents/skills/my-skill/references/examples.md` with detailed examples.
+Write `.trellis/agents/skills/my-skill/references/examples.md` with detailed examples.
 The agent loads this ONLY when it needs them.
 
 ### 3. Add a script (optional)
 
 ```bash
-mkdir -p .agents/skills/my-skill/scripts
+mkdir -p .trellis/agents/skills/my-skill/scripts
 ```
 
-Write `.agents/skills/my-skill/scripts/check.sh`. The agent executes this
+Write `.trellis/agents/skills/my-skill/scripts/check.sh`. The agent executes this
 when it needs automated verification.
 
 ### 4. Mirror to all platforms
 
 ```bash
-node scripts/generate-skills.mjs
+node .trellis/.trellis/scripts/generate-skills.mjs
 ```
 
 Or manually:
-- Claude Code: `ln -s ../../.agents/skills/my-skill .claude/skills/my-skill`
-- Codex: `cp -r .agents/skills/my-skill .codex/agents/my-skill`
-- OpenCode: `cp .agents/skills/my-skill/SKILL.md .opencode/command/my-skill.md`
-- Copilot: `cp .agents/skills/my-skill/SKILL.md .github/agents/my-skill.agent.md`
+- Claude Code: `ln -s ../../.trellis/agents/skills/my-skill .claude/skills/my-skill`
+- Codex: `cp -r .trellis/agents/skills/my-skill .codex/agents/my-skill`
+- OpenCode: `cp .trellis/agents/skills/my-skill/SKILL.md .opencode/command/my-skill.md`
+- Copilot: `cp .trellis/agents/skills/my-skill/SKILL.md .github/agents/my-skill.agent.md`
 
 ### 5. Register in AGENTS.md
 
@@ -220,7 +220,7 @@ the user explicitly triggers. Use the mandate for rules that always apply.
 
 ## Skills That Ship With Trellis (Built-In)
 
-Trellis defines these skills in `.agents/skills/` (created on first use or
+Trellis defines these skills in `.trellis/agents/skills/` (created on first use or
 by init.sh):
 
 | Skill | When | What |
@@ -233,7 +233,7 @@ by init.sh):
 | `quality-gates` | Pre-merge | Lint, build, test, mutation verification |
 | `ponytail-review` | Review phase | Over-engineering flags (advisory) |
 
-These are registered in the handoff registry (`.agents/handoffs/registry.yaml`)
+These are registered in the handoff registry (`.trellis/agents/handoffs/registry.yaml`)
 so the handoff engine can delegate to them automatically.
 
 ---
@@ -243,7 +243,7 @@ so the handoff engine can delegate to them automatically.
 Skills can be validated against the format spec:
 
 ```bash
-npx skills-ref validate .agents/skills/my-skill
+npx skills-ref validate .trellis/agents/skills/my-skill
 ```
 
 This checks:

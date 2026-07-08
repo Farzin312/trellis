@@ -3,9 +3,9 @@
  * check-skill-sync.mjs
  *
  * CI gate: verifies all platform skill mirrors match the source in
- * .agents/skills/.
+ * .trellis/agents/skills/.
  *
- * Usage: node scripts/check-skill-sync.mjs
+ * Usage: node .trellis/scripts/check-skill-sync.mjs
  */
 
 import { readdirSync, readFileSync, existsSync } from 'fs';
@@ -13,11 +13,11 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
-const sourceDir = join(root, '.agents', 'skills');
+const root = join(__dirname, '..', '..');
+const sourceDir = join(root, '.trellis', 'agents', 'skills');
 
 if (!existsSync(sourceDir)) {
-  console.log('SKIP: no .agents/skills/ directory');
+  console.log('SKIP: no .trellis/agents/skills/ directory');
   process.exit(0);
 }
 
@@ -50,7 +50,7 @@ for (const skillName of skills) {
     const mirror = readFileSync(mirrorPath, 'utf8');
     if (mirror.trim() !== source.trim()) {
       console.error(`FAIL: ${platform} mirror out of sync for skill "${skillName}"`);
-      console.error(`       Run: node scripts/generate-skills.mjs`);
+      console.error(`       Run: node .trellis/scripts/generate-skills.mjs`);
       failures++;
     }
   }

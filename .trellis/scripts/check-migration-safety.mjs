@@ -11,12 +11,12 @@
  *   2. RLS enabled on new tables (SQL-based tools only)
  *   3. FK delete rules (warns on CASCADE without justification)
  *
- * Supported: 15 tools. See scripts/migration-adapters.json for the full list
+ * Supported: 15 tools. See .trellis/scripts/migration-adapters.json for the full list
  * and detection rules. Run --list-adapters to see all.
  *
  * Usage:
- *   node scripts/check-migration-safety.mjs
- *   node scripts/check-migration-safety.mjs --list-adapters
+ *   node .trellis/scripts/check-migration-safety.mjs
+ *   node .trellis/scripts/check-migration-safety.mjs --list-adapters
  */
 
 import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
@@ -24,7 +24,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const adaptersFile = join(__dirname, 'migration-adapters.json');
 const args = process.argv.slice(2);
 
@@ -114,7 +114,7 @@ if (detectedTools.length === 0) {
   console.log('SKIP: no migration tool detected');
   console.log('      Checked for: ' + Object.values(adapters).map(a => a.detect.dirs?.[0]).filter(Boolean).join(', '));
   console.log(`\n      ${defaults.message}`);
-  console.log('      Run: node scripts/check-migration-safety.mjs --list-adapters');
+  console.log('      Run: node .trellis/scripts/check-migration-safety.mjs --list-adapters');
   process.exit(0);
 }
 

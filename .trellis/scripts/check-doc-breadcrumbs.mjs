@@ -5,7 +5,7 @@
  * CI gate: verifies every doc has a parent breadcrumb and all doc links resolve.
  * Wrapper around docs-sync.mjs --check.
  *
- * Usage: node scripts/check-doc-breadcrumbs.mjs
+ * Usage: node .trellis/scripts/check-doc-breadcrumbs.mjs
  */
 
 import { execFileSync } from 'child_process';

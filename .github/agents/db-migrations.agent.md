@@ -42,7 +42,7 @@ tool automatically.
    - Liquibase: `db/changelog/*.xml`
 4. Apply database conventions (see below).
 5. Add indexes, constraints, and triggers alongside table changes.
-6. Run: `node scripts/check-migration-safety.mjs` to verify.
+6. Run: `node .trellis/scripts/check-migration-safety.mjs` to verify.
 7. Update documentation in the same change-set.
 
 ## Database Conventions (universal)

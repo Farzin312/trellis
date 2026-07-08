@@ -29,7 +29,7 @@ This repo owns: [describe what this project is — fill in after init].
 2. **Code is source of truth** — when docs and code disagree, update the docs. Exception: if the code itself is contradicting (types lying about runtime, dead branches, mutually exclusive constraints), stop and surface the code concern.
 3. **Doc references are part of every code change** — renaming, moving, or deleting a symbol means updating every doc reference in the same commit. `npm run docs:sync` is the safety net, not the primary mechanism.
 4. **Bug fixes are categorized** — every fix gets a `docs/bug-fixes/YYYY-MM-DD-<slug>.md` entry with frontmatter (`area`, `category`, `severity`). Auto-indexed.
-5. **No unrequested abstractions** (Ponytail) — start with the lazy solution, scaled to the project's tier. Mark deliberate simplifications with `# ponytail: <ceiling>, upgrade: <path>`. Mark deliberate expansions with `# trellis: full-impl, <reason>`. Ponytail is advisory, not a build gate. See `.agents/skills/ponytail-review/SKILL.md` for scale-aware assessment.
+5. **No unrequested abstractions** (Ponytail) — start with the lazy solution, scaled to the project's tier. Mark deliberate simplifications with `# ponytail: <ceiling>, upgrade: <path>`. Mark deliberate expansions with `# trellis: full-impl, <reason>`. Ponytail is advisory, not a build gate. See `.trellis/agents/skills/ponytail-review/SKILL.md` for scale-aware assessment.
 
 ## Delegation matrix (how work routes to specialists)
 
@@ -70,7 +70,7 @@ If Bounds is installed, agents consult boundaries before changing shared code. `
 
 ## Agent handoff loops (Tier 3)
 
-If handoffs are configured (`.agents/handoffs/registry.yaml`), agents delegate to specialists mid-task. Handoffs are tools: call `handoff("<specialist>", context)` to transfer control. Three trigger types: explicit (agent calls), implicit (hook detects condition), phase-boundary (SDD transition).
+If handoffs are configured (`.trellis/agents/handoffs/registry.yaml`), agents delegate to specialists mid-task. Handoffs are tools: call `handoff("<specialist>", context)` to transfer control. Three trigger types: explicit (agent calls), implicit (hook detects condition), phase-boundary (SDD transition).
 
 ## Ponytail (lazy senior dev mode)
 

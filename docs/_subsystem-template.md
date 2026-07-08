@@ -48,7 +48,7 @@ Loading/empty/error states, mobile, dark mode, a11y.
 Chronological evolution.
 
 ## 13. Past bugs (auto)
-Injected by `scripts/generate-bug-index.mjs`.
+Injected by `.trellis/scripts/generate-bug-index.mjs`.
 
 ## 14. See also
 Explicit doc-graph edges.

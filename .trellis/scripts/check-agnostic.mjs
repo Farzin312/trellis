@@ -20,8 +20,8 @@
  *      (followed by "MUST", "is", "uses", "default", "truth")
  *
  * Usage:
- *   node scripts/check-agnostic.mjs           # check mode (CI gate)
- *   node scripts/check-agnostic.mjs --report  # verbose report
+ *   node .trellis/scripts/check-agnostic.mjs           # check mode (CI gate)
+ *   node .trellis/scripts/check-agnostic.mjs --report  # verbose report
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -29,7 +29,7 @@ import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 
 // Stack-specific identifiers
 const STACK_IDENTIFIERS = [
@@ -88,8 +88,8 @@ const ALLOWLIST_PATHS = [
   'docs/evolution.md',
   'docs/README.md',
   'docs/frontend/README.md',
-  '.agents/handoffs/registry.yaml',
-  '.agents/context/README.md',
+  '.trellis/agents/handoffs/registry.yaml',
+  '.trellis/agents/context/README.md',
 ];
 
 const args = process.argv.slice(2);

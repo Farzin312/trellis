@@ -6,7 +6,7 @@
  * If graphify-out/graph.json exists, checks that its gitCommitHash
  * matches HEAD or is within N commits.
  *
- * Usage: node scripts/check-graph-freshness.mjs
+ * Usage: node .trellis/scripts/check-graph-freshness.mjs
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -15,7 +15,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const graphFile = join(root, 'graphify-out', 'graph.json');
 
 if (!existsSync(graphFile)) {

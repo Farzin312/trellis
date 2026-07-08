@@ -12,7 +12,7 @@
  * The source files are the single source of truth. This script ensures
  * all 4 platforms receive identical command content.
  *
- * Usage: node scripts/generate-commands.mjs
+ * Usage: node .trellis/scripts/generate-commands.mjs
  */
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 'fs';
@@ -20,7 +20,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..');
+const root = join(__dirname, '..', '..');
 const sourceDir = join(root, '.specify', 'templates', 'commands');
 
 const targets = {

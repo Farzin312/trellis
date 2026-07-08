@@ -12,7 +12,7 @@ subsystem: self-hosted
 category: env-config
 files:
   - docker-compose.mem0.yml
-  - scripts/services.mjs
+  - .trellis/scripts/services.mjs
   - docs/self-hosted-services.md
   - docs/credits.md
   - .env.example
@@ -48,7 +48,7 @@ possible without vendoring mem0's evolving source.
 
 Stopped shipping a bespoke compose and pointed at reality (verified against the
 live registries and mem0's repo):
-- Deleted `docker-compose.mem0.yml`; removed mem0 from `scripts/services.mjs`
+- Deleted `docker-compose.mem0.yml`; removed mem0 from `.trellis/scripts/services.mjs`
   (Phoenix stays the only vendored service).
 - Rewrote `docs/self-hosted-services.md`: lead with the in-process SDK
   (`pip install mem0ai`, verified on PyPI), and for the server point to mem0's

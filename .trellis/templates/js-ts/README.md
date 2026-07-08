@@ -12,7 +12,7 @@ Copied to project root when init.sh detects Node.js (package.json present).
 init.sh also adds these to package.json scripts (if not present):
 - `"test": "vitest run"`
 - `"test:mutation": "stryker run"`
-- `"eval": "node scripts/run-evals.mjs"`
+- `"eval": "node .trellis/scripts/run-evals.mjs"`
 
 ## Alternatives if Not Using Vitest
 

@@ -146,13 +146,13 @@ a golden test suite. Any future change that breaks a golden test fails CI.
 **When it runs:**
 - CI: `.github/workflows/evals.yml`
 - SDD: when a spec's `verify.md` is marked COMPLETE, its tests are frozen
-- Local: `npx vitest run tests/golden` (created by the adopting project)
+- Local: `npx vitest run .trellis/tests/golden` (created by the adopting project)
 
 **How it works:**
 
 ```
 Spec 003 ships → verify.md has 5 test cases → frozen into:
-tests/golden/003-latest-arrivals-sorting.test.ts
+.trellis/tests/golden/003-latest-arrivals-sorting.test.ts
 
 Three months later, someone refactors the sorting module.
 The golden test catches the regression before it ships.
@@ -161,12 +161,18 @@ The golden test catches the regression before it ships.
 **Adding a golden test:**
 
 1. When a spec's verify.md flips to COMPLETE, copy its test files into a golden suite
-2. Naming: `tests/golden/<NNN>-<slug>.test.ts` (the project creates this directory)
+2. Naming: `.trellis/tests/golden/<NNN>-<slug>.test.ts` (the project creates this directory)
 3. Future changes must keep these tests passing
 
 ---
 
-## Level 3 — Agent Quality
+## Level 3 — Agent Quality (Tier 3, aspirational)
+
+> **Status:** Phoenix ships as a Docker service, but Trellis does not yet
+> auto-instrument agents to emit spans to it. The compose file exists for teams
+> who want to wire it themselves. The planned lightweight local ledger
+> (WORKPLAN section 7) will provide a zero-Docker alternative. Until then,
+> this level is opt-in manual setup.
 
 ### Arize Phoenix (Self-Hosted Observability)
 
@@ -181,7 +187,7 @@ but fewer free features). See [DESIGN.md](./DESIGN.md) and [docs/credits.md](cre
 
 **When it runs:**
 - Always-on in the background once instrumented
-- Dashboard: `http://localhost:6006` after `docker compose -f docker-compose.phoenix.yml up -d`
+- Dashboard: `http://localhost:6006` after `npm run services:start`
 
 **What it tells you:**
 - Which agent tasks take longest (bottleneck detection)
@@ -193,7 +199,7 @@ but fewer free features). See [DESIGN.md](./DESIGN.md) and [docs/credits.md](cre
 
 ```bash
 # Start Phoenix
-docker compose -f docker-compose.phoenix.yml up -d
+npm run services:start
 
 # Instrument your code (example for a Node.js agent)
 # See: https://docs.arize.com/phoenix
@@ -216,7 +222,7 @@ shouldn't.
 "Supabase" into AGENTS.md, it fails the agnostic check. Stack-specific
 configuration belongs in the adapted constitution, not the framework core.
 
-**The allowlist:** `scripts/agnostic-allowlist.json` lists files explicitly
+**The allowlist:** `.trellis/scripts/agnostic-allowlist.json` lists files explicitly
 permitted to reference specific stacks (e.g., `.env.example` which shows
 Supabase as an example).
 
@@ -280,12 +286,12 @@ Validates `# ponytail:` and `# trellis:` markers have the required format
 ```bash
 # Run ALL evals
 trellis eval
-# or: node scripts/run-evals.mjs
+# or: node .trellis/scripts/run-evals.mjs
 
 # Run specific evals
 npm run test:mutation           # StrykerJS only
 npm test                        # Unit + property tests (fast-check)
-npx vitest run tests/golden     # Golden tests only
+npx vitest run .trellis/tests/golden     # Golden tests only
 npm run check                   # All framework health checks
 
 # Run the full eval suite (evals + framework checks)
