@@ -13,26 +13,48 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, appendFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..', '..');
+const metricsDir = join(root, '.trellis', 'metrics');
 
 let failures = 0;
 
+function logMetric(name, durationMs, result) {
+  mkdirSync(metricsDir, { recursive: true });
+  const record = JSON.stringify({
+    ts: new Date().toISOString(),
+    agent: 'eval',
+    model: 'n/a',
+    phase: name,
+    tokens_in: 0,
+    tokens_out: 0,
+    est_cost_usd: 0,
+    tool_calls: 0,
+    duration_ms: durationMs,
+    result: result,
+  });
+  appendFileSync(join(metricsDir, 'runs.jsonl'), record + '\n');
+}
+
 function runStep(name, command, required = true) {
   console.log(`\n── ${name} ──`);
+  const start = Date.now();
   try {
     execSync(command, { cwd: root, stdio: 'inherit' });
     console.log(`PASS: ${name}`);
+    logMetric(name, Date.now() - start, 'pass');
   } catch (e) {
     if (required) {
       console.error(`FAIL: ${name}`);
       failures++;
+      logMetric(name, Date.now() - start, 'fail');
     } else {
       console.warn(`WARN: ${name} (non-blocking)`);
+      logMetric(name, Date.now() - start, 'warn');
     }
   }
 }

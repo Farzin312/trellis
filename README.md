@@ -3,8 +3,8 @@
 ```
         ╔══════════════════════════════════════════════╗
         ║                                              ║
-        ║   a framework that supports AI-assisted      ║
-        ║   projects as they scale                     ║
+        ║   ship faster with LLMs                      ║
+        ║   without the drift and cost blowup          ║
         ║                                              ║
         ║   agents climb it                            ║
         ║   specs weave through it                     ║
@@ -13,7 +13,10 @@
         ╚══════════════════════════════════════════════╝
 ```
 
-A cloneable AI-agent-ready project scaffold with code graph, boundary enforcement, evals, agent handoff loops, and a self-evolution engine. All free. All open-source. All cross-tool. Stack-agnostic.
+One clone makes any repo AI-agent-ready across 4 tools (Claude Code, Codex CLI,
+OpenCode, Copilot). Spec-driven development, knowledge graph, boundary
+enforcement, mutation evals, agent handoff loops, and cost-per-agent metrics.
+All free. All open-source. Stack-agnostic.
 
 ---
 
@@ -43,7 +46,7 @@ Which agents are you using?
 
 You don't need all four. Pick the ones you use. Skills, commands, and
 mandate files only mirror to your chosen platforms. Change later by
-editing `.trellis/config.json` and running `node .trellis/.trellis/scripts/generate-skills.mjs`.
+editing `.trellis/config.json` and running `node .trellis/scripts/generate-skills.mjs`.
 
 ### Two ways to start (what you actually get)
 
@@ -72,15 +75,43 @@ Most "AI-ready" repos are just an AGENTS.md file. That gets you 10% of the way:
 │  → introduces forbidden import            + agent handoff loops   │
 │  → writes code that "looks right"         + migration safety evals│
 │  → test passes but logic is wrong         + self-evolution engine │
-│                                            + portable context     │
+│  → no idea how many tokens it burned      + portable context     │
 │                                            + CI-enforced doc sync │
-│                                                                  │
+│                                            + cost-per-agent ledger│
 │  Result: drift, hallucination,            Result: agents navigate │
-│  broken docs, silent regressions          correctly, tests prove  │
-│                                            quality, framework     │
-│                                            stays fresh            │
+│  broken docs, silent regressions,         correctly, tests prove  │
+│  runaway token cost, no accountability    quality, framework     │
+│                                            stays fresh, cost is   │
+│                                            visible and auditable  │
 └──────────────────────────────────────────────────────────────────┘
 ```
+
+### The five failure modes Trellis kills
+
+| Failure mode | What happens without Trellis | Trellis mechanism |
+|---|---|---|
+| **Context drift** | Agent greps the whole repo, reads wrong files, hallucinates patterns | Knowledge graph (`graphify query`), portable context files |
+| **Forbidden imports** | Agent introduces cross-boundary deps, breaks subsystem isolation | Boundary enforcement (`bounds validate`), agnostic gate |
+| **Silent regressions** | Tests pass but logic is wrong; mutation score is 0% | Mutation evals (StrykerJS/mutmut), golden test suites |
+| **Doc/code drift** | Docs reference symbols that were renamed or deleted | CI-enforced doc sync, breadcrumb checks |
+| **Runaway token cost** | No visibility into what each agent turn costs | Cost-per-agent ledger (`trellis metrics`), pricing table |
+
+### How Trellis compares
+
+| Capability | Raw LLM agent | Just an AGENTS.md | Trellis |
+|---|---|---|---|
+| Agent reads project rules | No | Yes (1 file) | Yes (mandate + skills + commands) |
+| Code navigation | grep / guess | grep / guess | Knowledge graph (structured queries) |
+| Boundary enforcement | None | None | `bounds validate` in CI |
+| Spec-driven workflow | None | Mentioned | 9-phase SDD pipeline with slash commands |
+| Mutation testing | Manual | Manual | Built-in config + runner |
+| Golden test suites | Manual | Manual | Freeze-on-ship + regression gate |
+| Agent handoff contracts | None | None | Registry with input/output contracts |
+| Migration safety | Manual | Manual | Static analysis (RLS, FK, versioning) |
+| Doc/code sync | Manual | Manual | CI-enforced breadcrumbs + auto-sync |
+| Cost visibility | None | None | `trellis metrics` (per-agent, per-phase) |
+| Cross-tool support | One tool | One tool | 4 tools (Claude, Codex, OpenCode, Copilot) |
+| Stack-agnostic | N/A | Partial | Yes (JS/TS, Python, Go, Rust, generic) |
 
 ---
 
@@ -256,7 +287,7 @@ Write a spec once. Run it through any AI agent. The slash commands exist on all
 /clarify → /plan → /tasks → /checklist → /analyze → /implement → /review → /verify
 ```
 
-Every phase has a source file in `.specify/.trellis/templates/commands/`. A generator
+Every phase has a source file in `.specify/templates/commands/`. A generator
 emits mirrors to all 4 platforms. A CI gate verifies they stay in sync.
 
 ---
@@ -357,7 +388,7 @@ Agent completes 3+ similar tasks
     ▼
 Create .trellis/agents/skills/<name>/SKILL.md
     │
-    ├── Run: node .trellis/.trellis/scripts/generate-skills.mjs
+    ├── Run: node .trellis/scripts/generate-skills.mjs
     │   (mirrors to Claude Code, Codex, OpenCode, Copilot)
     │
     └── Add to delegation matrix in AGENTS.md
@@ -433,13 +464,11 @@ trellis/
 ├── AGENTS.md                     ← cross-tool mandate (THE entry point)
 ├── CLAUDE.md                     ← synced copy for Claude Code
 ├── README.md                     ← you are here
-├── init.sh                       ← clone-and-run setup
-├── cli.mjs                       ← CLI entry point
 ├── package.json                  ← npm scripts + dev deps + `trellis` bin
 │
 ├── .specify/                     ← SDD pipeline
 │   ├── memory/constitution.md   ← 11 constitutional principles
-│   └── .trellis/templates/
+│   └── templates/
 │       ├── commands/            ← SDD phase sources (single source of truth)
 │       ├── spec-template.md
 │       ├── plan-template.md
@@ -453,6 +482,7 @@ trellis/
 │   ├── credits.md               ← tool credits + licenses
 │   ├── contributing.md          ← how to extend Trellis
 │   ├── evals.md                 ← complete eval guide
+│   ├── metrics.md               ← token cost & per-agent metrics
 │   ├── evolution.md             ← self-evolution engine
 │   ├── coding-standards.md      ← code quality canon
 │   ├── ponytail-setup.md        ← ponytail install guide
@@ -470,10 +500,10 @@ trellis/
 │   │   ├── check-graph-freshness.mjs
 │   │   ├── check-ponytail.mjs
 │   │   ├── adapt-to-project.mjs  ← detect + adapt to project stack
-│   │   ├── handoff-engine.mjs    ← validate/replay handoff registry
+│   │   ├── handoff-engine.mjs    ← validate/list handoff registry
 │   │   └── run-evals.mjs         ← full eval suite runner
 │   ├── agents/                   ← agent configs (source of truth)
-│   │   ├── handoffs/registry.yaml← 7 SDD-phase specialists + trigger rules
+│   │   ├── handoffs/registry.yaml← 10 specialists + trigger rules
 │   │   ├── context/              ← portable cross-session memory
 │   │   └── skills/               ← SKILL.md sources (mirrored to platforms)
 │   ├── templates/                ← per-stack config templates (copied by init.sh)

@@ -24,6 +24,7 @@
     "check:graph": "node .trellis/scripts/check-graph-freshness.mjs",
     "check:all": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic && npm run check:migrations && node .trellis/scripts/run-evals.mjs",
     "eval": "node .trellis/scripts/run-evals.mjs",
+    "metrics": "node .trellis/scripts/metrics.mjs",
     "evolve": "node .trellis/scripts/adapt-to-project.mjs",
     "handoffs:validate": "node .trellis/scripts/handoff-engine.mjs validate",
     "handoffs:list": "node .trellis/scripts/handoff-engine.mjs list",
@@ -42,5 +43,5 @@
   },
   "optionalDependencies": {},
   "_comment_devDeps": "DevDeps are for JS/TS adopting projects. Non-JS projects can remove them. Framework scripts (.trellis/scripts/*.mjs) only require Node.js.",
-  "_comment_templates": "Per-stack config templates live in templates/. init.sh copies the matching ones."
+  "_comment_templates": "Per-stack config templates live in .trellis/templates/. init.sh copies the matching ones."
 }

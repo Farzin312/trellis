@@ -140,6 +140,24 @@ if (existsSync(agentsPath)) {
   console.log('  [OK] AGENTS.md scope updated');
 }
 
+// ── .bounds/root.yaml language detection ────────────────────────────────
+
+const boundsPath = join(root, '.bounds', 'root.yaml');
+if (existsSync(boundsPath)) {
+  let boundsContent = readFileSync(boundsPath, 'utf8');
+  const detectedLangs = [];
+  if (existsSync(join(root, 'package.json')) || existsSync(join(root, 'tsconfig.json'))) detectedLangs.push('typescript');
+  if (existsSync(join(root, 'requirements.txt')) || existsSync(join(root, 'pyproject.toml'))) detectedLangs.push('python');
+  if (existsSync(join(root, 'go.mod'))) detectedLangs.push('go');
+  if (existsSync(join(root, 'Cargo.toml'))) detectedLangs.push('rust');
+  if (detectedLangs.length === 0) detectedLangs.push('typescript'); // fallback
+
+  const langLine = `languages:\n${detectedLangs.map(l => `  - ${l}`).join('\n')}`;
+  boundsContent = boundsContent.replace(/languages:\n(  - \w+\n?)+/, langLine + '\n');
+  writeFileSync(boundsPath, boundsContent);
+  console.log(`  [OK] .bounds/root.yaml languages set to: ${detectedLangs.join(', ')}`);
+}
+
 console.log('\nAdaptation complete. Review the constitution and AGENTS.md for accuracy.');
 
 function parseExplicitStack(str) {

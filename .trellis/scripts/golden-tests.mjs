@@ -11,7 +11,7 @@
  *   node .trellis/scripts/golden-tests.mjs verify           — run all golden suites
  */
 
-import { readdirSync, existsSync, mkdirSync, copyFileSync, readFileSync } from 'fs';
+import { readdirSync, existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -65,7 +65,7 @@ switch (command) {
 
     if (testFiles.length === 0) {
       // Write a marker so the frozen suite is tracked
-      writeFileSyncSafe(join(goldenSpecDir, '.frozen'), `Frozen from ${specDir} on ${new Date().toISOString()}\n`);
+      writeFileSync(join(goldenSpecDir, '.frozen'), `Frozen from ${specDir} on ${new Date().toISOString()}\n`);
       console.log(`PASS: frozen ${specDir} (no test files found — marker written)`);
     } else {
       for (const testFile of testFiles) {
@@ -116,5 +116,3 @@ switch (command) {
     console.error('Usage: golden-tests.mjs [freeze <NNN> | list | verify]');
     process.exit(1);
 }
-
-import { writeFileSync as writeFileSyncSafe } from 'fs';

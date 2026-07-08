@@ -82,7 +82,7 @@ document is the reference.
 Trellis supports 15 migration tools via the adapter system. See
 `.trellis/scripts/migration-adapters.json` and run:
 ```bash
-node .trellis/.trellis/scripts/check-migration-safety.mjs --list-adapters
+node .trellis/scripts/check-migration-safety.mjs --list-adapters
 ```
 
 ### Boundary Enforcement
@@ -113,7 +113,7 @@ node .trellis/.trellis/scripts/check-migration-safety.mjs --list-adapters
 ### JavaScript / TypeScript
 
 All Trellis tools work natively. No fallbacks needed. This is the primary
-supported stack. Templates in `templates/js-ts/`.
+supported stack. Templates in `.trellis/templates/js-ts/`.
 
 ### Python
 
@@ -127,10 +127,10 @@ supported stack. Templates in `templates/js-ts/`.
 | Knowledge graph | Graphify (Python grammar) | Works |
 | Boundary enforcement | Bounds (partial) → import-linter (fallback) | Fallback |
 | Dead code | vulture / pyflakes | Manual wiring |
-| Mutation testing | mutmut (template in templates/python/) | Works |
+| Mutation testing | mutmut (template in .trellis/templates/python/) | Works |
 | Property testing | Hypothesis | Works |
 | Linting | Ruff (recommended) | Works |
-| Coverage | pytest-cov | Works (template in templates/python/) |
+| Coverage | pytest-cov | Works (template in .trellis/templates/python/) |
 
 Python is fully functional with two fallbacks: boundary enforcement (use
 import-linter) and dead-code analysis (use vulture). Both are documented in
@@ -148,7 +148,7 @@ the eval runner and the Python template README.
 | Knowledge graph | Graphify (Go grammar) | Works |
 | Boundary enforcement | Bounds (planned) → package import analysis | Fallback |
 | Dead code | deadcode (built-in) + golangci-lint | Works |
-| Mutation testing | go-mutesting | Works (documented in templates/go/) |
+| Mutation testing | go-mutesting | Works (documented in .trellis/templates/go/) |
 | Property testing | gopter / testing/quick | Works |
 | Linting | golangci-lint | Works |
 | Coverage | go test -cover | Works |
@@ -168,7 +168,7 @@ analysis until Bounds adds Go support.
 | Knowledge graph | Graphify (Rust grammar) | Works |
 | Boundary enforcement | Bounds (planned) → crate boundaries | Fallback |
 | Dead code | cargo udeps + clippy | Works |
-| Mutation testing | cargo-mutants | Works (documented in templates/rust/) |
+| Mutation testing | cargo-mutants | Works (documented in .trellis/templates/rust/) |
 | Property testing | proptest / quickcheck | Works |
 | Linting | clippy | Works |
 | Coverage | cargo-tarpaulin | Works |
@@ -235,7 +235,7 @@ To add support for a new language:
 
 1. **Migration adapter**: Add an entry to `.trellis/scripts/migration-adapters.json`
    if the language has a common migration tool.
-2. **Eval template**: Create `templates/<lang>/` with test runner config,
+2. **Eval template**: Create `.trellis/templates/<lang>/` with test runner config,
    mutation testing config, and property testing setup.
 3. **Boundary enforcement**: If Bounds supports it, wire it. If not, document
    the fallback in this file.

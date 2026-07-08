@@ -69,19 +69,21 @@ NOT OSI-certified. See [docs/credits.md](credits.md) for details.
 
 **Start:**
 ```bash
-docker compose -f docker-compose.phoenix.yml up -d
+npm run services:start
+# or: docker compose -f .trellis/services/docker-compose.phoenix.yml up -d
 ```
 
 **Dashboard:** http://localhost:6006
 
 **Stop:**
 ```bash
-docker compose -f docker-compose.phoenix.yml down
+npm run services:stop
+# or: docker compose -f .trellis/services/docker-compose.phoenix.yml down
 ```
 
 **Reset all data:**
 ```bash
-docker compose -f docker-compose.phoenix.yml down -v
+docker compose -f .trellis/services/docker-compose.phoenix.yml down -v
 ```
 
 **Instrument your code:** See https://docs.arize.com/phoenix for SDK

@@ -112,7 +112,7 @@ The same pattern extends to skills:
 
 ```bash
 # After creating a skill in .trellis/agents/skills/<name>/SKILL.md:
-node .trellis/.trellis/scripts/generate-skills.mjs
+node .trellis/scripts/generate-skills.mjs
 
 # This symlinks/copies to all platform directories.
 # CI gate: check-skill-sync.mjs verifies all platforms match source.
@@ -186,7 +186,7 @@ when it needs automated verification.
 ### 4. Mirror to all platforms
 
 ```bash
-node .trellis/.trellis/scripts/generate-skills.mjs
+node .trellis/scripts/generate-skills.mjs
 ```
 
 Or manually:

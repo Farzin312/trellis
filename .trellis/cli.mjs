@@ -12,6 +12,7 @@
  *   trellis init                       — set up THIS repo (interactive on a TTY)
  *   trellis graph [path] [--update]    — build/refresh the Graphify knowledge graph
  *   trellis eval                       — run the eval suite
+ *   trellis metrics [--recent|--raw]   — token cost summary by agent/phase
  *   trellis check                      — lint + docs + evals (run before commit)
  *   trellis handoffs list|validate     — handoff registry ops
  *   trellis evolve [--all] [--stack=x] — re-adapt to the project stack
@@ -71,6 +72,7 @@ Usage:
   trellis init                        Set up THIS repo (interactive on a TTY)
   trellis graph [path] [--update]     Build/refresh the Graphify knowledge graph
   trellis eval                        Run the eval suite
+  trellis metrics [--recent|--raw]    Token cost summary by agent/phase
   trellis check                       Lint + docs + evals (run before commit)
   trellis handoffs list|validate      List / validate the handoff registry
   trellis evolve [--all] [--stack=x]  Re-adapt to the project stack
@@ -88,6 +90,7 @@ graph [path] [--update]     build/refresh graphify-out/graph.json. --update=incr
                             doc/paper extraction needs one of ANTHROPIC_API_KEY|OPENAI_API_KEY|GEMINI_API_KEY; code-only needs none.
                             after build, query: graphify query "<q>" | graphify explain "<node>" | graphify path "A" "B"
 eval                        run .trellis/scripts/run-evals.mjs.
+metrics [--recent|--raw]    summarize .trellis/metrics/runs.jsonl: cost by agent, phase, totals.
 check                       npm lint + docs:check + evals. run before every commit.
 handoffs list|validate      ops on .trellis/agents/handoffs/registry.yaml.
 evolve [--all] [--stack=x]  re-adapt constitution+AGENTS.md to stack; --all also runs skill-health.
@@ -101,7 +104,7 @@ function help() {
 switch (cmd) {
   case 'init':
     if (process.stdin.isTTY) {
-      run('node .trellis/.trellis/scripts/wizard.mjs');
+      run('node .trellis/scripts/wizard.mjs');
     } else {
       announce('Setting up this repo (non-interactive defaults)');
       run('bash .trellis/init.sh "Trellis Project"');
@@ -128,9 +131,15 @@ switch (cmd) {
     // Curated copy: users get a clean project, NOT the whole dev repo. Exclusions
     // match paths RELATIVE to templateRoot (so ".bounds/cache.db" excludes only
     // that file, and top-level ".next" only — a nested foo/.next is kept).
-    // WORKPLAN.md and other dev-only scaffolding never ship to a new project.
+    // WORKPLAN.md, .gitattributes (dev-only), and generated mirror dirs
+    // (they regenerate via npm run skills:generate) never ship to a new project.
     const exclude = new Set([
       '.git', 'node_modules', '.next', 'graphify-out', '.bounds/cache.db', 'WORKPLAN.md',
+      '.gitattributes',
+      '.claude/skills', '.codex/agents',
+      '.opencode/command', '.github/agents',
+      '.claude/commands', '.codex/prompts',
+      '.trellis/metrics',
     ]);
     cpSync(templateRoot, target, {
       recursive: true,
@@ -201,6 +210,19 @@ switch (cmd) {
     announce('Running eval suite');
     run('node .trellis/scripts/run-evals.mjs');
     break;
+
+  case 'metrics': {
+    const mArg = rest[0] || '';
+    announce('Reading metrics ledger');
+    if (mArg === '--raw') {
+      run('node .trellis/scripts/metrics.mjs --raw');
+    } else if (mArg === '--recent') {
+      run('node .trellis/scripts/metrics.mjs --recent');
+    } else {
+      run('node .trellis/scripts/metrics.mjs');
+    }
+    break;
+  }
 
   case 'check':
     announce('Running all CI checks (lint + docs + evals)');

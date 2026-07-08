@@ -166,13 +166,12 @@ The golden test catches the regression before it ships.
 
 ---
 
-## Level 3 — Agent Quality (Tier 3, aspirational)
+## Level 3 — Agent Quality (Tier 3, opt-in)
 
-> **Status:** Phoenix ships as a Docker service, but Trellis does not yet
-> auto-instrument agents to emit spans to it. The compose file exists for teams
-> who want to wire it themselves. The planned lightweight local ledger
-> (WORKPLAN section 7) will provide a zero-Docker alternative. Until then,
-> this level is opt-in manual setup.
+> **Status:** Phoenix ships as a Docker service. Trellis's local metrics ledger
+> (`.trellis/metrics/runs.jsonl`) provides the zero-Docker alternative. To get
+> full agent traces with LLM-as-judge, wire Claude Code's native OTel export
+> to Phoenix. See `docs/metrics.md` for the env var setup.
 
 ### Arize Phoenix (Self-Hosted Observability)
 

@@ -137,7 +137,7 @@ code, passing through guardrails at every step.
 │       │     .trellis/tests/golden/<NNN>-<slug>.test.ts                          │
 │       │                                                                 │
 │       └─► Arize Phoenix (self-hosted observability)                    │
-│             docker-compose.phoenix.yml ──► localhost:6006              │
+│  .trellis/services/docker-compose.phoenix.yml ──► localhost:6006      │
 │                                                                         │
 │   Framework health checks (always run):                                │
 │       check-mandate-sync.mjs ── AGENTS.md = CLAUDE.md                  │

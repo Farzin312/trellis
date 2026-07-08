@@ -8,7 +8,7 @@
  *   1. All skills have valid frontmatter (name, description, version)
  *   2. All skills are mirrored to all 4 platforms (sync check)
  *   3. No skills reference files that don't exist
- *   4. No two skills overlap >50% on trigger keywords (redundancy)
+ *   4. No two skills overlap >50% on keywords or share >=2 commands (redundancy)
  *   5. All skills referenced in delegation matrix actually exist
  *   6. Skills are under the 3KB token-efficiency target
  *
@@ -18,9 +18,8 @@
  */
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
-import { join, basename } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -6,7 +6,7 @@
  * agent platform directories listed in .trellis/config.json.
  *
  * Default targets (when config.json lists all 4):
- *   .claude/skills/<name>/          (symlink — Claude Code supports symlinks)
+ *   .claude/skills/<name>/          (copy — portable across platforms)
  *   .codex/agents/<name>/           (copy)
  *   .opencode/command/<name>.md     (copy, flat file)
  *   .github/agents/<name>.agent.md  (copy)
@@ -21,7 +21,7 @@
  *   node .trellis/scripts/generate-skills.mjs --prune      # remove stale mirrors too
  */
 
-import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, statSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 

@@ -78,7 +78,7 @@ const ALLOWLIST_PATHS = [
   '.env.example',
   'docs/ponytail-setup.md',
   'docs/credits.md',
-  'docker-compose.phoenix.yml',
+  '.trellis/services/docker-compose.phoenix.yml',
   'pyproject.toml',
   'package.json',
   'README.md',

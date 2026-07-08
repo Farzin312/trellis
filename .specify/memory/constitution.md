@@ -10,8 +10,8 @@ When a doc and the code disagree, the doc is updated to match the code — unles
 
 ### II. Auth, Security & Money Fail-Closed
 
-- Auth truth is your auth provider (e.g., Supabase Auth). No alternative auth source.
-- Payment truth is your payment provider's webhooks (e.g., Stripe). Clients MUST NOT claim payment status directly.
+- Auth truth is your auth provider. No alternative auth source.
+- Payment truth is your payment provider's webhooks. Clients MUST NOT claim payment status directly.
 - Row-Level Security (RLS) MUST be enabled on every public table.
 - Money and audit tables are backend-only; no client writes.
 - Server-side validation is mandatory; never trust client input.

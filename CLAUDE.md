@@ -11,7 +11,7 @@ This file is the single entry point for AI coding agents. It is a DIRECTIVE INDE
 
 ## Scope
 
-This repo owns: [describe what this project is — fill in after init].
+This repo owns: [describe what this project is — fill in after init]..
 
 ## The 5 load-bearing rules
 
@@ -94,6 +94,7 @@ Default posture: start lazy. Stdlib first. One line over fifty. No unrequested a
 
 - `npm run lint` — all checks (mandate sync, command sync, breadcrumbs, eslint)
 - `npm run test` — full test suite (vitest)
+- `npm run metrics` — token cost summary by agent/phase (reads .trellis/metrics/)
 - `npm run test:mutation` — mutation testing eval (stryker)
 - `npm run docs:sync` — regenerate auto-docs + verify accuracy
 - `npm run docs:check` — read-only docs verification (CI gate)

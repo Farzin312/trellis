@@ -2,7 +2,7 @@
 /**
  * wizard.mjs — interactive install flow (create-next-app style).
  *
- * Runs when `trellis init` or `bash init.sh` is invoked with no args on a TTY.
+ * Runs when `trellis init` or `bash .trellis/init.sh` is invoked with no args on a TTY.
  * Every answer maps to an existing init.sh flag; the wizard just collects them,
  * prints a plan, confirms, then shells to init.sh. No new dependencies —
  * node:readline/promises only.

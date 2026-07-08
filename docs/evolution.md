@@ -21,7 +21,7 @@ similar tasks that no existing skill covers, it should create a skill.
 The process is in `.trellis/agents/skills/skill-evolution/SKILL.md`:
 
 1. Create `.trellis/agents/skills/<name>/SKILL.md` (under 3KB)
-2. Run `node .trellis/.trellis/scripts/generate-skills.mjs` to mirror to all 4 platforms
+2. Run `node .trellis/scripts/generate-skills.mjs` to mirror to all 4 platforms
 3. Add to the delegation matrix in AGENTS.md
 4. Register in the skill table in docs/README-FOR-AGENTS.md
 
@@ -37,7 +37,7 @@ agent should fix them:
 2. Fix the issue
 3. Bump the version (1.0.0 -> 1.1.0 for additions, 2.0.0 for breaking)
 4. Add an entry to the skill's Evolution Log
-5. Run `node .trellis/.trellis/scripts/generate-skills.mjs` to re-mirror
+5. Run `node .trellis/scripts/generate-skills.mjs` to re-mirror
 
 ### When NOT to Create a Skill
 
@@ -64,8 +64,8 @@ run in CI or manually. Zero LLM tokens consumed.
 
 Run manually:
 ```bash
-node .trellis/.trellis/scripts/evolve-skills.mjs           # check mode
-node .trellis/.trellis/scripts/evolve-skills.mjs --report  # verbose report
+node .trellis/scripts/evolve-skills.mjs           # check mode
+node .trellis/scripts/evolve-skills.mjs --report  # verbose report
 ```
 
 ### Framework Integrity Checks (existing)

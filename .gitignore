@@ -18,6 +18,9 @@ node_modules/
 # Trellis project config (user-specific agent selection)
 .trellis/config.json
 
+# Metrics ledger (git-ignored — never touches user source tree)
+.trellis/metrics/
+
 # Generated artifacts
 graphify-out/
 .bounds/cache.db

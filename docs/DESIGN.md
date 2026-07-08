@@ -44,7 +44,7 @@ Files that MAY reference specific stacks:
 - `.env.example` (shows examples, clearly marked)
 - `docs/ponytail-setup.md` (references the Ponytail project by name)
 - `docs/credits.md` (names every tool we use)
-- `docker-compose.phoenix.yml` at root (names Phoenix image)
+- `.trellis/services/docker-compose.phoenix.yml` (names Phoenix image)
 - User project code (app/, lib/, etc. — not framework files)
 
 ---
