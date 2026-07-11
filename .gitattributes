@@ -1,6 +1,5 @@
-# Trellis-development-only files. `export-ignore` keeps them OUT of `git archive`,
-# GitHub's "Download ZIP", and release tarballs — so anyone who DOWNLOADS Trellis
-# gets a clean scaffold, not the whole dev repo. (Contributors who `git clone` still
-# get everything.) `trellis new <name>` applies the same curation to scaffolded projects.
-WORKPLAN.md export-ignore
-.gitattributes export-ignore
+* text=auto
+*.mjs text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

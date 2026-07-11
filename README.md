@@ -29,6 +29,24 @@ Trellis does not configure application authentication. Authentication,
 authorization, secrets, and money
 flows remain the adopting project's responsibility and must fail closed.
 
+## Positioning
+
+Trellis is for teams that want agent operating rules and proof to travel with
+the repository. It is not a hosted agent runtime, model router, IDE, or guarantee
+of generated-code quality.
+
+The useful bundle is narrower and concrete: shared Agent Skills, a complete SDD
+chain, safe project creation, a dependency-free structural map, configuration-
+aware optional architecture tools, documentation integrity checks, and portable
+self-tests behind one blocking command. Projects can use only the core and add
+Graphify, Bounds, or Phoenix when their actual scale justifies them.
+
+[GitHub Spec Kit](https://github.com/github/spec-kit) and
+[OpenSpec](https://github.com/Fission-AI/OpenSpec) are credible alternatives for
+spec-centered workflows. Trellis's emphasis is the surrounding repository
+governance and honest evidence contract, not a claim that other tools cannot
+support agent workflows.
+
 ## Prerequisites and support
 
 Core use requires:

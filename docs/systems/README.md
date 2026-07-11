@@ -1,11 +1,16 @@
-# System Documentation
+# Trellis system documentation
 
-> Parent: [`docs/README.md`](../README.md)
+> Parent: [documentation index](../README.md)
 
-This directory holds durable domain and subsystem documentation. Each domain
-gets its own subfolder with a README.md (the lifecycle map) and flat subsystem
-deep docs.
+These maps document source ownership and public boundaries for Trellis itself:
 
-This directory starts empty — the adopting project creates domain folders as
-needed. See `docs/STRUCTURE.md` for the full rules and `docs/_subsystem-template.md`
-for the template.
+- [Control plane](./control-plane/README.md) — CLI, initialization,
+  configuration, mapping, and optional operations
+- [Guidance](./guidance/README.md) — mandate, Agent Skills, SDD artifacts, and
+  compatibility mirror
+- [Verification](./verification/README.md) — aggregate gate, self-tests,
+  documentation checks, and configured evidence
+
+Use the [subsystem template](../_subsystem-template.md) for additions. Generated
+projects receive an empty project-owned index rather than these Trellis-specific
+maps.

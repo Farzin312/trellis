@@ -51,11 +51,11 @@ const SCAFFOLD_PATHS = [
   'docs/sdd',
   'docs/self-hosted-services.md',
   'docs/skills.md',
-  'docs/systems',
   'package.json',
 ];
 const PORTABLE_TESTS = [
   'adapt.test.mjs',
+  'agnostic.test.mjs',
   'ci.test.mjs',
   'cli.test.mjs',
   'config.test.mjs',
@@ -191,6 +191,11 @@ function copyScaffold(target) {
   cpSync(
     join(packageRoot, '.trellis', 'scaffold', 'gitignore'),
     join(target, '.gitignore'),
+  );
+  mkdirSync(join(target, 'docs', 'systems'), { recursive: true });
+  cpSync(
+    join(packageRoot, '.trellis', 'scaffold', 'systems-readme.md'),
+    join(target, 'docs', 'systems', 'README.md'),
   );
   mkdirSync(join(target, '.specify', 'specs'), { recursive: true });
   mkdirSync(join(target, 'docs', 'bug-fixes'), { recursive: true });

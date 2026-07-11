@@ -66,4 +66,5 @@ commands or options that help does not expose.
 See [evals.md](./evals.md) for status semantics and
 [DESIGN.md](./DESIGN.md) for product boundaries. See
 [repository mapping](./repository-mapping.md) for Graphify and Bounds setup and
-readiness semantics.
+readiness semantics. Source ownership is detailed in the
+[system documentation index](./systems/README.md).

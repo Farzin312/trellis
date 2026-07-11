@@ -33,6 +33,7 @@ key circumvention uses; consult the upstream license for the operative terms.
 | [Agent Skills](https://agentskills.io/) | `SKILL.md` structure used by canonical `.agents/skills/` sources |
 | [AGENTS.md](https://agents.md/) | Durable cross-agent repository guidance convention |
 | [GitHub Spec Kit](https://github.com/github/spec-kit) | Inspiration for the spec-driven phase model |
+| [OpenSpec](https://github.com/Fission-AI/OpenSpec) | Related repository-native specification workflow considered in product positioning |
 | [Ponytail](https://github.com/DietrichGebert/ponytail) | Optional external simplicity posture referenced by review guidance; MIT |
 
 Platform products and their terms are not bundled with Trellis. Compatibility

@@ -1,54 +1,50 @@
-# Subsystem Doc Template
+# Subsystem documentation template
 
-> Parent: `docs/README.md`
+> Parent: [documentation index](./README.md)
 
-Copy this template when creating a new subsystem doc at `docs/systems/<domain>/<subsystem>.md`.
+Copy this file to `docs/systems/<subsystem>/README.md`, replace every angle-bracket
+prompt, and link the new document from `docs/systems/README.md`.
 
 ---
 
-# <Subsystem Name>
+# <Subsystem name>
 
-> Parent: [`docs/systems/<domain>/README.md`](../README.md)
+> Parent: [system documentation](../README.md)
 
-## 1. What this subsystem owns
-Disambiguate from sibling subsystems. One paragraph.
+## Ownership
 
-## 2. File:function map
-| File | Function | Purpose |
-|------|----------|---------|
+State what this subsystem owns and what adjacent subsystems own instead.
 
-## 3. API routes
-Cross-link to auto-generated `docs/api-reference/`.
+## Public surface
 
-## 4. Database (owned tables)
-Single owner per table. Cross-link to `docs/database/tables/<name>.md`.
+List stable functions, commands, events, routes, tables, or files that other
+subsystems may use. Link to the current contract where one exists.
 
-## 5. State machine / invariants
-The "must always be true" knowledge.
+## Private internals
 
-## 6. Failure modes
-Contract for how it fails.
+Identify directories or symbols that callers must not import or depend on.
 
-## 7. Logs / Observability
-Every structured log event emitted.
+## Dependencies and dependents
 
-## 8. Tests
-Test files that verify this subsystem.
+List allowed outbound dependencies and known consumers. Explain any exception to
+the normal dependency direction.
 
-## 9. Edge cases handled
-Subtle production bites + where guarded.
+## Invariants and trust boundaries
 
-## 10. Security
-Auth/role/RLS/rate-limit/audit/PII per subsystem.
+Document state rules, validation, authorization, sensitive data, concurrency,
+and idempotency requirements that must remain true.
 
-## 11. UX / Usability
-Loading/empty/error states, mobile, dark mode, a11y.
+## Failure and operation
 
-## 12. SDD spec history
-Chronological evolution.
+Describe expected failures, retry behavior, timeouts, logs, alerts, and recovery.
+Do not claim observability that the project has not configured.
 
-## 13. Past bugs (auto)
-Injected by `.trellis/scripts/generate-bug-index.mjs`.
+## Verification
 
-## 14. See also
-Explicit doc-graph edges.
+List the focused tests and commands that exercise this subsystem, including
+important negative and edge cases.
+
+## Related evidence
+
+Link the living design or API owner first, then relevant completed specifications
+and bug-fix records. Historical records do not override this document.

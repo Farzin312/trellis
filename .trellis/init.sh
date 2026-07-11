@@ -192,10 +192,7 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
   if [ -e "$HOOK" ]; then
     echo "KEEP pre-commit hook"
   else
-    mkdir -p "$HOOK_DIR"
-    printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' 'npm run check' > "$HOOK"
-    chmod +x "$HOOK"
-    echo "CREATE pre-commit hook"
+    echo "SKIP pre-commit hook: Trellis does not modify project Git hooks"
   fi
 fi
 

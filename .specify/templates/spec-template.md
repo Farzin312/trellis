@@ -2,7 +2,7 @@
 
 > Spec ID: NNN
 > Status: draft | in-progress | shipped | archived
-> Branch: <NNN-slug>
+> Delivery: <NNN-slug>
 
 ## Problem
 

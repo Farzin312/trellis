@@ -1,38 +1,36 @@
-# Requirements Checklist
+# Requirements checklist
 
-> Spec: NNN
+> Spec: <NNN>
 
-Fill BEFORE Analyze. Validates spec quality, not code.
+Complete this before Analyze. It validates artifact quality, not implementation.
 
-## Completeness
+## Requirements and scope
 
-- [ ] Every FR-XXX has a corresponding task in tasks.md
-- [ ] Every SC-XXX has a corresponding task in tasks.md
-- [ ] Every AUTH-XXX has a corresponding task in tasks.md
-- [ ] Every VAL-XXX has a corresponding task in tasks.md
-- [ ] Every INV-XXX is referenced in plan.md or risks.md
-- [ ] Every EDGE-XXX has a guard or test
+- [ ] Every requirement is observable, unambiguous, and traceable to a task.
+- [ ] Every success criterion has a planned verification method.
+- [ ] Assumptions, edge cases, invariants, and out-of-scope items are explicit.
+- [ ] Security, validation, compatibility, and recovery requirements are present
+      when the feature needs them.
 
-## Contracts
+## Plan and contracts
 
-- [ ] Every API endpoint in contracts.md has auth, request shape, response shape, error codes
-- [ ] No two contracts contradict each other
-- [ ] Frontend consumes only what contracts.md defines
+- [ ] The plan satisfies each requirement without contradictory decisions.
+- [ ] Every changed public contract defines caller, inputs, outputs, errors, and
+      compatibility behavior.
+- [ ] Ownership and dependency direction are clear.
+- [ ] Risks have mitigation, detection, and recovery where applicable.
 
-## Test Strategy
+## Test strategy
 
-- [ ] Every FR has at least one test
-- [ ] Test strategy covers happy path + error path + edge cases
-- [ ] Property-based tests defined for invariant-heavy logic (if fast-check configured)
-- [ ] Mutation testing target areas identified (if stryker configured)
-
-## Ponytail Review
-
-- [ ] No over-specification (simplest spec that captures requirements)
-- [ ] Marked expansions: `# trellis: full-impl, <reason>`
+- [ ] Behavior tasks have a test that fails for the intended reason first.
+- [ ] Happy, invalid, unauthorized, dependency-failure, concurrency, and retry
+      paths are covered as applicable.
+- [ ] Optional tools or external proof are identified as such, not counted as
+      local passed evidence.
 
 ## Result
 
 **Result: PASS / FAIL**
 
-If FAIL, list the gaps. Analyze is blocked until PASS.
+If FAIL, list the owning artifact and required correction. Analyze remains
+blocked until the updated checklist passes.

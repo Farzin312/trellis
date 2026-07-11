@@ -23,8 +23,9 @@ try {
 }
 
 if (args[0] === '--list-adapters') {
+  console.log('Static detection metadata (not migration execution support):');
   for (const [key, adapter] of Object.entries(adapters)) {
-    console.log(`${key}\t${adapter.displayName}\t${adapter.status}`);
+    console.log(`${key}\t${adapter.displayName}`);
   }
   process.exit(0);
 }
@@ -137,7 +138,8 @@ if (detected.key !== 'golang-migrate') {
   const versions = new Map();
   const pattern = new RegExp(detected.adapter.versionPattern);
   for (const file of detected.files) {
-    const version = basename(file).match(pattern)?.[1];
+    const versionSource = detected.adapter.versionFromParent ? basename(dirname(file)) : basename(file);
+    const version = versionSource.match(pattern)?.[1];
     if (!version) continue;
     if (versions.has(version)) {
       console.error(`FAIL: duplicate migration version ${version}: ${basename(versions.get(version))}, ${basename(file)}`);
@@ -166,7 +168,7 @@ for (const file of detected.files) {
 }
 
 if (errors > 0) {
-  console.error(`FAIL migration-safety tool=${detected.key} files=${detected.files.length} errors=${errors} warnings=${warnings}`);
+  console.error(`FAIL migration-static-check tool=${detected.key} files=${detected.files.length} errors=${errors} warnings=${warnings}`);
   process.exit(1);
 }
-console.log(`PASS migration-safety tool=${detected.key} files=${detected.files.length} warnings=${warnings}`);
+console.log(`PASS migration-static-check tool=${detected.key} files=${detected.files.length} warnings=${warnings}`);

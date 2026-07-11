@@ -1,17 +1,19 @@
-# Tasks: <Feature Name>
+# Tasks: <feature name>
 
-> Spec: NNN
+> Spec: <NNN>
 
-Tasks are atomic, path-referenced, and ordered. Each implementation task has a paired `[TEST]` task.
+Tasks are ordered, path-referenced, and independently verifiable. Pair each
+behavior implementation with a test that fails for the intended reason first.
 
 | ID | Task | Type | Files | Refs | Deps | Parallel? |
-|----|------|------|-------|------|------|-----------|
-| T001 | [TEST] Write test for X | test | tests/unit/x.test.ts | FR-001 | — | — |
-| T002 | Implement X | impl | lib/x.ts | FR-001 | T001 | — |
-| T003 | [TEST] Write API test for Y | test | tests/api/y.test.ts | FR-002 | — | [P] |
-| T004 | Implement API route Y | impl | app/api/y/route.ts | FR-002 | T003 | [P] |
+|---|---|---|---|---|---|---|
+| T001 | [TEST] Prove <behavior> | test | `<test path>` | FR-001 | — | — |
+| T002 | Implement <behavior> | impl | `<source path>` | FR-001 | T001 | — |
+| T003 | Verify <documentation or operation> | verify | `<target path>` | SC-001 | T002 | — |
 
 Markers:
-- `[TEST]` — test task, runs to failure before implementation
-- `[P]` — parallel-safe, can dispatch concurrently with other [P] tasks
-- TXXX in Deps column must complete before this task starts
+
+- `[TEST]` means observe the intended failure before implementation.
+- `[P]` means no shared write ownership or unmet dependency; parallel execution
+  is safe.
+- Every dependency ID must complete before the dependent task starts.

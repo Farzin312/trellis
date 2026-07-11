@@ -1,34 +1,35 @@
-# Plan: <Feature Name>
+# Plan: <feature name>
 
-> Spec: NNN
+> Spec: <NNN>
 
-## Architecture
+## Architecture and ownership
 
-How this will be built. Diagrams welcome (ASCII or Mermaid).
+Describe the smallest coherent solution, its subsystem owner, dependency
+direction, data flow, and rollout sequence.
 
 ## Contracts
 
-### API Contracts
-(Or link to `contracts/` folder for multi-endpoint specs.)
+List changed public interfaces, callers, request or input shape, response or
+output shape, stable errors, and compatibility behavior. Link a `contracts/`
+directory when one table would be unclear.
 
-| Endpoint | Method | Auth | Request | Response |
-|----------|--------|------|---------|----------|
+## Data and state
 
-## Data Model
-
-(Or link to `data-model.md`.)
+Describe persisted data, state transitions, constraints, idempotency,
+concurrency, migration, and recovery when applicable.
 
 ## Risks
 
-(Or link to `risks.md`.)
+| Risk | Impact | Mitigation | Detection | Recovery |
+|---|---|---|---|---|
+| <risk> | <impact> | <mitigation> | <evidence> | <recovery> |
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
+## Test strategy
 
-## Test Strategy
+Map requirements to the smallest useful test layers and feature-specific
+verification. Identify external proof separately.
 
-How this will be verified. Unit, integration, e2e, property, mutation.
+## Complexity decisions
 
-## Complexity Tracking
-
-Any deviation from a constitution principle requires justification here.
+Explain any dependency, abstraction, compatibility layer, or operational
+machinery that is not already justified by current requirements.
