@@ -14,12 +14,12 @@ the copyright and permission notice.
 The core Node CLI has no runtime package dependency. Development tools and
 optional integrations retain their own licenses.
 
-The Trellis mark, wordmarks, setup diagrams, and terminal walkthrough under
-`assets/` are project-owned release assets distributed under the same MIT
-license. The raster mark was generated specifically for Trellis and then
-cleaned into a transparent source asset; it does not incorporate a third-party
-logo or stock artwork. The SVG diagrams and animated walkthrough are
-deterministic project-authored assets.
+The Trellis wordmarks, setup diagrams, and terminal walkthrough under `assets/`
+are project-owned release assets distributed under the same MIT license. They
+are deterministic, project-authored SVGs and do not incorporate a third-party
+logo or stock artwork. The terminal walkthrough adds a CSS reveal as
+enhancement only; it honors reduced-motion and degrades to the same static
+frame.
 
 ## Optional integrations
 
