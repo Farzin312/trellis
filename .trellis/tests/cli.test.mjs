@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -8,14 +8,50 @@ import test from 'node:test';
 const root = new URL('../..', import.meta.url).pathname;
 const cli = join(root, '.trellis', 'cli.mjs');
 
-function run(args, cwd = root) {
-  return spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8' });
+function run(args, cwd = root, env = process.env) {
+  return spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8', env });
 }
 
 test('CLI exposes one canonical version', () => {
   const result = run(['--version']);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout.trim(), '0.1.0');
+});
+
+test('Graphify wrapper requires project configuration and uses the current update contract', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'trellis-graph-'));
+  try {
+    mkdirSync(join(cwd, '.trellis'), { recursive: true });
+    const config = {
+      schema_version: 1,
+      project_name: 'Fixture',
+      project_slug: 'fixture',
+      stacks: ['generic'],
+      enabled_integrations: [],
+    };
+    writeFileSync(join(cwd, '.trellis', 'config.json'), JSON.stringify(config));
+
+    const unconfigured = run(['graph'], cwd);
+    assert.equal(unconfigured.status, 1, unconfigured.stdout + unconfigured.stderr);
+    assert.match(unconfigured.stderr, /not enabled/i);
+
+    config.enabled_integrations = ['graphify'];
+    writeFileSync(join(cwd, '.trellis', 'config.json'), JSON.stringify(config));
+    const bin = join(cwd, 'bin');
+    mkdirSync(bin);
+    const graphify = join(bin, 'graphify');
+    writeFileSync(graphify, `#!${process.execPath}\nconsole.log(process.argv.slice(2).join('|'));\n`);
+    chmodSync(graphify, 0o755);
+
+    const configured = run(['graph'], cwd, { ...process.env, PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(configured.status, 0, configured.stdout + configured.stderr);
+    assert.match(configured.stdout, /^update\|\.$/m);
+
+    const retiredFlag = run(['graph', '--update'], cwd, { ...process.env, PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(retiredFlag.status, 2, retiredFlag.stdout + retiredFlag.stderr);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
 });
 
 test('CLI rejects unsafe names, traversal, unknown flags, and missing operands', () => {

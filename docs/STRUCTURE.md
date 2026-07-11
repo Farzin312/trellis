@@ -8,8 +8,8 @@ This file defines ownership and navigation for repository documentation.
   success, troubleshooting, license, and contribution entry point.
 - `docs/README.md` routes adopters, maintainers, generated guidance, and history.
 - `docs/README-FOR-AGENTS.md` is the token-efficient agent routing page.
-- `docs/DESIGN.md` explains product boundaries and decisions.
-- `docs/SYSTEM.md` maps implemented commands and artifact ownership.
+- Project architecture belongs in `docs/DESIGN.md` or `docs/SYSTEM.md` only when
+  the project has verified content to put there; do not generate empty claims.
 - `docs/systems/` contains living subsystem documentation.
 - `.specify/specs/` and `docs/bug-fixes/` contain historical delivery evidence.
 

@@ -130,12 +130,20 @@ if [ "$CONFIG_EXISTS" = false ]; then
       delete pkg.homepage;
       delete pkg.bugs;
       fs.writeFileSync("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
-      if (fs.existsSync("package-lock.json")) {
-        const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-        lock.name = process.argv[1];
-        if (lock.packages?.[""]) lock.packages[""].name = process.argv[1];
-        fs.writeFileSync("package-lock.json", `${JSON.stringify(lock, null, 2)}\n`);
-      }
+      const packageEntry = {
+        name: pkg.name,
+        version: pkg.version,
+        bin: pkg.bin,
+        engines: pkg.engines,
+      };
+      const lock = {
+        name: pkg.name,
+        version: pkg.version,
+        lockfileVersion: 3,
+        requires: true,
+        packages: { "": packageEntry },
+      };
+      fs.writeFileSync("package-lock.json", `${JSON.stringify(lock, null, 2)}\n`);
     }
   ' "$SLUG"
 
@@ -146,6 +154,14 @@ if [ "$CONFIG_EXISTS" = false ]; then
       fs.writeFileSync("README.md", `# ${name}\n\nThis repository uses Trellis for durable AI-agent guidance and verification.\n\n## Start here\n\n- Add application-specific prerequisites and run commands when application code is introduced.\n- AI coding agents start at [AGENTS.md](./AGENTS.md).\n- Run \`npm run check\` to verify the Trellis contract.\n- Start non-trivial work with the \`speckit-specify\` Agent Skill.\n\n## License\n\nNo license has been selected for this project. Trellis-owned files under \`.trellis/\` retain the MIT license in [\`.trellis/LICENSE\`](./.trellis/LICENSE).\n`);
     ' "$PROJECT_NAME"
     echo "CREATE README.md"
+  fi
+  if [ ! -e docs/README.md ]; then
+    node -e '
+      const fs = require("node:fs");
+      fs.mkdirSync("docs", { recursive: true });
+      fs.writeFileSync("docs/README.md", `# Project documentation\n\n> Parent: [project README](../README.md)\n\n## Agent guidance\n\n- [Agent routing](./README-FOR-AGENTS.md)\n- [Documentation structure](./STRUCTURE.md)\n- [Coding standards](./coding-standards.md)\n- [Spec-driven development](./sdd/sdd.md)\n\n## Toolkit references\n\n- [Repository mapping and optional architecture tools](./repository-mapping.md)\n- [Evaluation contract](./evals.md)\n- [Language support](./language-support.md)\n- [Metrics ledger](./metrics.md)\n- [Optional Phoenix service](./self-hosted-services.md)\n- [Agent Skills](./skills.md)\n- [Credits and licenses](./credits.md)\n\n## Project records\n\n- [System documentation](./systems/README.md)\n- [Bug-fix register](./bug-fixes/README.md)\n- Active delivery evidence lives under \`.specify/specs/\`.\n`);
+    ' 
+    echo "CREATE docs/README.md"
   fi
 else
   echo "KEEP .trellis/config.json"

@@ -1,21 +1,19 @@
 ---
 name: speckit-clarify
-disable-model-invocation: true
-description: Drive targeted questions until ambiguity is materially resolved.
+description: Resolve material ambiguity in a Trellis feature specification. Use after Specify or whenever an unanswered choice would materially change scope, behavior, risk, or acceptance.
 ---
 
-## Task
+# Clarify
 
-Read `.specify/specs/<NNN>-<slug>/spec.md`. Identify every ambiguity, gap, or unstated assumption. Ask targeted questions one at a time (when the user is actively answering) or in a batch (when the user prefers).
+Read `spec.md` and identify only ambiguities that affect scope, observable
+behavior, security, data integrity, compatibility, or acceptance.
 
-## Rules
+Resolve from repository evidence when possible. Ask concise targeted questions
+only when the answer cannot be discovered safely; otherwise state the bounded
+assumption and rationale. Record every resolution in the spec's clarification
+log and update affected requirements.
 
-- No arbitrary cap on questions. Ask as many as needed.
-- Prefix each question with the source location: `**Found in**: path/to/file.ts:line — <note>`
-- Update `spec.md` § Clarification Log with each answer.
-- Clarification stops when: ambiguity is materially resolved, the user explicitly stops, or additional questions are low-value.
-- Do not design solutions during Clarify. That is Plan's job.
+Do not design the solution. Stop when remaining uncertainty is low-risk or
+explicitly deferred.
 
-## Next Phase
-
-Invoke `speckit-plan`.
+Next: `speckit-plan`.

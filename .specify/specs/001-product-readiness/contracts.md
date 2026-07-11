@@ -11,7 +11,7 @@
 | `trellis check` | none | `--ai` | Runs the single mandatory gate contract in the current project | FR-002, FR-008, FR-009 |
 | `trellis eval` | none | `--ai` | Runs required framework tests plus configured project evals in the current project | FR-002, FR-003 |
 | `trellis map` | none | `--json` | Prints a bounded, read-only structural map without optional tools | FR-012, VAL-005 |
-| `trellis graph` | optional project-relative path | `--update` | Runs only when Graphify is configured and installed | FR-006, SC-001 |
+| `trellis graph` | optional project-relative path | none | Runs `graphify update` only when Graphify is configured and installed | FR-006, SC-001 |
 | `trellis config` | `show`, `enable`, or `disable` | integration operand for mutations | Validates and atomically manages supported optional integrations | FR-013, VAL-006 |
 | `trellis metrics` | none | `--recent`, `--raw` | Rejects corrupt records and summarizes accepted records | FR-008, EDGE-006 |
 | `trellis evolve` | none | `--stack=<value>` | Re-runs deterministic project adaptation only | FR-005, VAL-001 |

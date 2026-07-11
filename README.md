@@ -17,12 +17,16 @@ rewrite arbitrary project policy.
   mirror.
 - `trellis eval` runs required toolkit self-tests and configured project tests,
   reporting passes, failures, warnings, and skips separately.
+- `trellis map` prints a bounded structural repository map without an LLM or
+  optional tool.
 - `npm run check` is the release gate for this repository.
 - Graphify, Bounds, and Phoenix are optional integrations. Their absence is not
   described as successful evidence.
 
 Trellis provides workflow and verification infrastructure. It does not
-guarantee an agent's output or install application dependencies. Trellis does not configure application authentication. Authentication, authorization, secrets, and money
+guarantee an agent's output or install application dependencies.
+Trellis does not configure application authentication. Authentication,
+authorization, secrets, and money
 flows remain the adopting project's responsibility and must fail closed.
 
 ## Prerequisites and support
@@ -54,6 +58,30 @@ JavaScript/TypeScript, Python, Go, and Rust projects. See
 [language support](docs/language-support.md) for the boundary between tested
 automation and manual integration.
 
+## Understand a repository cheaply
+
+Start with the read-only core map:
+
+```bash
+trellis map
+trellis map --json
+```
+
+It summarizes manifests, stacks, top-level composition, tests, and documented
+systems without writing a cache. Enable Graphify only for deeper symbol and
+dependency traversal, or Bounds for reviewed subsystem ownership and boundary
+enforcement. Enablement is atomic and project-wide:
+
+```bash
+trellis config show
+trellis config enable graphify
+trellis config enable bounds
+```
+
+Enabling does not install either tool and makes missing setup a blocking check.
+See [repository mapping and optional tools](docs/repository-mapping.md) for exact
+installation, CI, verification, and removal commands.
+
 ## Install
 
 The current distribution is a source checkout. It is not advertised as an npm
@@ -80,9 +108,9 @@ To configure a checkout that already contains Trellis:
 trellis init "My Project" --stack=typescript
 ```
 
-Add `--with-graphify` or `--with-bounds` only when you want and can satisfy that
-integration's prerequisites. Run `trellis help --ai` for the exact current CLI
-contract.
+Add `--with-graphify` or `--with-bounds` only when you want that integration to
+become a project-wide requirement; these flags enable but do not install it. Run
+`trellis help --ai` for the exact current CLI contract.
 
 ## First successful workflow
 

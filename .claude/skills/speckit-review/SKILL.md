@@ -1,32 +1,22 @@
 ---
 name: speckit-review
-disable-model-invocation: true
-description: Post-implementation review. Catch implementation drift and coding standards violations.
+description: Review a completed Trellis implementation for requirement drift, defects, security gaps, boundary violations, documentation mismatch, and unnecessary complexity. Use after Implement and before Verify.
 ---
 
-## Task
+# Review
 
-After Implement, before Verify: review every changed file against the coding standards canon (`docs/coding-standards.md`).
+Review every changed file and the resulting behavior against the spec, contracts,
+tasks, coding standards, and current subsystem conventions.
 
-Produce a `review.md`-style report covering:
+Check correctness, failure handling, validation, types, idempotency, concurrency,
+public/private boundaries, security, accessibility where relevant, tests, and
+living documentation. Use `security-review` for trust boundaries and
+`ponytail-review` for advisory simplicity findings.
 
-1. **Standards compliance** — guard clauses, error handling, TypeScript discipline, naming, state machines, idempotency, race-condition prevention.
-2. **Pattern compliance** — no duplication, reuse of established primitives, design system tokens.
-3. **Scope compliance** — no additions beyond tasks.md. Out-of-scope changes logged as follow-ups.
-4. **Security** — auth checks, RLS, money-path safety, rate limiting, audit logging.
-5. **Ponytail signals** — flag potential over-engineering (advisory, non-blocking). One-implementation abstractions, premature config, unjustified file size.
+Write `review.md` with evidence-backed findings ordered by severity, exact paths,
+and disposition. Correctness, security, data-integrity, and boundary findings are
+blocking. Advisory simplicity findings do not override a required safe design.
 
-## Rules
+Fix blocking findings and repeat the review before proceeding.
 
-- Every changed file gets reviewed. No exceptions.
-- Security/money findings are BLOCKING. Ponytail findings are ADVISORY.
-- If Graphify is installed: query the graph to verify no forbidden cross-boundary imports were introduced.
-- If Bounds is installed: `bounds validate --quick` before reporting.
-
-## Delegation
-
-If handoff loops are enabled, this runs as the `ponytail-review` specialist (advisory) plus a blocking standards check.
-
-## Next Phase
-
-Invoke `speckit-verify`.
+Next: `speckit-verify`.

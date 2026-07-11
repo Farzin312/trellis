@@ -104,6 +104,33 @@ test('new initialization writes the canonical tierless config and honors explici
   }
 });
 
+test('repeated initialization applies only explicitly requested managed changes', () => {
+  const project = fixture();
+  try {
+    writeFileSync(join(project, '.trellis/config.json'), `${JSON.stringify({
+      schema_version: 1,
+      project_name: 'Existing Project',
+      project_slug: 'existing-project',
+      stacks: ['javascript'],
+      enabled_integrations: [],
+      user_setting: 'keep',
+    }, null, 2)}\n`);
+
+    const result = run(project, '--stack=python', '--with-bounds');
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.deepEqual(JSON.parse(readFileSync(join(project, '.trellis/config.json'), 'utf8')), {
+      schema_version: 1,
+      project_name: 'Existing Project',
+      project_slug: 'existing-project',
+      stacks: ['python'],
+      enabled_integrations: ['bounds'],
+      user_setting: 'keep',
+    });
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+  }
+});
+
 test('removed tiers and malformed operands fail before project files change', () => {
   for (const args of [
     ['Project', '--tier=2'],

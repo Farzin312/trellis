@@ -25,6 +25,11 @@ validated against the supported vocabulary.
 The core Agent Skills, SDD artifacts, mandate, documentation checks, and Node
 self-tests do not depend on an adopting project's language.
 
+`trellis map` is also language-neutral: it reports manifests, file composition,
+tests, and documented systems without parsing imports. Deeper language coverage
+belongs to the optional tools described in
+[repository mapping](./repository-mapping.md).
+
 ## Manual integration
 
 Java, Ruby, PHP, C/C++, Swift, Kotlin, Scala, and other stacks can keep the

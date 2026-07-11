@@ -1,35 +1,23 @@
 ---
 name: speckit-plan
-disable-model-invocation: true
-description: Create the technical plan: architecture, contracts, risks, test strategy.
+description: Design the technical solution, contracts, risks, and test strategy for a clarified Trellis specification. Use after Clarify and before task decomposition.
 ---
 
-## Task
+# Plan
 
-Read the clarified `spec.md`. Produce:
+Read the clarified spec and relevant current architecture. Produce:
 
-1. `plan.md` — architecture, data model, test strategy
-2. `contracts.md` (or `contracts/` folder) — API contracts
-3. `risks.md` — production hazards + mitigations
+- `plan.md`: architecture, ownership, data flow, rollout, and test strategy;
+- `contracts.md` or `contracts/`: changed public interfaces and errors;
+- `risks.md`: failure modes, mitigations, detection, and recovery.
 
-## Delegation
+Trace decisions to requirement IDs without restating the whole spec. Prefer the
+smallest design satisfying demonstrated needs and existing conventions. Identify
+compatibility, concurrency, idempotency, security, migration, and operational
+risks as applicable.
 
-If handoff loops are enabled, dispatch domain subagents in parallel:
-- `api-routes` skill -> contracts
-- `db-migrations` skill -> data model
-- `frontend-ui` skill -> frontend sections of plan
-- `security-review` skill -> risks
+Use configured discovery or boundary tools before shared-code design. Delegate
+independent domain analysis with only relevant requirements and paths. Do not
+write production implementation code in this phase.
 
-Each receives only the relevant FR/SC refs + template. Never the full spec.
-
-## Rules
-
-- No implementation code. This is architecture.
-- ID-only references to spec requirements (FR-XXX).
-- If Graphify is installed: `graphify query "how does <area> work?"` before designing.
-- If Bounds is installed: `bounds describe <subsystem>` before touching shared code.
-- Ponytail: the simplest architecture that satisfies the requirements wins. Mark expansions with `# trellis: full-impl, <reason>`.
-
-## Next Phase
-
-Invoke `speckit-tasks`.
+Next: `speckit-tasks`.

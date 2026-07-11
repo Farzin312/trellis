@@ -82,6 +82,24 @@ test('configured Graphify rejects a corrupt graph', () => {
   }
 });
 
+test('configured Graphify accepts a structurally valid non-empty artifact without inventing freshness metadata', () => {
+  const cwd = fixture(['graphify']);
+  try {
+    const bin = fakeCommand(cwd, 'graphify', "console.log('graphify 1.0');");
+    mkdirSync(join(cwd, 'graphify-out'));
+    writeFileSync(join(cwd, 'graphify-out', 'graph.json'), JSON.stringify({
+      nodes: [{ id: 'source:a' }],
+      links: [],
+    }));
+    const result = run(cwd, { PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /PASS integration=graphify artifact=valid nodes=1/);
+    assert.doesNotMatch(result.stdout, /current|fresh/i);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test('configured Bounds rejects zero effective coverage', () => {
   const cwd = fixture(['bounds']);
   try {

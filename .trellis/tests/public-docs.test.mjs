@@ -14,6 +14,7 @@ const publicDocs = [
   'docs/evals.md',
   'docs/language-support.md',
   'docs/metrics.md',
+  'docs/repository-mapping.md',
   'docs/self-hosted-services.md',
   'docs/skills.md',
   'docs/evolution.md',
@@ -109,6 +110,15 @@ test('capability docs describe only configured or implemented behavior', () => {
   assert.match(services, /Phoenix/);
   assert.match(services, /source-available/i);
   assert.doesNotMatch(services, /Mem0/i);
+
+  const mapping = read('docs/repository-mapping.md');
+  assert.match(mapping, /trellis map --json/);
+  assert.match(mapping, /trellis config enable graphify/);
+  assert.match(mapping, /graphify update/);
+  assert.match(mapping, /trellis config enable bounds/);
+  assert.match(mapping, /bounds preflight --fail-on-unowned/);
+  assert.match(mapping, /does not install/i);
+  assert.match(mapping, /project-wide requirement/i);
 });
 
 test('Agent Skills paths use the canonical source and Claude mirror only', () => {
@@ -118,6 +128,7 @@ test('Agent Skills paths use the canonical source and Claude mirror only', () =>
   assert.doesNotMatch(text, /\.trellis\/agents\/skills\//);
   assert.doesNotMatch(text, /\.codex\/(?:agents|prompts)\//);
   assert.doesNotMatch(text, /\.opencode\/command\//);
+  assert.doesNotMatch(text, /\.claude\/commands\//);
 });
 
 test('durable guidance shares one stack-agnostic nine-phase contract', () => {

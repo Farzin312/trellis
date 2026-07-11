@@ -8,7 +8,7 @@ does not mean a tool is installed, configured, or required.
 ## Trellis
 
 The `trellis-agent-toolkit` source is licensed under MIT. See
-[LICENSE](../LICENSE). Redistributed copies or substantial portions must retain
+[the scoped Trellis license](../.trellis/LICENSE). Redistributed copies or substantial portions must retain
 the copyright and permission notice.
 
 The core Node CLI has no runtime package dependency. Development tools and

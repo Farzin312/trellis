@@ -1,27 +1,20 @@
 ---
 name: speckit-analyze
-disable-model-invocation: true
-description: Post-task solution audit. The hard gate before any code is written.
+description: Audit the complete pre-implementation Trellis artifact chain for contradictions, missing coverage, unsafe assumptions, and infeasible tasks. Use as the hard gate before writing code.
 ---
 
-## Task
+# Analyze
 
-Read the full artifact chain (spec, plan, contracts, risks, tasks). Audit:
+Read the spec, clarification log, plan, contracts, risks, tasks, and required
+checklists. Verify that every requirement and success criterion has a coherent
+design and task, contracts agree, risks have mitigations, and tests cover the
+important failure paths.
 
-1. Does the plan satisfy every FR/SC/AUTH/VAL requirement?
-2. Are contracts internally consistent?
-3. Are risks mitigated?
-4. Are tasks complete and correctly ordered?
-5. Does the test strategy cover the requirements?
+Check boundary ownership and security assumptions using configured tools where
+applicable. Do not require an optional tool that the project has not enabled.
 
-Produce `analysis.md` with `Result: PASS` or `Result: FAIL`.
+Write `analysis.md` with findings, traceability gaps, and `Result: PASS` or
+`Result: FAIL`. A failure names the artifact and phase that must be repaired.
+Implementation must not begin until the updated chain passes again.
 
-## Rules
-
-- If `Result: FAIL`, implementation MUST NOT begin. Return to the failing phase.
-- If Bounds is installed: `bounds validate --quick` MUST exit clean before PASS.
-- Security or money audits delegate to `security-review` when subagents are available.
-
-## Next Phase
-
-If PASS, invoke `speckit-implement`. If FAIL, return to the flagged phase.
+Next after PASS: `speckit-implement`.

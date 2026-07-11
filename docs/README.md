@@ -11,6 +11,8 @@ project policy, and historical evidence have separate routes.
   troubleshooting, licensing, and contribution path
 - [Language support](./language-support.md) — tested automation versus manual
   integration
+- [Repository mapping](./repository-mapping.md) — dependency-free orientation
+  and explicit Graphify/Bounds setup
 - [Optional Phoenix service](./self-hosted-services.md) — Docker setup and
   limitations
 - [Credits and licenses](./credits.md) — bundled, optional, and referenced tools
@@ -19,6 +21,8 @@ project policy, and historical evidence have separate routes.
 
 - [Design](./DESIGN.md) — product boundaries and design decisions
 - [System](./SYSTEM.md) — implemented components, commands, and artifact ownership
+- [Repository mapping](./repository-mapping.md) — configuration and readiness
+  contracts for structural mapping and optional architecture tools
 - [Evaluation contract](./evals.md) — required and optional evidence
 - [Metrics ledger](./metrics.md) — validated provider-supplied records
 - [Agent Skills](./skills.md) — canonical sources and Claude mirror generation

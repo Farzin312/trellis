@@ -1,77 +1,31 @@
 ---
 name: security-review
-description: |
-  Audit authentication, authorization, money paths, RLS, and input
-  validation surfaces. Use when changes touch auth, payments, user
-  data, permissions, or security-sensitive code. Auto-loads during
-  SDD Plan phase for security risks and Analyze phase for cross-cutting
-  concerns. Findings on auth/money are BLOCKING.
-version: 1.0.0
+description: Audit authentication, authorization, user data, secrets, payments, uploads, input validation, abuse controls, and database access. Use when a change crosses a trust boundary or handles sensitive state.
 ---
 
-# Security Review
+# Security review
 
-## Overview
+Map actors, assets, entry points, trusted components, and failure impact. Then
+inspect the relevant controls:
 
-Audit security-sensitive code changes for vulnerabilities. Focus on
-auth, money, data access, and input handling. Findings are BLOCKING
-for auth/money/RLS, ADVISORY for everything else.
+- authentication validates credentials and sessions through the established seam;
+- authorization checks the action and resource, defaults to deny, and prevents
+  tenant or object-reference leaks;
+- all untrusted input is structurally validated before side effects;
+- queries, templates, commands, redirects, and file paths resist injection;
+- secrets do not enter source, logs, client bundles, errors, or persisted prompts;
+- uploads enforce size, type, storage, and serving policy at a trusted boundary;
+- money and privileged mutations use exact representation, idempotency, trusted
+  provider state, and auditable transitions;
+- rate limits, replay defenses, and concurrency controls match the abuse model;
+- database and storage permissions enforce least privilege independently of UI;
+- errors fail closed without hiding operational causes from maintainers.
 
-## Audit Checklist
+Test bypass attempts and negative cases, not only helper presence. Distinguish a
+confirmed vulnerability from defense-in-depth advice and uncertain external
+configuration.
 
-### Authentication
-- [ ] Every non-public route verifies identity
-- [ ] Auth checks fail closed (deny by default)
-- [ ] No alternative auth source bypasses the primary provider
-- [ ] Session/token validation uses the project's auth helper, not custom
-
-### Authorization
-- [ ] Role checks use the project's role helper
-- [ ] Status checks (active/suspended/banned) enforced
-- [ ] Privilege escalation impossible via parameter manipulation
-
-### Money (if applicable)
-- [ ] Money stored as integer cents (or smallest currency unit), never float
-- [ ] Payment status comes from webhook/provider, not client
-- [ ] Refund/payout operations are idempotent
-- [ ] Money tables are backend-only (no client writes)
-- [ ] Price manipulation (negative, zero, overflow) impossible
-
-### Data Access
-- [ ] RLS enabled on all public tables (SQL-based tools)
-- [ ] No IDOR (Insecure Direct Object Reference) vulnerabilities
-- [ ] Query parameters validated and scoped to the caller
-- [ ] Bulk operations have batch limits
-
-### Input Validation
-- [ ] All inputs validated server-side
-- [ ] Never trust client input
-- [ ] Sanitize user content before storage (XSS prevention)
-- [ ] File uploads validated by type and size
-
-### Secrets
-- [ ] No secrets in code, logs, or error messages
-- [ ] Environment variables read through centralized helpers
-- [ ] API keys not exposed to the client
-
-## When to Load
-
-Load this skill when:
-- Changes touch auth, money, payments, or user data
-- SDD Plan phase (security risk assessment)
-- SDD Analyze phase (cross-cutting security audit)
-- The delegation matrix routes you here
-
-## Finding Severity
-
-- **BLOCKING**: auth bypass, money vulnerability, RLS gap, IDOR,
-  secret exposure, injection vulnerability. Must fix before merge.
-- **ADVISORY**: defense-in-depth improvements, rate limiting gaps,
-  logging improvements. Flag for discussion, don't block merge.
-
-## Output Expectations
-
-Return:
-- List of findings with severity (BLOCKING/ADVISORY)
-- For each BLOCKING: exact file:line, what's wrong, how to fix
-- Overall PASS/FAIL verdict
+Return findings ordered by severity with `file:line`, exploit or failure path,
+affected asset, smallest safe fix, and verification. Any plausible auth bypass,
+cross-tenant access, secret exposure, injection, or money-integrity failure is
+blocking until resolved or disproved.

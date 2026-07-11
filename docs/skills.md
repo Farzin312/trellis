@@ -31,6 +31,12 @@ Compatibility reviewed: 2026-07-10.
 Platform discovery rules can change. Update the review date and public claim
 tests when changing this table.
 
+Codex needs no repository `.codex` directory for these skills: it reads the
+shared `.agents/skills/` tree and `AGENTS.md`. Trellis does not generate legacy
+custom-prompt or command mirrors. Claude is the only listed platform requiring a
+separate project skill directory, so it is the only generated compatibility
+copy.
+
 ## Minimum format
 
 ```markdown

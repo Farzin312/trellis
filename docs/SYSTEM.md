@@ -28,7 +28,10 @@ only when explicitly requested or configured.
 | `trellis init [name]` | Configure a checkout that already contains Trellis |
 | `trellis check` | Run the same aggregate gate as `npm run check` |
 | `trellis eval` | Run required toolkit self-tests and configured project tests |
-| `trellis graph [path] [--update]` | Invoke Graphify only when configured and available |
+| `trellis map [--json]` | Print a bounded read-only structural repository map |
+| `trellis config show` | Validate and display project configuration without writing |
+| `trellis config enable\|disable <graphify\|bounds>` | Atomically manage project-wide optional requirements |
+| `trellis graph [path]` | Run `graphify update` only when Graphify is configured and available |
 | `trellis metrics [--recent\|--raw]` | Validate and summarize the optional JSONL ledger |
 | `trellis evolve [--stack=<value>]` | Re-run deterministic project adaptation |
 | `trellis services <start\|stop\|status\|ports> [phoenix]` | Manage the bundled Phoenix compose service |
@@ -46,7 +49,7 @@ commands or options that help does not expose.
 | `CLAUDE.md` | Compatibility bridge | Generate from the mandate contract |
 | `.agents/skills/**` | Canonical Agent Skills | Hand edit |
 | `.claude/skills/**` | Claude compatibility | Generate; do not hand edit |
-| `.trellis/config.json` | Project configuration | Write structurally; preserve unrelated user files |
+| `.trellis/config.json` | Project-wide stacks and enabled integrations | Validate and write atomically; preserve unrelated fields |
 | `.specify/specs/**` | Point-in-time delivery evidence | Append through the SDD workflow |
 | `docs/**` | Living and historical documentation | Route by audience; preserve breadcrumbs |
 | `.trellis/metrics/runs.jsonl` | Optional local ledger | Validate every nonblank record before summarizing |
@@ -61,4 +64,6 @@ commands or options that help does not expose.
 - Optional evidence remains visible as optional `PASS`, `SKIP`, or `WARN`.
 
 See [evals.md](./evals.md) for status semantics and
-[DESIGN.md](./DESIGN.md) for product boundaries.
+[DESIGN.md](./DESIGN.md) for product boundaries. See
+[repository mapping](./repository-mapping.md) for Graphify and Bounds setup and
+readiness semantics.

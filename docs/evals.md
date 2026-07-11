@@ -57,4 +57,4 @@ assumed. Their state is classified as follows:
 - executed but non-blocking by explicit policy: `WARN`
 
 See [language support](./language-support.md) for tested command dispatch and
-[SYSTEM.md](./SYSTEM.md) for the aggregate gate boundary.
+[repository mapping](./repository-mapping.md) for optional-integration evidence.

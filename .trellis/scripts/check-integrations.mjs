@@ -51,19 +51,15 @@ if (!enabled.includes('graphify')) {
         fail('graphify', 'corrupt-artifact', 'delete graphify-out and rebuild the graph');
       }
       if (graph) {
-        const commit = graph.gitCommitHash || graph.commitHash || graph.meta?.gitCommitHash;
-        if (typeof commit !== 'string' || !/^[a-f0-9]{7,64}$/i.test(commit)) {
-          fail('graphify', 'missing-commit-metadata', 'rebuild the graph with the configured Graphify version');
+        const links = graph.links || graph.edges;
+        if (!Array.isArray(graph.nodes) || !Array.isArray(links)) {
+          fail('graphify', 'invalid-artifact-schema', 'run trellis graph to rebuild graphify-out/graph.json');
+        } else if (graph.nodes.length === 0) {
+          fail('graphify', 'zero-coverage', 'run trellis graph against a path containing supported source');
+        } else if (existsSync(join(root, 'graphify-out', 'needs_update'))) {
+          fail('graphify', 'pending-semantic-update', 'run the Graphify semantic update workflow for changed non-code content');
         } else {
-          const stale = run('git', ['rev-list', `${commit}..HEAD`, '--count']);
-          const count = Number.parseInt(stale.stdout?.trim(), 10);
-          if (stale.status !== 0 || !Number.isInteger(count)) {
-            fail('graphify', 'unverifiable-commit', 'rebuild the graph from the current checkout');
-          } else if (count > 0) {
-            fail('graphify', `stale-${count}-commits`, 'run graphify update .');
-          } else {
-            console.log('PASS integration=graphify coverage=graph-present-and-current');
-          }
+          console.log(`PASS integration=graphify artifact=valid nodes=${graph.nodes.length}`);
         }
       }
     }
@@ -98,7 +94,7 @@ if (!enabled.includes('bounds')) {
       } else if (mapped < total) {
         fail('bounds', `partial-coverage-${mapped}-of-${total}`, 'assign every supported source file');
       } else {
-        const validation = run('bounds', ['validate', '--mode', 'full', '--fail-on-unowned']);
+        const validation = run('bounds', ['preflight', '--fail-on-unowned']);
         if (validation.status !== 0) fail('bounds', 'validation-failed', 'run bounds validate -H and resolve every error');
         else console.log(`PASS integration=bounds coverage=${mapped}-of-${total}`);
       }

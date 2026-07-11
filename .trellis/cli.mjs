@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateConfig } from './scripts/config-core.mjs';
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = process.cwd();
@@ -26,39 +27,50 @@ const SCAFFOLD_PATHS = [
   '.agents',
   '.env.example',
   '.github/workflows/ci.yml',
-  '.gitignore',
   '.specify/memory',
   '.specify/templates',
   '.trellis/LICENSE',
   '.trellis/cli.mjs',
   '.trellis/init.sh',
+  '.trellis/scaffold',
   '.trellis/scripts',
   '.trellis/services',
-  '.trellis/tests',
   'AGENTS.md',
   'CLAUDE.md',
-  'docs/DESIGN.md',
   'docs/README-FOR-AGENTS.md',
-  'docs/README.md',
   'docs/STRUCTURE.md',
-  'docs/SYSTEM.md',
   'docs/_subsystem-template.md',
   'docs/bug-fixes/README.md',
   'docs/bug-fixes/_template.md',
   'docs/coding-standards.md',
   'docs/credits.md',
   'docs/evals.md',
-  'docs/evolution.md',
-  'docs/frontend',
   'docs/language-support.md',
   'docs/metrics.md',
-  'docs/ponytail-setup.md',
+  'docs/repository-mapping.md',
   'docs/sdd',
   'docs/self-hosted-services.md',
   'docs/skills.md',
   'docs/systems',
-  'package-lock.json',
   'package.json',
+];
+const PORTABLE_TESTS = [
+  'adapt.test.mjs',
+  'ci.test.mjs',
+  'cli.test.mjs',
+  'config.test.mjs',
+  'docs.test.mjs',
+  'evals.test.mjs',
+  'init.test.mjs',
+  'integrations.test.mjs',
+  'mandate.test.mjs',
+  'metrics.test.mjs',
+  'migrations.test.mjs',
+  'repo-map.test.mjs',
+  'sdd-skills.test.mjs',
+  'services.test.mjs',
+  'skills.test.mjs',
+  'wizard.test.mjs',
 ];
 
 const HELP = AI
@@ -69,7 +81,7 @@ check             run the repository's single aggregate gate.
 eval              run required framework tests and configured project evals.
 map [--json]      print a bounded, read-only structural repository map.
 config show|enable|disable [integration] inspect or manage optional integrations.
-graph [path] [--update] build or update configured Graphify data.
+graph [path]       build or refresh the configured Graphify code graph.
 metrics [--recent|--raw] summarize the optional local run ledger.
 evolve [--stack=x]       re-run deterministic project adaptation.
 services start|stop|status|ports [phoenix] manage the optional service.
@@ -170,6 +182,16 @@ function copyScaffold(target) {
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(source, destination, { recursive: true, preserveTimestamps: true });
   }
+  for (const name of PORTABLE_TESTS) {
+    const source = join(packageRoot, '.trellis', 'tests', name);
+    const destination = join(target, '.trellis', 'tests', name);
+    mkdirSync(dirname(destination), { recursive: true });
+    cpSync(source, destination);
+  }
+  cpSync(
+    join(packageRoot, '.trellis', 'scaffold', 'gitignore'),
+    join(target, '.gitignore'),
+  );
   mkdirSync(join(target, '.specify', 'specs'), { recursive: true });
   mkdirSync(join(target, 'docs', 'bug-fixes'), { recursive: true });
 }
@@ -291,24 +313,20 @@ switch (command) {
   }
 
   case 'graph': {
-    const update = args.includes('--update');
-    const operands = args.filter((arg) => arg !== '--update');
-    if (operands.some((arg) => arg.startsWith('-')) || operands.length > 1) {
-      usage('graph accepts one project-relative path and --update');
+    if (args.some((arg) => arg.startsWith('-')) || args.length > 1) {
+      usage('graph accepts at most one project-relative path');
       break;
     }
-    const path = operands[0] || '.';
+    const path = args[0] || '.';
     const resolved = resolve(projectRoot, path);
     if (isAbsolute(path) || relative(projectRoot, resolved).startsWith('..')) {
       usage('graph path must stay inside the current project');
       break;
     }
-    if (!hasExecutable('graphify')) {
-      fail('graphify is not installed; enable it explicitly during init');
-      break;
-    }
     try {
-      const config = JSON.parse(readFileSync(join(projectRoot, '.trellis', 'config.json'), 'utf8'));
+      const config = validateConfig(JSON.parse(
+        readFileSync(join(projectRoot, '.trellis', 'config.json'), 'utf8'),
+      ));
       if (!config.enabled_integrations?.includes('graphify')) {
         fail('graphify is not enabled in .trellis/config.json');
         break;
@@ -317,7 +335,11 @@ switch (command) {
       fail('cannot read .trellis/config.json');
       break;
     }
-    run('graphify', update ? ['update', path] : [path]);
+    if (!hasExecutable('graphify')) {
+      fail('graphify is enabled but not installed');
+      break;
+    }
+    run('graphify', ['update', path]);
     break;
   }
 

@@ -19,3 +19,15 @@ test('scaffold payload excludes source secrets, histories, and active specs', ()
   assert.doesNotMatch(cli, /SCAFFOLD_PATHS[\s\S]*docs\/bug-fixes\/2026/);
   assert.ok(root.endsWith('/trellis/'));
 });
+
+test('scaffold ships portable tests and project guidance, not Trellis release assertions', () => {
+  const portableBlock = cli.match(/const PORTABLE_TESTS = \[([\s\S]*?)\n\];/)?.[1] || '';
+  for (const name of ['cli.test.mjs', 'config.test.mjs', 'repo-map.test.mjs', 'skills.test.mjs']) {
+    assert.match(portableBlock, new RegExp(name.replaceAll('.', '\\.')));
+  }
+  for (const name of ['package.test.mjs', 'public-docs.test.mjs', 'release.test.mjs', 'scaffold.test.mjs']) {
+    assert.doesNotMatch(portableBlock, new RegExp(name.replaceAll('.', '\\.')));
+  }
+  assert.doesNotMatch(cli, /'docs\/(?:DESIGN|SYSTEM|evolution|ponytail-setup)\.md'/);
+  assert.match(cli, /\.trellis\/scaffold/);
+});
