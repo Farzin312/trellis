@@ -36,12 +36,12 @@ for arg in "$@"; do
 done
 
 command -v node >/dev/null 2>&1 || {
-  echo "FAIL: Node.js 20 or newer is required." >&2
+  echo "FAIL: Node.js 22 or newer is required." >&2
   exit 1
 }
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-[ "$NODE_MAJOR" -ge 20 ] || {
-  echo "FAIL: Node.js 20 or newer is required; found $(node --version)." >&2
+[ "$NODE_MAJOR" -ge 22 ] || {
+  echo "FAIL: Node.js 22 or newer is required; found $(node --version)." >&2
   exit 1
 }
 
@@ -89,8 +89,11 @@ if [ "$STACK_SET" = true ]; then
   if ! STACK="$(normalize_csv "$STACK")"; then usage; fi
 else
   DETECT_ARGS=()
-  [ -f package.json ] && DETECT_ARGS+=(javascript)
-  [ -f tsconfig.json ] && DETECT_ARGS+=(typescript)
+  if [ -f tsconfig.json ]; then
+    DETECT_ARGS+=(typescript)
+  elif [ -f package.json ]; then
+    DETECT_ARGS+=(javascript)
+  fi
   { [ -f pyproject.toml ] || [ -f requirements.txt ]; } && DETECT_ARGS+=(python)
   [ -f go.mod ] && DETECT_ARGS+=(go)
   [ -f Cargo.toml ] && DETECT_ARGS+=(rust)
@@ -171,16 +174,22 @@ if [ "$CONFIG_EXISTS" = false ]; then
   if [ ! -e README.md ]; then
     node -e '
       const fs = require("node:fs");
+      const path = require("node:path");
       const name = process.argv[1];
-      fs.writeFileSync("README.md", `# ${name}\n\nThis repository uses Trellis for durable AI-agent guidance and verification.\n\n## Start here\n\n- Add application-specific prerequisites and run commands when application code is introduced.\n- AI coding agents start at [AGENTS.md](./AGENTS.md).\n- Run \`npm run check\` to verify the Trellis contract.\n- Start non-trivial work with the \`speckit-specify\` Agent Skill.\n\n## License\n\nNo license has been selected for this project. Trellis-owned files under \`.trellis/\` retain the MIT license in [\`.trellis/LICENSE\`](./.trellis/LICENSE).\n`);
+      const temporary = path.join(process.cwd(), `.README.md.tmp-${process.pid}-${Date.now()}`);
+      fs.writeFileSync(temporary, `# ${name}\n\nThis repository uses Trellis for durable AI-agent guidance and verification.\n\n## Start here\n\n- Add application-specific prerequisites and run commands when application code is introduced.\n- AI coding agents start at [AGENTS.md](./AGENTS.md).\n- Run \`npm run check\` to verify the Trellis contract.\n- Start non-trivial work with the \`speckit-specify\` Agent Skill.\n\n## License\n\nNo license has been selected for this project. Trellis-owned files under \`.trellis/\` retain the MIT license in [\`.trellis/LICENSE\`](./.trellis/LICENSE).\n`);
+      fs.renameSync(temporary, "README.md");
     ' "$PROJECT_NAME"
     echo "CREATE README.md"
   fi
   if [ ! -e docs/README.md ]; then
     node -e '
       const fs = require("node:fs");
+      const path = require("node:path");
       fs.mkdirSync("docs", { recursive: true });
-      fs.writeFileSync("docs/README.md", `# Project documentation\n\n> Parent: [project README](../README.md)\n\n## Agent guidance\n\n- [Agent routing](./README-FOR-AGENTS.md)\n- [Documentation structure](./STRUCTURE.md)\n- [Coding standards](./coding-standards.md)\n- [Spec-driven development](./sdd/sdd.md)\n\n## Toolkit references\n\n- [Repository mapping and optional architecture tools](./repository-mapping.md)\n- [Evaluation contract](./evals.md)\n- [Language support](./language-support.md)\n- [Metrics ledger](./metrics.md)\n- [Optional Phoenix service](./self-hosted-services.md)\n- [Agent Skills](./skills.md)\n- [Credits and licenses](./credits.md)\n\n## Project records\n\n- [System documentation](./systems/README.md)\n- [Bug-fix register](./bug-fixes/README.md)\n- Active delivery evidence lives under \`.specify/specs/\`.\n`);
+      const temporary = path.join("docs", `.README.md.tmp-${process.pid}-${Date.now()}`);
+      fs.writeFileSync(temporary, `# Project documentation\n\n> Parent: [project README](../README.md)\n\n## Agent guidance\n\n- [Agent routing](./README-FOR-AGENTS.md)\n- [Documentation structure](./STRUCTURE.md)\n- [Coding standards](./coding-standards.md)\n- [Spec-driven development](./sdd/sdd.md)\n\n## Toolkit references\n\n- [Repository mapping and optional architecture tools](./repository-mapping.md)\n- [Evaluation contract](./evals.md)\n- [Language support](./language-support.md)\n- [Metrics ledger](./metrics.md)\n- [Optional Phoenix service](./self-hosted-services.md)\n- [Agent Skills](./skills.md)\n- [Credits and licenses](./credits.md)\n\n## Project records\n\n- [System documentation](./systems/README.md)\n- [Bug-fix register](./bug-fixes/README.md)\n- Active delivery evidence lives under \`.specify/specs/\`.\n`);
+      fs.renameSync(temporary, "docs/README.md");
     ' 
     echo "CREATE docs/README.md"
   fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Validate Claude's native import of the canonical cross-agent mandate. */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +17,12 @@ if (args.some((arg) => arg !== '--fix') || args.filter((arg) => arg === '--fix')
 }
 const fix = args[0] === '--fix';
 
+function writeClaude(content) {
+  const temporary = `${claudeFile}.tmp-${process.pid}-${Date.now()}`;
+  writeFileSync(temporary, content);
+  renameSync(temporary, claudeFile);
+}
+
 if (!existsSync(agentsFile)) {
   console.error('FAIL: AGENTS.md not found');
   process.exit(1);
@@ -24,7 +30,7 @@ if (!existsSync(agentsFile)) {
 
 if (fix) {
   if (!existsSync(claudeFile)) {
-    writeFileSync(claudeFile, '@AGENTS.md\n');
+    writeClaude('@AGENTS.md\n');
     console.log('FIXED: created CLAUDE.md with AGENTS.md import');
     process.exit(0);
   }
@@ -38,7 +44,7 @@ if (fix) {
     .filter((line) => line.trim() !== '@AGENTS.md')
     .join('\n')
     .replace(/^\n+/, '');
-  writeFileSync(claudeFile, `@AGENTS.md\n${body ? `\n${body}` : ''}`);
+  writeClaude(`@AGENTS.md\n${body ? `\n${body}` : ''}`);
   console.log('FIXED: prepended AGENTS.md import and preserved Claude-specific instructions');
   process.exit(0);
 }

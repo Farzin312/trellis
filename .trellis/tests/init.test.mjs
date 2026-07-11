@@ -127,6 +127,19 @@ test('repeated initialization rejects a conflicting project identity instead of 
   }
 });
 
+test('auto-detection treats a package with tsconfig as TypeScript instead of duplicate JS and TS stacks', () => {
+  const project = fixture();
+  try {
+    writeFileSync(join(project, 'tsconfig.json'), '{}\n');
+    const result = run(project, 'TypeScript Project');
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const config = JSON.parse(readFileSync(join(project, '.trellis/config.json'), 'utf8'));
+    assert.deepEqual(config.stacks, ['typescript']);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+  }
+});
+
 test('repeated initialization applies only explicitly requested managed changes', () => {
   const project = fixture();
   try {

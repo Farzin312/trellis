@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ConfigError, readProjectConfig } from './scripts/config-core.mjs';
+import { readProjectConfig } from './scripts/config-core.mjs';
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = process.cwd();
@@ -161,11 +161,12 @@ function parseSetupArgs(input, { requireName = false } = {}) {
 
   if (requireName && !name) return { error: 'new requires a project name' };
   if (name && requireName
-    && (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name) || name === '.' || name === '..')) {
-    return { error: 'project name must be one safe child-directory basename' };
+    && (name.length > 200 || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)
+      || name === '.' || name === '..')) {
+    return { error: 'project name must be a safe child-directory basename of at most 200 characters' };
   }
   if (name && !requireName
-    && (!name.trim() || name.length > 200 || /[\\/\u0000-\u001f]/.test(name))) {
+    && (!name.trim() || name !== name.trim() || name.length > 200 || /[\\/\u0000-\u001f]/.test(name))) {
     return { error: 'project display name must be 1-200 characters without slashes or control characters' };
   }
   if (stack !== null) {
@@ -336,7 +337,7 @@ switch (command) {
         break;
       }
     } catch (error) {
-      const detail = error instanceof ConfigError ? error.message : error.message;
+      const detail = error instanceof Error ? error.message : String(error);
       fail(`cannot read .trellis/config.json: ${detail}`);
       break;
     }

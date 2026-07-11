@@ -85,6 +85,7 @@ test('CLI rejects unsafe names, traversal, unknown flags, and missing operands',
     ['new'],
     ['new', '../escape'],
     ['new', 'bad;touch-proof'],
+    ['new', 'a'.repeat(201)],
     ['new', 'valid-name', '--unknown'],
     ['metrics', '--unknown'],
   ]) {

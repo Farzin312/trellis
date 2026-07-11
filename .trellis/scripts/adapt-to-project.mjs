@@ -98,30 +98,6 @@ function adaptAgents(stacks) {
   console.log(`  [${writeIfChanged(path, next) ? 'OK' : 'KEEP'}] AGENTS.md managed scope`);
 }
 
-function adaptBounds(stacks) {
-  const path = join(root, '.bounds', 'root.yaml');
-  if (!existsSync(path)) return;
-
-  const languages = [...new Set(stacks
-    .filter((stack) => stack !== 'generic')
-    .map((stack) => stack === 'javascript' ? 'typescript' : stack))];
-  if (languages.length === 0) {
-    console.log('  [KEEP] .bounds/root.yaml languages (generic stack)');
-    return;
-  }
-
-  const content = readFileSync(path, 'utf8');
-  const languageBlock = /^languages:\s*\n(?:[ \t]+-[^\n]*\n?)+/m;
-  if (!languageBlock.test(content)) {
-    console.log('  [KEEP] .bounds/root.yaml has no managed languages block');
-    return;
-  }
-
-  const replacement = `languages:\n${languages.map((language) => `  - ${language}`).join('\n')}\n`;
-  const next = content.replace(languageBlock, replacement);
-  console.log(`  [${writeIfChanged(path, next) ? 'OK' : 'KEEP'}] .bounds/root.yaml languages: ${languages.join(', ')}`);
-}
-
 function adaptConfig(stacks) {
   const path = join(root, '.trellis', 'config.json');
   if (!existsSync(path)) return;
@@ -135,13 +111,15 @@ function adaptConfig(stacks) {
 }
 
 function main() {
+  if (!existsSync(join(root, '.trellis', 'config.json'))) {
+    throw new Error('missing .trellis/config.json; run trellis init first');
+  }
   const explicit = parseArgs(process.argv.slice(2));
   const stacks = explicit === undefined ? detectStacks() : parseStacks(explicit);
   console.log(`Detected stacks: ${stacks.join(', ')}`);
   adaptConfig(stacks);
   adaptAgents(stacks);
-  adaptBounds(stacks);
-  console.log('Adaptation complete. Review the managed scope and Bounds languages for accuracy.');
+  console.log('Adaptation complete. Review the managed project scope for accuracy.');
 }
 
 try {

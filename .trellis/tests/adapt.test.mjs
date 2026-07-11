@@ -25,6 +25,13 @@ function fixture(extraFiles = {}) {
     join(root, '.trellis', 'scripts', 'config-core.mjs'),
     join(project, '.trellis', 'scripts', 'config-core.mjs'),
   );
+  writeFileSync(join(project, '.trellis', 'config.json'), JSON.stringify({
+    schema_version: 1,
+    project_name: 'Project',
+    project_slug: 'project',
+    stacks: ['generic'],
+    enabled_integrations: [],
+  }));
   writeFileSync(
     join(project, 'AGENTS.md'),
     '# Project\n\nThis repo owns: [describe what this project is — fill in after init].\n\nUser notes stay.\n',
@@ -49,14 +56,15 @@ function run(project, ...args) {
   });
 }
 
-test('explicit canonical stacks adapt managed fields repeatedly without touching user content', () => {
+test('explicit stacks adapt Trellis-managed scope and preserve external tool configuration', () => {
   const project = fixture();
   try {
     const constitution = readFileSync(join(project, '.specify/memory/constitution.md'), 'utf8');
+    const bounds = readFileSync(join(project, '.bounds/root.yaml'), 'utf8');
     const first = run(project, '--stack=python');
     assert.equal(first.status, 0, first.stderr);
     assert.match(readFileSync(join(project, 'AGENTS.md'), 'utf8'), /built with python/);
-    assert.match(readFileSync(join(project, '.bounds/root.yaml'), 'utf8'), /  - python/);
+    assert.equal(readFileSync(join(project, '.bounds/root.yaml'), 'utf8'), bounds);
     assert.equal(readFileSync(join(project, '.specify/memory/constitution.md'), 'utf8'), constitution);
 
     const snapshot = [
@@ -73,7 +81,7 @@ test('explicit canonical stacks adapt managed fields repeatedly without touching
     const changed = run(project, '--stack=go,rust');
     assert.equal(changed.status, 0, changed.stderr);
     assert.match(readFileSync(join(project, 'AGENTS.md'), 'utf8'), /built with go, rust/);
-    assert.match(readFileSync(join(project, '.bounds/root.yaml'), 'utf8'), /  - go\n  - rust/);
+    assert.equal(readFileSync(join(project, '.bounds/root.yaml'), 'utf8'), bounds);
   } finally {
     rmSync(project, { recursive: true, force: true });
   }
@@ -120,5 +128,19 @@ test('auto-detection reports every root language and falls back to generic', () 
   } finally {
     rmSync(mixed, { recursive: true, force: true });
     rmSync(generic, { recursive: true, force: true });
+  }
+});
+
+test('adaptation fails when the canonical Trellis configuration is missing', () => {
+  const project = fixture();
+  try {
+    rmSync(join(project, '.trellis', 'config.json'));
+    const agents = readFileSync(join(project, 'AGENTS.md'), 'utf8');
+    const result = run(project, '--stack=python');
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /missing \.trellis\/config\.json/i);
+    assert.equal(readFileSync(join(project, 'AGENTS.md'), 'utf8'), agents);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
   }
 });

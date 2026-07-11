@@ -8,7 +8,7 @@ adds an owned subsystem map and enforceable boundary checks.
 
 | Need | Tool | Core requirement | Writes project state |
 |---|---|---|---|
-| What is in this repository? | `trellis map` | Node.js 20+ | No |
+| What is in this repository? | `trellis map` | Node.js 22+ | No |
 | Where is a symbol and what connects to it? | Graphify | Separate Python tool | `graphify-out/` |
 | Which subsystem owns this and what may depend on it? | Bounds | Separate Python tool plus reviewed ownership | `.bounds/` |
 

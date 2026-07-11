@@ -52,7 +52,8 @@ support agent workflows.
 Core use requires:
 
 - Git
-- Node.js 20 or newer
+- Node.js 22 or newer (use a currently supported LTS release; see the
+  [Node.js release schedule](https://nodejs.org/en/about/previous-releases))
 - npm
 - Bash (macOS or Linux; on Windows use WSL or Git Bash)
 - at least one AI coding agent if you want to run the Agent Skills

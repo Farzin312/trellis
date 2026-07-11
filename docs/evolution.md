@@ -12,10 +12,11 @@ trellis evolve
 trellis evolve --stack=typescript,python
 ```
 
-The command re-runs the same validated stack and project-identity adaptation used
-by initialization. It writes only Trellis-owned configuration and generated
-content. Unsupported stack values and conflicting identity data fail with a
-concrete message.
+The command re-runs validated stack detection, updates the Trellis stack config,
+and refreshes only the marked project-scope sentence in `AGENTS.md`. It does not
+rename the project or edit Graphify, Bounds, application, or other external-tool
+configuration. Unsupported stack values and invalid Trellis configuration fail
+with a concrete message.
 
 ## Skill health
 

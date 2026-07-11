@@ -10,7 +10,7 @@ test('package metadata has one publish-ready identity', () => {
   assert.equal(pkg.private, false);
   assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.bin?.trellis, './.trellis/cli.mjs');
-  assert.equal(pkg.engines?.node, '>=20');
+  assert.equal(pkg.engines?.node, '>=22');
   assert.match(pkg.repository?.url || '', /Farzin312\/trellis/);
   assert.match(pkg.homepage || '', /Farzin312\/trellis/);
   assert.match(pkg.bugs?.url || '', /Farzin312\/trellis/);
