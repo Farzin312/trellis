@@ -1,5 +1,6 @@
 ---
-phase: checklist
+name: speckit-checklist
+disable-model-invocation: true
 description: Fill spec-quality checklists before Analyze. Validates the spec is complete, not the code.
 ---
 
@@ -21,4 +22,4 @@ Fill the required checklists before Analyze runs. These validate SPEC QUALITY â€
 
 ## Next Phase
 
-Hand off to `/analyze`.
+Invoke `speckit-analyze`.

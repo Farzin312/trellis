@@ -1,5 +1,6 @@
 ---
-phase: review
+name: speckit-review
+disable-model-invocation: true
 description: Post-implementation review. Catch implementation drift and coding standards violations.
 ---
 
@@ -22,10 +23,10 @@ Produce a `review.md`-style report covering:
 - If Graphify is installed: query the graph to verify no forbidden cross-boundary imports were introduced.
 - If Bounds is installed: `bounds validate --quick` before reporting.
 
-## Delegation (Tier 3)
+## Delegation
 
 If handoff loops are enabled, this runs as the `ponytail-review` specialist (advisory) plus a blocking standards check.
 
 ## Next Phase
 
-Hand off to `/verify`.
+Invoke `speckit-verify`.

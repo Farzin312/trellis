@@ -1,122 +1,123 @@
 #!/usr/bin/env node
-/**
- * wizard.mjs — interactive install flow (create-next-app style).
- *
- * Runs when `trellis init` or `bash .trellis/init.sh` is invoked with no args on a TTY.
- * Every answer maps to an existing init.sh flag; the wizard just collects them,
- * prints a plan, confirms, then shells to init.sh. No new dependencies —
- * node:readline/promises only.
- */
+/** Interactive, dependency-free argument collector for init.sh. */
 
-import { createInterface } from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { stdin as input, stdout as output } from 'node:process';
+import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const rl = createInterface({ input, output });
 
-const AGENTS = ['claude', 'codex', 'opencode', 'copilot'];
-// Menu label -> adapt-to-project --stack value ('' = auto-detect from manifests).
-const STACKS = {
+export const AGENTS = ['claude', 'codex', 'opencode', 'copilot'];
+export const STACKS = {
   'auto-detect': '',
-  'next+supabase': 'nextjs,supabase',
-  python: '',
-  go: '',
-  rust: '',
-  generic: '',
+  javascript: 'javascript',
+  typescript: 'typescript',
+  python: 'python',
+  go: 'go',
+  rust: 'rust',
+  generic: 'generic',
 };
 
-async function ask(question, def) {
-  const a = (await rl.question(`${question}${def ? ` [${def}]` : ''}: `)).trim();
-  return a || def || '';
+export function parseAgentSelection(value) {
+  const tokens = value.split(',').map((token) => token.trim()).filter(Boolean);
+  if (tokens.length === 0) throw new Error('Choose at least one agent');
+
+  const agents = tokens.map((token) => {
+    const agent = /^\d+$/.test(token) ? AGENTS[Number(token) - 1] : token;
+    if (!agent || !AGENTS.includes(agent)) throw new Error(`Unknown agent: ${token}`);
+    return agent;
+  });
+  return [...new Set(agents)];
 }
 
-async function askYesNo(question, def) {
-  const a = (await ask(question, def ? 'Y/n' : 'y/N')).toLowerCase();
-  if (!a) return def;
-  return a.startsWith('y');
-}
-
-async function askChoice(question, choices, def) {
-  console.log(`\n${question}`);
-  choices.forEach((c, i) => console.log(`  ${i + 1}) ${c}`));
-  const a = await ask('Choose', String(choices.indexOf(def) + 1));
-  const idx = Number(a) - 1;
-  return choices[idx] ?? def;
+export function buildInitArgs({ name, agents, stack, graphify, bounds }) {
+  const args = ['.trellis/init.sh', name, `--agents=${agents.join(',')}`];
+  if (stack) args.push(`--stack=${stack}`);
+  if (graphify) args.push('--with-graphify');
+  if (bounds) args.push('--with-bounds');
+  return args;
 }
 
 async function main() {
-  console.log('\n  Trellis — new project setup\n  ---------------------------');
+  const rl = createInterface({ input, output });
 
+  async function ask(question, fallback = '') {
+    const answer = (await rl.question(`${question}${fallback ? ` [${fallback}]` : ''}: `)).trim();
+    return answer || fallback;
+  }
+
+  async function askYesNo(question, fallback) {
+    for (;;) {
+      const answer = (await ask(question, fallback ? 'Y/n' : 'y/N')).toLowerCase();
+      if (['y', 'yes', 'y/n'].includes(answer)) return true;
+      if (['n', 'no'].includes(answer)) return false;
+      console.log('  Enter yes or no.');
+    }
+  }
+
+  async function askChoice(question, choices, fallback) {
+    console.log(`\n${question}`);
+    choices.forEach((choice, index) => console.log(`  ${index + 1}) ${choice}`));
+    for (;;) {
+      const answer = await ask('Choose', String(choices.indexOf(fallback) + 1));
+      const index = Number(answer) - 1;
+      if (Number.isInteger(index) && choices[index]) return choices[index];
+      console.log(`  Choose a number from 1 to ${choices.length}.`);
+    }
+  }
+
+  console.log('\n  Trellis — project setup\n  -----------------------');
   const name = await ask('\nProject name', 'my-app');
 
-  // Multi-select agents: comma-separated numbers or names, default all.
-  console.log('\nWhich AI agents? (comma-separated, default all)');
-  AGENTS.forEach((a, i) => console.log(`  ${i + 1}) ${a}`));
-  const rawAgents = await ask('Agents', AGENTS.join(','));
-  const agents = rawAgents
-    .split(',')
-    .map((t) => t.trim())
-    .map((t) => (/^\d+$/.test(t) ? AGENTS[Number(t) - 1] : t))
-    .filter((t) => AGENTS.includes(t));
-  const agentList = agents.length ? [...new Set(agents)] : AGENTS;
-
-  const tier = await askChoice(
-    'Tier?',
-    ['1 (Core)', '2 (Intelligence)', '3 (Full)'],
-    '2 (Intelligence)',
-  );
-  const tierNum = tier[0]; // '1' | '2' | '3'
-
-  // Tier drives the defaults; the user still confirms each tool.
-  const tierWantsTools = tierNum !== '1';
-  const withGraphify = tierWantsTools
-    ? await askYesNo('Install Graphify (knowledge graph)?', true)
-    : false;
-  const withBounds = tierWantsTools
-    ? await askYesNo('Install Bounds (boundary enforcement)?', true)
-    : false;
+  console.log('\nWhich AI agents? (comma-separated)');
+  AGENTS.forEach((agent, index) => console.log(`  ${index + 1}) ${agent}`));
+  let agents;
+  while (!agents) {
+    try {
+      agents = parseAgentSelection(await ask('Agents', AGENTS.join(',')));
+    } catch (error) {
+      console.log(`  ${error.message}`);
+    }
+  }
 
   const stackLabel = await askChoice('Stack?', Object.keys(STACKS), 'auto-detect');
-  const stackValue = STACKS[stackLabel];
+  const stack = STACKS[stackLabel];
+  const graphify = await askYesNo('Install Graphify (knowledge graph)?', false);
+  const bounds = await askYesNo('Install Bounds (boundary enforcement)?', false);
 
-  // ── Plan + confirm ──────────────────────────────────────────────────
   console.log('\n  Plan');
   console.log('  ----');
   console.log(`  Project name : ${name}`);
-  console.log(`  Agents       : ${agentList.join(', ')}`);
-  console.log(`  Tier         : ${tierNum}`);
-  console.log(`  Graphify     : ${withGraphify ? 'yes' : 'no'}`);
-  console.log(`  Bounds       : ${withBounds ? 'yes' : 'no'}`);
-  console.log(`  Stack        : ${stackLabel}${stackValue ? ` (${stackValue})` : ''}`);
+  console.log(`  Agents       : ${agents.join(', ')}`);
+  console.log(`  Stack        : ${stackLabel}`);
+  console.log(`  Graphify     : ${graphify ? 'yes' : 'no'}`);
+  console.log(`  Bounds       : ${bounds ? 'yes' : 'no'}`);
   console.log('');
 
   if (!(await askYesNo('Proceed?', true))) {
     console.log('Aborted. Nothing was changed.');
     rl.close();
-    process.exit(0);
+    return;
   }
   rl.close();
 
-  // ── Compose init.sh invocation ──────────────────────────────────────
-  const args = [
-    '.trellis/init.sh',
-    name,
-    `--tier=${tierNum}`,
-    `--agents=${agentList.join(',')}`,
-  ];
-  if (withGraphify) args.push('--with-graphify');
-  if (withBounds) args.push('--with-bounds');
-  if (stackValue) args.push(`--stack=${stackValue}`);
-
-  const res = spawnSync('bash', args, {
+  const result = spawnSync('bash', buildInitArgs({ name, agents, stack, graphify, bounds }), {
     cwd: root,
     stdio: 'inherit',
     env: { ...process.env, TRELLIS_WIZARD: '1' },
   });
-  process.exit(res.status ?? 0);
+  if (result.error) {
+    console.error(`FAIL: could not start init.sh: ${result.error.message}`);
+    process.exit(1);
+  }
+  process.exit(result.status ?? 1);
 }
 
-main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`FAIL: ${error.message}`);
+    process.exit(1);
+  });
+}

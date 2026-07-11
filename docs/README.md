@@ -1,69 +1,50 @@
-# __PROJECT_NAME__ — Documentation Index
+# Trellis Documentation
 
-> Parent: [root `README.md`](../README.md)
-> Children: [`STRUCTURE.md`](./STRUCTURE.md), [`SYSTEM.md`](./SYSTEM.md), [`DESIGN.md`](./DESIGN.md), [`README-FOR-AGENTS.md`](./README-FOR-AGENTS.md), [`coding-standards.md`](./coding-standards.md), [`skills.md`](./skills.md), [`language-support.md`](./language-support.md), [`evals.md`](./evals.md), [`metrics.md`](./metrics.md), [`evolution.md`](./evolution.md), [`self-hosted-services.md`](./self-hosted-services.md), [`ponytail-setup.md`](./ponytail-setup.md), [`credits.md`](./credits.md), [`contributing.md`](./contributing.md), [`_subsystem-template.md`](./_subsystem-template.md), [`sdd/sdd.md`](./sdd/sdd.md), [`bug-fixes/_template.md`](./bug-fixes/_template.md)
+> Parent: [root README](../README.md)
 
-This is the single entry point for documentation. If you don't know where to look, start here.
+Use this index by audience. Product setup, maintainer internals, generated
+project policy, and historical evidence have separate routes.
 
-The docs follow a parent -> children breadcrumb pattern: every file declares its parent at the top. AI agents and humans both use these breadcrumbs to walk the tree without guessing.
+## Adopters
 
-## Map
+- [README](../README.md) — prerequisites, source installation, first workflow,
+  troubleshooting, licensing, and contribution path
+- [Language support](./language-support.md) — tested automation versus manual
+  integration
+- [Optional Phoenix service](./self-hosted-services.md) — Docker setup and
+  limitations
+- [Credits and licenses](./credits.md) — bundled, optional, and referenced tools
 
-```
-docs/
-├── README.md                  ← you are here (human entry point)
-├── README-FOR-AGENTS.md       ← AI agent entry point
-├── STRUCTURE.md               ← documentation rules (single source of truth)
-├── SYSTEM.md                  ← full system architecture diagram
-├── DESIGN.md                  ← design decisions + framework-agnostic allowlist
-├── coding-standards.md        ← what "good code" means
-├── evals.md                   ← the eval system (mutation, golden, Phoenix)
-├── metrics.md                 ← token cost & per-agent metrics ledger
-├── evolution.md               ← self-evolution engine
-├── skills.md                  ← how skills work + how to create them
-├── language-support.md        ← supported stacks + eval tooling per language
-├── self-hosted-services.md    ← Phoenix, Mem0, and other optional services
-├── ponytail-setup.md          ← ponytail plugin install guide
-├── credits.md                 ← tool credits + licenses
-├── contributing.md            ← how to extend Trellis
-├── _subsystem-template.md     ← copy when creating a subsystem doc
-├── sdd/
-│   └── sdd.md                 ← Spec-Driven Development policy
-├── systems/                   ← durable domain/subsystem docs
-├── bug-fixes/                 ← append-only register of production fixes
-│   └── _template.md
-├── api-reference/             ← auto-generated from API route JSDoc
-├── database/                  ← schema notes
-├── frontend/                  ← Lighthouse / a11y / asset standards
-└── archive/                   ← retired docs kept for context
-```
+## Maintainers
 
-Plus, at the repo root:
+- [Design](./DESIGN.md) — product boundaries and design decisions
+- [System](./SYSTEM.md) — implemented components, commands, and artifact ownership
+- [Evaluation contract](./evals.md) — required and optional evidence
+- [Metrics ledger](./metrics.md) — validated provider-supplied records
+- [Agent Skills](./skills.md) — canonical sources and Claude mirror generation
+- [Evolution](./evolution.md) — explicit adaptation and deterministic health checks
+- [Documentation rules](./STRUCTURE.md) — ownership, breadcrumbs, and audiences
+- [Contributing](./contributing.md) — repository change process
 
-```
-.specify/specs/<NNN>-<slug>/      ← SDD ledger — one folder per change
-AGENTS.md                       ← cross-tool AI agent mandate
-```
+## Generated project guidance
 
-## Where to look
+- [Agent entry point](./README-FOR-AGENTS.md)
+- [SDD policy](./sdd/sdd.md)
+- [Coding standards](./coding-standards.md)
+- [System documentation directory](./systems/README.md)
+- [Subsystem template](./_subsystem-template.md)
+- [`AGENTS.md`](../AGENTS.md) and the
+  [constitution](../.specify/memory/constitution.md)
 
-| Question | Doc |
-|----------|-----|
-| How do I create skills for AI agents? | [`skills.md`](./skills.md) |
-| What languages and tools are supported? | [`language-support.md`](./language-support.md) |
-| How do I set up self-hosted services? | [`self-hosted-services.md`](./self-hosted-services.md) |
-| How does the whole system fit together? | [`SYSTEM.md`](./SYSTEM.md) |
-| What design decisions were made? | [`DESIGN.md`](./DESIGN.md) |
-| How does the SDD spec workflow work? | [`sdd/sdd.md`](./sdd/sdd.md) |
-| How does the eval system work? | [`evals.md`](./evals.md) |
-| How do I track token costs per agent? | [`metrics.md`](./metrics.md) |
-| What conventions does this repo follow? | [`coding-standards.md`](./coding-standards.md), [`AGENTS.md`](../AGENTS.md) |
-| How should documentation be structured? | [`STRUCTURE.md`](./STRUCTURE.md) |
-| Where is the function I need? | The owning subsystem doc at [`systems/`](./systems/) |
-| How do I install Ponytail? | [`ponytail-setup.md`](./ponytail-setup.md) |
-| What tools does Trellis use? | [`credits.md`](./credits.md) |
-| How do I contribute to Trellis? | [`contributing.md`](./contributing.md) |
+These files are part of the scaffold payload. Project-specific identity is
+written structurally during initialization; release documentation contains no
+placeholder product identity.
 
-## The 4-doc pattern
+## History and evidence
 
-Every domain needs at most four kinds of docs: walkthrough (lifecycle map), file:function map, state machines & invariants, bug-fixes register. If you can't fit knowledge into one of these four, ask whether it should exist as a doc at all.
+- [Bug-fix register](./bug-fixes/README.md) — append-only maintainer history
+- [Active specifications](../.specify/specs/) — point-in-time delivery records,
+  not living adopter guidance
+
+Living docs follow current code. Historical records remain reachable but do not
+override current behavior.

@@ -1,169 +1,138 @@
 #!/usr/bin/env node
-/**
- * metrics.mjs — thin ledger reader + cost summarizer.
- *
- * Reads .trellis/metrics/runs.jsonl and .trellis/scripts/model-pricing.json,
- * prints a summary: total tokens, total cost, grouped by agent and phase.
- *
- * Also provides appendRun() for other scripts to write records.
- *
- * Usage:
- *   node .trellis/scripts/metrics.mjs              # summary
- *   node .trellis/scripts/metrics.mjs --recent      # last 10 sessions
- *   node .trellis/scripts/metrics.mjs --raw         # dump runs.jsonl
- *   node .trellis/scripts/metrics.mjs --append '{"ts":"...","agent":"..."}'
- */
 
-import { readFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+} from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..', '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const metricsDir = join(root, '.trellis', 'metrics');
 const runsFile = join(metricsDir, 'runs.jsonl');
-const pricingFile = join(__dirname, 'model-pricing.json');
+const stringFields = ['ts', 'agent', 'model', 'phase', 'phase_or_task', 'result', 'pricing_version'];
+const numberFields = ['tokens_in', 'tokens_out', 'est_cost_usd', 'tool_calls', 'duration_ms'];
+const integerFields = new Set(['tokens_in', 'tokens_out', 'tool_calls', 'duration_ms']);
 
-// --- Pricing ---
-function loadPricing() {
-  if (!existsSync(pricingFile)) return { _fallback: { input_per_mtok: 0, output_per_mtok: 0 }, _updated: 'unknown' };
-  return JSON.parse(readFileSync(pricingFile, 'utf8'));
+function usage() {
+  console.error('Usage: metrics.mjs [--recent | --raw | --append <json>]');
+  process.exit(2);
 }
 
-function computeCost(tokensIn, tokensOut, model, pricing) {
-  const rates = pricing[model] || pricing._fallback || { input_per_mtok: 0, output_per_mtok: 0 };
-  return (tokensIn / 1e6) * rates.input_per_mtok + (tokensOut / 1e6) * rates.output_per_mtok;
+function validationError(record) {
+  if (!record || Array.isArray(record) || typeof record !== 'object') return 'record must be a JSON object';
+  for (const field of stringFields) {
+    if (record[field] !== undefined && typeof record[field] !== 'string') return `${field} must be a string`;
+  }
+  for (const field of numberFields) {
+    if (record[field] === undefined) continue;
+    if (typeof record[field] !== 'number' || !Number.isFinite(record[field])) return `${field} must be finite`;
+    if (record[field] < 0) return `${field} must be non-negative`;
+    if (integerFields.has(field) && !Number.isInteger(record[field])) return `${field} must be an integer`;
+  }
+  return null;
 }
 
-// --- Ledger read ---
 function readRuns() {
   if (!existsSync(runsFile)) return [];
-  return readFileSync(runsFile, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map(line => {
-      try { return JSON.parse(line); } catch { return null; }
-    })
-    .filter(Boolean);
+  const runs = [];
+  const errors = [];
+  for (const [index, line] of readFileSync(runsFile, 'utf8').split('\n').entries()) {
+    if (!line.trim()) continue;
+    let record;
+    try {
+      record = JSON.parse(line);
+    } catch (error) {
+      errors.push(`FAIL: runs.jsonl:${index + 1} invalid JSON: ${error.message}`);
+      continue;
+    }
+    const error = validationError(record);
+    if (error) errors.push(`FAIL: runs.jsonl:${index + 1} ${error}`);
+    else runs.push(record);
+  }
+  if (errors.length > 0) {
+    for (const error of errors) console.error(error);
+    process.exit(1);
+  }
+  return runs;
 }
 
-// --- Append (for other scripts) ---
-function appendRun(record) {
+function appendRun(input) {
+  const record = { ...input, ts: input.ts || new Date().toISOString() };
+  const error = validationError(record);
+  if (error) {
+    console.error(`FAIL: record ${error}`);
+    process.exit(1);
+  }
   mkdirSync(metricsDir, { recursive: true });
-  const pricing = loadPricing();
-  if (record.est_cost_usd === undefined && record.tokens_in !== undefined) {
-    record.est_cost_usd = computeCost(record.tokens_in || 0, record.tokens_out || 0, record.model || '', pricing);
-  }
-  if (record.pricing_version === undefined) {
-    record.pricing_version = pricing._updated || 'unknown';
-  }
-  appendFileSync(runsFile, JSON.stringify(record) + '\n');
+  appendFileSync(runsFile, `${JSON.stringify(record)}\n`, { encoding: 'utf8', flag: 'a' });
 }
 
-// --- Summary ---
-function summarize(runs) {
-  const pricing = loadPricing();
-  const pricingVersion = pricing._updated || 'unknown';
+const args = process.argv.slice(2);
+if (args.length > 0 && !['--recent', '--raw', '--append'].includes(args[0])) usage();
+if ((args[0] === '--recent' || args[0] === '--raw') && args.length !== 1) usage();
+if (args[0] === '--append' && args.length !== 2) usage();
 
-  const totals = { tokens_in: 0, tokens_out: 0, cost: 0, tool_calls: 0, runs: runs.length };
-  const byAgent = {};
-  const byPhase = {};
-
-  for (const r of runs) {
-    totals.tokens_in += r.tokens_in || 0;
-    totals.tokens_out += r.tokens_out || 0;
-    totals.cost += r.est_cost_usd || 0;
-    totals.tool_calls += r.tool_calls || 0;
-
-    const agent = r.agent || 'unknown';
-    if (!byAgent[agent]) byAgent[agent] = { tokens_in: 0, tokens_out: 0, cost: 0, runs: 0 };
-    byAgent[agent].tokens_in += r.tokens_in || 0;
-    byAgent[agent].tokens_out += r.tokens_out || 0;
-    byAgent[agent].cost += r.est_cost_usd || 0;
-    byAgent[agent].runs += 1;
-
-    const phase = r.phase || r.phase_or_task || 'unspecified';
-    if (!byPhase[phase]) byPhase[phase] = { cost: 0, runs: 0 };
-    byPhase[phase].cost += r.est_cost_usd || 0;
-    byPhase[phase].runs += 1;
-  }
-
-  return { totals, byAgent, byPhase, pricingVersion };
-}
-
-// --- CLI ---
-const arg = process.argv[2] || '';
-
-// --append mode: write a record from CLI
-if (arg === '--append') {
-  const json = process.argv[3];
-  if (!json) {
-    console.error('Usage: metrics.mjs --append \'{"ts":"...","agent":"..."}\'');
-    process.exit(1);
-  }
+if (args[0] === '--append') {
+  let record;
   try {
-    const record = JSON.parse(json);
-    if (!record.ts) record.ts = new Date().toISOString();
-    appendRun(record);
-    console.log('OK: record appended');
-  } catch (e) {
-    console.error('FAIL: invalid JSON:', e.message);
+    record = JSON.parse(args[1]);
+  } catch (error) {
+    console.error(`FAIL: invalid JSON: ${error.message}`);
     process.exit(1);
   }
+  appendRun(record);
+  console.log('PASS: metrics record appended');
   process.exit(0);
 }
 
 const runs = readRuns();
-
 if (runs.length === 0) {
-  console.log('No metrics recorded yet.');
-  console.log('');
-  console.log('The ledger is at .trellis/metrics/runs.jsonl (git-ignored).');
-  console.log('Records are appended by:');
-  console.log('  - Eval runner (run-evals.mjs)');
-  console.log('  - Claude Code Stop/SubagentStop hooks');
-  console.log('  - Manual: trellis metrics --append \'{"ts":"...","agent":"..."}\'');
-  console.log('');
-  console.log('See docs/metrics.md for the full schema.');
+  console.log('SKIP: no metrics records');
   process.exit(0);
 }
 
-if (arg === '--raw') {
-  for (const r of runs) console.log(JSON.stringify(r));
+if (args[0] === '--raw') {
+  for (const run of runs) console.log(JSON.stringify(run));
   process.exit(0);
 }
 
-if (arg === '--recent') {
+if (args[0] === '--recent') {
   const recent = runs.slice(-10);
-  console.log(`Last ${recent.length} session(s):\n`);
-  for (const r of recent) {
-    const cost = r.est_cost_usd ? `$${r.est_cost_usd.toFixed(4)}` : 'n/a';
-    console.log(`  ${r.ts}  ${r.agent || '?'}  ${r.model || '?'}  ${r.phase || '?'}  ${cost}`);
+  console.log(`Last ${recent.length} record(s):`);
+  for (const run of recent) {
+    const cost = run.est_cost_usd === undefined ? 'n/a' : `$${run.est_cost_usd.toFixed(4)}`;
+    console.log(`${run.ts || '?'} ${run.agent || '?'} ${run.model || '?'} ${run.phase || run.phase_or_task || '?'} ${cost}`);
   }
   process.exit(0);
 }
 
-// Default: summary
-const s = summarize(runs);
-console.log('═══════════════════════════════════════════');
-console.log('  TRELLIS METRICS SUMMARY');
-console.log('═══════════════════════════════════════════');
-console.log(`  Sessions:     ${s.totals.runs}`);
-console.log(`  Tokens in:    ${s.totals.tokens_in.toLocaleString()}`);
-console.log(`  Tokens out:   ${s.totals.tokens_out.toLocaleString()}`);
-console.log(`  Est. cost:    $${s.totals.cost.toFixed(4)}`);
-console.log(`  Tool calls:   ${s.totals.tool_calls}`);
-console.log(`  Pricing ver:  ${s.pricingVersion}`);
-console.log('');
+const totals = runs.reduce((sum, run) => ({
+  tokensIn: sum.tokensIn + (run.tokens_in ?? 0),
+  tokensOut: sum.tokensOut + (run.tokens_out ?? 0),
+  cost: sum.cost + (run.est_cost_usd ?? 0),
+  toolCalls: sum.toolCalls + (run.tool_calls ?? 0),
+}), { tokensIn: 0, tokensOut: 0, cost: 0, toolCalls: 0 });
 
-console.log('  By agent:');
-for (const [agent, data] of Object.entries(s.byAgent).sort((a, b) => b[1].cost - a[1].cost)) {
-  console.log(`    ${agent.padEnd(12)} ${data.runs} runs  $${data.cost.toFixed(4)}  ${(data.tokens_in + data.tokens_out).toLocaleString()} tokens`);
+const byAgent = new Map();
+for (const run of runs) {
+  const agent = run.agent || 'unknown';
+  const value = byAgent.get(agent) || { runs: 0, tokens: 0, cost: 0 };
+  value.runs++;
+  value.tokens += (run.tokens_in ?? 0) + (run.tokens_out ?? 0);
+  value.cost += run.est_cost_usd ?? 0;
+  byAgent.set(agent, value);
 }
-console.log('');
 
-console.log('  By phase:');
-for (const [phase, data] of Object.entries(s.byPhase).sort((a, b) => b[1].cost - a[1].cost)) {
-  console.log(`    ${phase.padEnd(14)} ${data.runs} runs  $${data.cost.toFixed(4)}`);
+console.log('TRELLIS METRICS SUMMARY');
+console.log(`Records:       ${runs.length}`);
+console.log(`Tokens in:     ${totals.tokensIn}`);
+console.log(`Tokens out:    ${totals.tokensOut}`);
+console.log(`Reported cost: $${totals.cost.toFixed(4)}`);
+console.log(`Tool calls:    ${totals.toolCalls}`);
+console.log('By agent:');
+for (const [agent, value] of [...byAgent].sort(([a], [b]) => a.localeCompare(b))) {
+  console.log(`  ${agent} records=${value.runs} tokens=${value.tokens} reported_cost=$${value.cost.toFixed(4)}`);
 }
-console.log('═══════════════════════════════════════════');

@@ -1,136 +1,64 @@
-# Trellis Design Philosophy
+# Trellis Design
 
-> Parent: `docs/README.md`
+> Parent: [documentation index](./README.md)
 
-This document defines the core design principles that make Trellis work for
-ANY project, not just one stack. It is the reference a reviewer checks against
-when evaluating whether a change keeps the framework agnostic.
+Trellis is a source-distributed control plane for project guidance and checks.
+Its design favors explicit configuration, deterministic evidence, and safe file
+ownership over automatic repository rewriting.
 
----
+## Product boundary
 
-## Principle 1 — Stack-Agnostic by Construction
+Trellis owns its CLI, initializer, Agent Skills, generated Claude compatibility
+files, documentation checks, and optional-integration readiness checks. It does
+not own an adopting application's architecture, dependencies, authentication,
+authorization, payment state, database policy, or deployment.
 
-Trellis never assumes a specific framework, database, payment provider, or
-frontend runtime. The framework skeleton works for:
+Trellis does not configure application authentication. Generated guidance tells
+projects to validate trust-boundary input and fail closed, but provider choice
+and implementation stay project-owned.
 
-- Next.js, Remix, Astro, SvelteKit, Nuxt, or plain Express
-- PostgreSQL/Supabase, MySQL/PlanetScale, SQLite/Turso, MongoDB
-- Stripe, Square, PayPal, Lemon Squeezy, or no payments at all
-- React, Vue, Svelte, Solid, or no UI framework at all
-- TypeScript, Python, Go, Rust, or mixed-language monorepos
+## Design decisions
 
-The SDD pipeline, mandate file pattern, documentation rules, handoff loops,
-eval system, and boundary enforcement are all independent of the target stack.
+### One canonical instruction source
 
-### How this is enforced
+Reusable workflows are hand-edited under `.agents/skills/<name>/SKILL.md`.
+Claude Code receives a generated `.claude/skills/` mirror. Other platform copies
+are not generated. `AGENTS.md` is the durable mandate; `CLAUDE.md` is a minimal
+compatibility import.
 
-Every framework file (scripts, templates, docs, configs) is checked by
-`.trellis/scripts/check-agnostic.mjs`. This script scans for stack-specific identifiers
-and flags any that appear in framework-core files. The allowlist lives at
-`.trellis/scripts/agnostic-allowlist.json` — files listed there are explicitly permitted
-to reference specific stacks (e.g., the `.env.example` template, which shows
-Supabase as an EXAMPLE).
+### A zero-dependency core
 
-Files that MUST stay agnostic:
-- `AGENTS.md`, `CLAUDE.md` (mandate files)
-- `docs/STRUCTURE.md`, `docs/coding-standards.md`, `docs/sdd/sdd.md`
-- `docs/README-FOR-AGENTS.md`, `docs/README.md`
-- `.specify/memory/constitution.md`
-- All scripts under `.trellis/scripts/` (except stack-specific helpers)
-- `.trellis/agents/handoffs/registry.yaml`
-- `README.md`, this file
+The CLI and repository self-tests use Node.js standard-library APIs. Optional
+tools are not hidden dependencies of help, initialization, core checks, or docs
+verification.
 
-Files that MAY reference specific stacks:
-- `.env.example` (shows examples, clearly marked)
-- `docs/ponytail-setup.md` (references the Ponytail project by name)
-- `docs/credits.md` (names every tool we use)
-- `.trellis/services/docker-compose.phoenix.yml` (names Phoenix image)
-- User project code (app/, lib/, etc. — not framework files)
+### Explicit optional integrations
 
----
+Graphify and Bounds are enabled by explicit initialization flags. Phoenix is
+started only by an explicit service command. An unconfigured integration is
+reported as `SKIP`; a configured integration that is absent or invalid is a
+failure with a next action.
 
-## Principle 2 — Moldable to the Project Premise
+### Evidence has a type
 
-When a project clones Trellis, init.sh asks (or infers) the project's premise:
-what it does, what stack it uses, what constraints matter. The constitution,
-coding standards, and mandate file are then ADAPTED — not rewritten from
-scratch.
+Checks report required passes and failures separately from optional passes,
+skips, and warnings. A skip never becomes passed evidence. Public claims are
+limited to behavior covered by executable metadata or repository tests.
 
-The adaptation is done by `.trellis/scripts/adapt-to-project.mjs` (runs during init).
-It:
-1. Detects the stack from package.json, requirements.txt, go.mod, Cargo.toml.
-2. Updates constitution Principle I (Server Components First) to match the
-   rendering model (or removes it for non-UI projects).
-3. Updates constitution Principle II (Auth/Money Fail-Closed) with the
-   project's actual auth and payment providers (or removes money if N/A).
-4. Updates the .env.example with the project's actual service keys.
-5. Leaves all framework principles (SDD, docs contract, file decomposition,
-   observability, TDD, handoff loops, evals) untouched — those are universal.
+### Safe ownership
 
-This means a Rust CLI project, a Python data pipeline, a Go microservice, and
-a Next.js marketplace all start from the same Trellis clone but get a
-constitution tuned to their reality.
+`trellis new` copies an allowlisted scaffold payload into a new directory.
+Initialization and generation replace only Trellis-owned generated files and
+reject malformed input. Merging Trellis into an unrelated repository requires
+human review because package files, mandates, hooks, and CI may already be owned
+by that project.
 
----
+## Supported extension points
 
-## Principle 3 — Ever-Evolving Agents
+- Add or update a workflow in `.agents/skills/`, then regenerate the Claude mirror.
+- Add stack detection only with fixture coverage and a documented support label.
+- Add an optional integration only with explicit configuration, readiness checks,
+  failure behavior, and license documentation.
+- Add CLI behavior only with argument-validation and exit-status tests.
 
-Agents are not static. As the project grows, the tools improve, the team
-learns, and the AI landscape shifts, the agent configurations (mandate files,
-skills, handoff registry, command prompts) must evolve. Stale agents are a
-liability — they enforce yesterday's rules against today's code.
-
-Trellis includes an Evolution Agent (see `docs/evolution.md`) that periodically
-audits the agent configurations against:
-- The current codebase (has the stack drifted from what the constitution says?)
-- The current tool versions (are commands using deprecated flags?)
-- The current AI landscape (are there better tools or patterns now?)
-- Recent failures (are agents repeatedly making mistakes the rules don't catch?)
-
-The Evolution Agent proposes updates; it does not auto-apply them. Every
-proposed change goes through SDD review (the framework reviews itself).
-
----
-
-## Principle 4 — The Review Catches Opinionation
-
-Every PR to the Trellis framework itself (not user projects) must pass:
-1. `.trellis/scripts/check-agnostic.mjs` — flags stack-specific coupling in framework files.
-2. `npm run docs:check` — flags broken or missing cross-references.
-3. The review command's agnostic checklist (see `.specify/templates/commands/review.md`).
-
-A PR that hardcodes "Supabase" into AGENTS.md, or "React" into coding-standards
-without marking it as an example, is REJECTED. The framework serves all stacks;
-opinionation belongs in the adapted constitution, not the framework core.
-
----
-
-## Principle 5 — The Framework Reviews Itself
-
-Trellis's own verify.md (see `MASTERPLAN.md`) runs the framework's checks
-against the framework. If check-agnostic.mjs flags Trellis's own files, that
-is a build failure. If docs:check finds a broken link in Trellis's own docs,
-that is a build failure. The framework is its own first customer.
-
----
-
-## What Stays Universal (Never Adapted Away)
-
-These are the load-bearing constants. No matter what the project is, these
-hold:
-
-1. **SDD before code** — non-trivial changes go through the spec pipeline.
-2. **Code is source of truth** — docs follow code unless code is contradicting.
-3. **Doc references update with every code change** — same commit.
-4. **Bug fixes are categorized** — every fix gets a structured entry.
-5. **Lazy by default (Ponytail)** — start simple, mark deviations.
-6. **TDD** — tests first, run to failure, then pass.
-7. **File decomposition** — 400 warn, 600 plan, 800 decompose.
-8. **Observability** — structured logging, request-level metrics.
-9. **Eval system** — mutation tests, property tests, golden tests prove quality.
-10. **Boundary enforcement** — architectural rules are prescriptive and CI-gated.
-11. **Knowledge graph** — agents navigate via queries, not grepping.
-12. **Handoff loops** — agents delegate to specialists based on triggers.
-13. **Evolution** — the framework and its agents update themselves periodically.
-
-These 13 constants are why Trellis is a framework, not a boilerplate.
+The implemented component map is in [SYSTEM.md](./SYSTEM.md).

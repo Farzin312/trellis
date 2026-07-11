@@ -1,155 +1,133 @@
 #!/usr/bin/env node
-/**
- * run-evals.mjs
- *
- * Runs the full evaluation suite:
- *   1. Unit + integration tests (vitest)
- *   2. Property-based tests (fast-check, integrated in vitest)
- *   3. Mutation testing (stryker)
- *   4. Golden tests (per-spec locked suites)
- *   5. Ponytail marker format check (advisory)
- *
- * Usage: node .trellis/scripts/run-evals.mjs
- */
 
-import { execSync } from 'child_process';
-import { existsSync, readdirSync, appendFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..', '..');
-const metricsDir = join(root, '.trellis', 'metrics');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const counts = {
+  required_pass: 0,
+  required_fail: 0,
+  optional_pass: 0,
+  optional_skip: 0,
+  optional_warn: 0,
+};
 
-let failures = 0;
-
-function logMetric(name, durationMs, result) {
-  mkdirSync(metricsDir, { recursive: true });
-  const record = JSON.stringify({
-    ts: new Date().toISOString(),
-    agent: 'eval',
-    model: 'n/a',
-    phase: name,
-    tokens_in: 0,
-    tokens_out: 0,
-    est_cost_usd: 0,
-    tool_calls: 0,
-    duration_ms: durationMs,
-    result: result,
-  });
-  appendFileSync(join(metricsDir, 'runs.jsonl'), record + '\n');
+function report(status, kind, name, detail = '') {
+  counts[`${kind}_${status.toLowerCase()}`]++;
+  console.log(`${status} ${kind} ${name}${detail ? ` reason=${detail}` : ''}`);
 }
 
-function runStep(name, command, required = true) {
-  console.log(`\n── ${name} ──`);
-  const start = Date.now();
+function runRequired(name, command, args) {
+  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
+  if (!result.error && result.status === 0) {
+    report('PASS', 'required', name);
+    return;
+  }
+  const detail = result.error?.code === 'ENOENT'
+    ? `missing-command:${command}`
+    : `exit-${result.status ?? 1}`;
+  report('FAIL', 'required', name, detail);
+  const output = `${result.stdout || ''}${result.stderr || ''}`.trim();
+  if (output) console.error(output);
+}
+
+function walk(dir, files = []) {
+  if (!existsSync(dir)) return files;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (['.git', '.trellis', 'node_modules', 'graphify-out'].includes(entry.name)) continue;
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) walk(path, files);
+    else if (entry.isFile()) files.push(path);
+  }
+  return files;
+}
+
+function readPackage(path) {
   try {
-    execSync(command, { cwd: root, stdio: 'inherit' });
-    console.log(`PASS: ${name}`);
-    logMetric(name, Date.now() - start, 'pass');
-  } catch (e) {
-    if (required) {
-      console.error(`FAIL: ${name}`);
-      failures++;
-      logMetric(name, Date.now() - start, 'fail');
-    } else {
-      console.warn(`WARN: ${name} (non-blocking)`);
-      logMetric(name, Date.now() - start, 'warn');
-    }
+    const value = JSON.parse(readFileSync(path, 'utf8'));
+    return value && !Array.isArray(value) && typeof value === 'object' ? value : null;
+  } catch {
+    return null;
   }
 }
 
-// Step 1: Unit + integration tests
-const hasPackageJson = existsSync(join(root, 'package.json'));
-const hasRequirementsTxt = existsSync(join(root, 'requirements.txt'));
-const hasGoMod = existsSync(join(root, 'go.mod'));
-const hasCargoToml = existsSync(join(root, 'Cargo.toml'));
+const selfTestDir = join(root, '.trellis', 'tests');
+const selfTests = existsSync(selfTestDir)
+  ? readdirSync(selfTestDir)
+    .filter((name) => name.endsWith('.test.mjs'))
+    .sort()
+    .map((name) => join(selfTestDir, name))
+  : [];
 
-if (hasPackageJson) {
-  // Check if any test files exist before running vitest. A scaffold repo ships
-  // zero tests; the adopting project adds them. Exit 1 from "no test files" is
-  // not a failure — it's a SKIP.
-  const testFiles = readdirSync(root, { recursive: true })
-    .filter(f => /\.(test|spec)\.(m|c)?[jt]sx?$/.test(f) && !f.includes('node_modules') && !f.includes('.git'));
-  if (testFiles.length > 0) {
-    runStep('Test suite (vitest)', 'npx vitest run');
+if (selfTests.length === 0) {
+  report('FAIL', 'required', 'framework-self-tests', 'no-test-files');
+} else {
+  runRequired('framework-self-tests', process.execPath, ['--test', ...selfTests]);
+}
+
+const projectFiles = walk(root);
+const jsTests = projectFiles.filter((path) => /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/.test(path));
+const pythonTests = projectFiles.filter((path) => /(?:^|\/)(?:test_.*|.*_test)\.py$/.test(path));
+const goTests = projectFiles.filter((path) => /_test\.go$/.test(path));
+const rustFiles = projectFiles.filter((path) => path.endsWith('.rs'));
+let detectedManifest = false;
+
+const packagePath = join(root, 'package.json');
+if (existsSync(packagePath)) {
+  detectedManifest = true;
+  const pkg = readPackage(packagePath);
+  if (!pkg) {
+    report('FAIL', 'required', 'javascript-project-tests', 'invalid-package-json');
+  } else if (typeof pkg.scripts?.['test:project'] === 'string' && pkg.scripts['test:project'].trim()) {
+    runRequired(
+      'javascript-project-tests',
+      process.platform === 'win32' ? 'npm.cmd' : 'npm',
+      ['run', 'test:project'],
+    );
+  } else if (jsTests.length > 0) {
+    report('WARN', 'optional', 'javascript-project-tests', 'test-files-without-test:project');
   } else {
-    console.log('\n── Test suite (vitest) ──');
-    console.log('SKIP: no test files found (*.test.* / *.spec.*)');
-    console.log('       The scaffold ships zero tests. Adopting projects add them.');
-    console.log('       See docs/sdd/sdd.md for the test-header format.');
+    report('SKIP', 'optional', 'javascript-project-tests', 'not-configured');
   }
-} else if (hasRequirementsTxt) {
-  runStep('Test suite (pytest)', 'python -m pytest -q');
-} else if (hasGoMod) {
-  runStep('Test suite (go test)', 'go test ./...');
-} else if (hasCargoToml) {
-  runStep('Test suite (cargo test)', 'cargo test');
-} else {
-  console.log('\n── Test suite ──');
-  console.log('SKIP: no recognized project manifest');
-  console.log('       Expected: package.json, requirements.txt, go.mod, or Cargo.toml');
 }
 
-// Step 2: Docs check
-runStep('Docs sync check', 'node .trellis/scripts/docs-sync.mjs --check', false);
-
-// Step 3: Migration safety
-if (existsSync(join(root, 'supabase', 'migrations'))) {
-  runStep('Migration safety', 'node .trellis/scripts/check-migration-safety.mjs', false);
-}
-
-// Step 4: Ponytail format check (always advisory)
-runStep('Ponytail marker format', 'node .trellis/scripts/check-ponytail.mjs', false);
-
-// Step 5: Mutation testing (language-specific)
-const strykerConfig = join(root, 'stryker.config.json');
-const mutmutConfig = join(root, 'mutmut.ini');
-
-if (existsSync(strykerConfig)) {
-  runStep('Mutation testing (StrykerJS)', 'npx stryker run', false);
-} else if (existsSync(mutmutConfig)) {
-  runStep('Mutation testing (mutmut)', 'mutmut run', false);
-} else if (hasGoMod) {
-  console.log('\n── Mutation testing ──');
-  console.log('INFO: Go mutation testing via go-mutesting (install separately)');
-  console.log('      See .trellis/templates/go/README.md');
-} else if (hasCargoToml) {
-  console.log('\n── Mutation testing ──');
-  console.log('INFO: Rust mutation testing via cargo-mutants (install separately)');
-  console.log('      See .trellis/templates/rust/README.md');
-} else {
-  console.log('\n── Mutation testing ──');
-  console.log('SKIP: no mutation testing config found');
-  console.log('       JS/TS: .trellis/templates/js-ts/stryker.config.json');
-  console.log('       Python: .trellis/templates/python/mutmut.ini');
-  console.log('       Go: go-mutesting | Rust: cargo-mutants');
-}
-
-// Step 6: Golden tests
-const goldenDir = join(root, '.trellis', 'tests', 'golden');
-if (existsSync(goldenDir)) {
-  // Check if directory has any test files
-  const hasTests = readdirSync(goldenDir, { recursive: true }).some(f => /\.(test|spec)\.(m|c)?[jt]s$/.test(f));
-  if (hasTests) {
-    runStep('Golden tests', 'npx vitest run .trellis/tests/golden', false);
+const pyprojectPath = join(root, 'pyproject.toml');
+const requirementsPath = join(root, 'requirements.txt');
+if (existsSync(pyprojectPath) || existsSync(requirementsPath)) {
+  detectedManifest = true;
+  if (pythonTests.length === 0) {
+    report('SKIP', 'optional', 'python-project-tests', 'no-test-evidence');
   } else {
-    console.log('\n── Golden tests ──');
-    console.log('SKIP: .trellis/tests/golden/ exists but contains no test files');
-    console.log('       Golden tests are per-spec locked suites. See docs/sdd/sdd.md');
+    const pyproject = existsSync(pyprojectPath) ? readFileSync(pyprojectPath, 'utf8') : '';
+    const requirements = existsSync(requirementsPath) ? readFileSync(requirementsPath, 'utf8') : '';
+    const pytest = existsSync(join(root, 'pytest.ini'))
+      || /\[tool\.pytest(?:\.|\])/.test(pyproject)
+      || /^pytest(?:\W|$)/im.test(requirements);
+    runRequired(
+      'python-project-tests',
+      process.platform === 'win32' ? 'python' : 'python3',
+      pytest ? ['-m', 'pytest', '-q'] : ['-m', 'unittest', 'discover'],
+    );
   }
-} else {
-  console.log('\n── Golden tests ──');
-  console.log('SKIP: no .trellis/tests/golden/ directory');
-  console.log('       Golden tests are per-spec locked suites. See docs/sdd/sdd.md');
 }
 
-// Summary
-console.log('\n═══════════════════════════════════════════');
-if (failures === 0) {
-  console.log('  ALL REQUIRED EVALS PASSED');
-} else {
-  console.error(`  ${failures} REQUIRED EVAL(S) FAILED`);
+if (existsSync(join(root, 'go.mod'))) {
+  detectedManifest = true;
+  if (goTests.length > 0) runRequired('go-project-tests', 'go', ['test', './...']);
+  else report('SKIP', 'optional', 'go-project-tests', 'no-test-evidence');
 }
-console.log('═══════════════════════════════════════════');
-process.exit(failures > 0 ? 1 : 0);
+
+if (existsSync(join(root, 'Cargo.toml'))) {
+  detectedManifest = true;
+  const hasRustTests = rustFiles.some((path) => path.includes(`${join(root, 'tests')}/`)
+    || readFileSync(path, 'utf8').includes('#[test]'));
+  if (hasRustTests) runRequired('rust-project-tests', 'cargo', ['test']);
+  else report('SKIP', 'optional', 'rust-project-tests', 'no-test-evidence');
+}
+
+if (!detectedManifest) report('SKIP', 'optional', 'project-tests', 'no-project-manifest');
+
+console.log(`RESULT required_pass=${counts.required_pass} required_fail=${counts.required_fail} optional_pass=${counts.optional_pass} optional_skip=${counts.optional_skip} optional_warn=${counts.optional_warn}`);
+process.exit(counts.required_fail > 0 ? 1 : 0);

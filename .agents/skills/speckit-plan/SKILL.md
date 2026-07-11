@@ -1,5 +1,6 @@
 ---
-phase: plan
+name: speckit-plan
+disable-model-invocation: true
 description: Create the technical plan: architecture, contracts, risks, test strategy.
 ---
 
@@ -11,7 +12,7 @@ Read the clarified `spec.md`. Produce:
 2. `contracts.md` (or `contracts/` folder) — API contracts
 3. `risks.md` — production hazards + mitigations
 
-## Delegation (Tier 3)
+## Delegation
 
 If handoff loops are enabled, dispatch domain subagents in parallel:
 - `api-routes` skill -> contracts
@@ -31,4 +32,4 @@ Each receives only the relevant FR/SC refs + template. Never the full spec.
 
 ## Next Phase
 
-Hand off to `/tasks`.
+Invoke `speckit-tasks`.

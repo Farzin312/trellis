@@ -1,11 +1,12 @@
 ---
-phase: clarify
+name: speckit-clarify
+disable-model-invocation: true
 description: Drive targeted questions until ambiguity is materially resolved.
 ---
 
 ## Task
 
-Read `specs/<NNN>-<slug>/spec.md`. Identify every ambiguity, gap, or unstated assumption. Ask targeted questions one at a time (when the user is actively answering) or in a batch (when the user prefers).
+Read `.specify/specs/<NNN>-<slug>/spec.md`. Identify every ambiguity, gap, or unstated assumption. Ask targeted questions one at a time (when the user is actively answering) or in a batch (when the user prefers).
 
 ## Rules
 
@@ -17,4 +18,4 @@ Read `specs/<NNN>-<slug>/spec.md`. Identify every ambiguity, gap, or unstated as
 
 ## Next Phase
 
-Hand off to `/plan`.
+Invoke `speckit-plan`.

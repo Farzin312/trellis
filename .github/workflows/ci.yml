@@ -6,55 +6,21 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.head_ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  ci:
-    name: Lint - Build - Test - Docs
-    runs-on: ubuntu-latest
+permissions:
+  contents: read
 
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci --include=dev
-
-      - name: Generate commands
-        run: node scripts/generate-commands.mjs
-
-      - name: Mandate sync check
-        run: node scripts/check-mandate-sync.mjs
-
-      - name: Command sync check
-        run: node scripts/check-command-sync.mjs
-
-      - name: Docs check
-        run: node scripts/docs-sync.mjs --check
-
-      - name: Stack-agnostic check
-        run: node scripts/check-agnostic.mjs
-
-      - name: Ponytail marker format check
-        run: node scripts/check-ponytail.mjs
-
-      - name: Migration safety check
-        run: node scripts/check-migration-safety.mjs
-
-      - name: Tests
-        run: npm test
-        continue-on-error: true # scaffold has no tests yet; projects replace this
-
-      - name: Handoff registry validate
-        run: node scripts/handoff-engine.mjs validate
-
-      - name: Skill health check
-        run: node scripts/evolve-skills.mjs
-
-      - name: Skill sync check
-        run: node scripts/generate-skills.mjs
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check

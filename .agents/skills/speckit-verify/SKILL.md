@@ -1,5 +1,6 @@
 ---
-phase: verify
+name: speckit-verify
+disable-model-invocation: true
 description: Empirical sign-off. Tests pass, routes correct, docs synced, graph parity.
 ---
 

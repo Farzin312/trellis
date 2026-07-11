@@ -1,18 +1,9 @@
 #!/usr/bin/env node
-/**
- * check-mandate-sync.mjs
- *
- * CI gate + fixer: verifies AGENTS.md and CLAUDE.md are byte-identical
- * (after stripping the auto-generated header from CLAUDE.md).
- *
- * Usage:
- *   node .trellis/scripts/check-mandate-sync.mjs           # check mode (CI)
- *   node .trellis/scripts/check-mandate-sync.mjs --fix     # fix mode: copy AGENTS.md -> CLAUDE.md
- */
+/** Validate Claude's native import of the canonical cross-agent mandate. */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..', '..');
@@ -20,37 +11,34 @@ const agentsFile = join(root, 'AGENTS.md');
 const claudeFile = join(root, 'CLAUDE.md');
 
 const args = process.argv.slice(2);
-const fix = args.includes('--fix');
+if (args.some((arg) => arg !== '--fix') || args.filter((arg) => arg === '--fix').length > 1) {
+  console.error('Usage: check-mandate-sync.mjs [--fix]');
+  process.exit(2);
+}
+const fix = args[0] === '--fix';
 
 if (!existsSync(agentsFile)) {
   console.error('FAIL: AGENTS.md not found');
   process.exit(1);
 }
 
-const agentsContent = readFileSync(agentsFile, 'utf8');
-
 if (fix) {
-  const header = `<!-- Auto-generated mandate sync copy.\n     Do not edit directly — edit AGENTS.md, then run: npm run check:mandates -- --fix\n     CI gate: npm run check:mandates verifies this file matches AGENTS.md. -->\n`;
-  writeFileSync(claudeFile, header + agentsContent);
-  console.log('FIXED: CLAUDE.md synced to AGENTS.md');
+  writeFileSync(claudeFile, '@AGENTS.md\n');
+  console.log('FIXED: CLAUDE.md imports AGENTS.md');
   process.exit(0);
 }
 
 // Check mode
 if (!existsSync(claudeFile)) {
-  console.error('FAIL: CLAUDE.md not found. Run with --fix to generate.');
+  console.error('FAIL: CLAUDE.md not found. Run: npm run check:mandates -- --fix');
   process.exit(1);
 }
 
-const claudeContent = readFileSync(claudeFile, 'utf8');
-// Strip the auto-generated header from CLAUDE.md for comparison
-const claudeBody = claudeContent.replace(/^<!--[\s\S]*?-->\n*/, '');
-
-if (claudeBody.trim() === agentsContent.trim()) {
-  console.log('PASS: AGENTS.md and CLAUDE.md are in sync');
+if (readFileSync(claudeFile, 'utf8').trim() === '@AGENTS.md') {
+  console.log('PASS: CLAUDE.md imports AGENTS.md');
   process.exit(0);
 } else {
-  console.error('FAIL: AGENTS.md and CLAUDE.md are out of sync');
+  console.error('FAIL: CLAUDE.md must contain only @AGENTS.md');
   console.error('       Run: npm run check:mandates -- --fix');
   process.exit(1);
 }

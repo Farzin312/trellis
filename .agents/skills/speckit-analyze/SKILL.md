@@ -1,5 +1,6 @@
 ---
-phase: analyze
+name: speckit-analyze
+disable-model-invocation: true
 description: Post-task solution audit. The hard gate before any code is written.
 ---
 
@@ -19,8 +20,8 @@ Produce `analysis.md` with `Result: PASS` or `Result: FAIL`.
 
 - If `Result: FAIL`, implementation MUST NOT begin. Return to the failing phase.
 - If Bounds is installed: `bounds validate --quick` MUST exit clean before PASS.
-- Security/money audit delegates to `security-review` skill (parallel if Tier 3).
+- Security or money audits delegate to `security-review` when subagents are available.
 
 ## Next Phase
 
-If PASS, hand off to `/implement`. If FAIL, return to the flagged phase.
+If PASS, invoke `speckit-implement`. If FAIL, return to the flagged phase.

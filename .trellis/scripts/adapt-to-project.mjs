@@ -1,173 +1,134 @@
 #!/usr/bin/env node
-/**
- * adapt-to-project.mjs
- *
- * Adapts the Trellis framework to the project's actual stack. Runs during
- * init.sh. Detects stack from manifest files and updates the constitution,
- * mandate file, and .env.example to match reality.
- *
- * This is what makes Trellis MOLDABLE to any project premise rather than
- * being hardcoded to one stack.
- *
- * Usage:
- *   node .trellis/scripts/adapt-to-project.mjs                    # auto-detect
- *   node .trellis/scripts/adapt-to-project.mjs --stack nextjs,supabase,stripe
- *   node .trellis/scripts/adapt-to-project.mjs --interactive       # prompt user
- */
+/** Adapt Trellis-owned project metadata to canonical root-language stacks. */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..', '..');
-const args = process.argv.slice(2);
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const allowedStacks = ['generic', 'javascript', 'typescript', 'python', 'go', 'rust'];
 
-// ── Stack detection ────────────────────────────────────────────────────
+class UsageError extends Error {}
 
-function detectStack() {
-  const stack = { runtime: [], database: [], payments: [], ui: [], cloud: [] };
-  let pkg = {};
-
-  // package.json
-  if (existsSync(join(root, 'package.json'))) {
-    pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    if (deps['next']) stack.runtime.push('nextjs');
-    if (deps['react']) stack.ui.push('react');
-    if (deps['svelte']) stack.ui.push('svelte');
-    if (deps['vue']) stack.ui.push('vue');
-    if (deps['@sveltejs/kit']) stack.runtime.push('sveltekit');
-    if (deps['@remix-run/react']) stack.runtime.push('remix');
-    if (deps['astro']) stack.runtime.push('astro');
-    if (deps['express']) stack.runtime.push('express');
-    if (deps['fastify']) stack.runtime.push('fastify');
-    if (deps['@supabase/supabase-js']) stack.database.push('supabase');
-    if (deps['stripe']) stack.payments.push('stripe');
-    if (deps['@trpc/server']) stack.runtime.push('trpc');
-    if (deps['zod']) stack.runtime.push('zod');
-  }
-
-  // requirements.txt
-  if (existsSync(join(root, 'requirements.txt'))) {
-    const reqs = readFileSync(join(root, 'requirements.txt'), 'utf8').toLowerCase();
-    if (reqs.includes('fastapi') || reqs.includes('flask') || reqs.includes('django')) {
-      stack.runtime.push('python-web');
+function parseArgs(args) {
+  let value;
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === '--stack') {
+      if (value !== undefined || !args[index + 1]) throw new UsageError('--stack requires one value');
+      value = args[++index];
+    } else if (arg.startsWith('--stack=')) {
+      if (value !== undefined) throw new UsageError('--stack may only be provided once');
+      value = arg.slice('--stack='.length);
+    } else {
+      throw new UsageError(`Unknown argument: ${arg}`);
     }
-    if (reqs.includes('sqlalchemy') || reqs.includes('asyncpg')) stack.database.push('postgres');
-    if (reqs.includes('pymongo')) stack.database.push('mongodb');
   }
-
-  // go.mod
-  if (existsSync(join(root, 'go.mod'))) {
-    const gomod = readFileSync(join(root, 'go.mod'), 'utf8');
-    if (gomod.includes('gin-gonic') || gomod.includes('echo')) stack.runtime.push('go-web');
-    stack.runtime.push('go');
-  }
-
-  // Cargo.toml
-  if (existsSync(join(root, 'Cargo.toml'))) {
-    const cargo = readFileSync(join(root, 'Cargo.toml'), 'utf8');
-    if (cargo.includes('axum') || cargo.includes('actix')) stack.runtime.push('rust-web');
-    stack.runtime.push('rust');
-  }
-
-  return stack;
+  return value;
 }
 
-const explicitStack = args.find(a => a.startsWith('--stack='));
-const stack = explicitStack ? parseExplicitStack(explicitStack) : detectStack();
+function parseStacks(value) {
+  const parts = value.split(',').map((part) => part.trim());
+  if (parts.some((part) => !part)) throw new UsageError('--stack contains an empty value');
 
-console.log('Detected stack:');
-console.log(JSON.stringify(stack, null, 2));
+  const unknown = parts.find((part) => !allowedStacks.includes(part));
+  if (unknown) throw new UsageError(`Unsupported stack: ${unknown}. Expected: ${allowedStacks.join(', ')}`);
 
-// ── Constitution adaptation ────────────────────────────────────────────
-
-const constitutionPath = join(root, '.specify', 'memory', 'constitution.md');
-if (existsSync(constitutionPath)) {
-  let content = readFileSync(constitutionPath, 'utf8');
-
-  // Principle I: Server Components First
-  // Adapt to the UI framework if present, or remove for non-UI projects
-  if (stack.ui.length === 0 && !stack.runtime.includes('nextjs')) {
-    // Non-UI project: replace Principle I
-    content = content.replace(
-      /### I\. Server Components First[\s\S]*?(?=### II\.)/,
-      '### I. Simplicity First\n\nPrefer the simplest solution that works. '
-      + 'Avoid premature abstraction. See Ponytail addendum below.\n\n'
-    );
-    console.log('  Adapted: Principle I -> Simplicity First (no UI framework detected)');
+  const stacks = [...new Set(parts)];
+  if (stacks.includes('generic') && stacks.length > 1) {
+    throw new UsageError('generic cannot be combined with another stack');
   }
-
-  // Principle II: Auth provider
-  const hasSupabase = stack.database.includes('supabase');
-  if (!hasSupabase) {
-    content = content.replace(
-      /Auth truth is your auth provider \(e\.g\., Supabase Auth\)\./,
-      'Auth truth is your auth provider.'
-    );
-    content = content.replace(
-      /Payment truth is your payment provider's webhooks \(e\.g\., Stripe\)\./,
-      "Payment truth is your payment provider's webhooks."
-    );
-    console.log('  Adapted: Principle II stack references made generic');
-  }
-
-  writeFileSync(constitutionPath, content);
-  console.log('  [OK] Constitution adapted to project stack');
+  return stacks;
 }
 
-// ── AGENTS.md adaptation ───────────────────────────────────────────────
+function detectStacks() {
+  const stacks = [];
+  const packagePath = join(root, 'package.json');
+  const hasPackage = existsSync(packagePath);
+  const hasTypeScriptConfig = existsSync(join(root, 'tsconfig.json'));
 
-const agentsPath = join(root, 'AGENTS.md');
-if (existsSync(agentsPath)) {
-  let content = readFileSync(agentsPath, 'utf8');
+  if (hasPackage || hasTypeScriptConfig) {
+    let usesTypeScript = hasTypeScriptConfig;
+    if (hasPackage) {
+      const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+      const dependencies = { ...pkg.dependencies, ...pkg.devDependencies };
+      usesTypeScript ||= Boolean(dependencies.typescript);
+    }
+    stacks.push(usesTypeScript ? 'typescript' : 'javascript');
+  }
+  if (existsSync(join(root, 'requirements.txt')) || existsSync(join(root, 'pyproject.toml'))) {
+    stacks.push('python');
+  }
+  if (existsSync(join(root, 'go.mod'))) stacks.push('go');
+  if (existsSync(join(root, 'Cargo.toml'))) stacks.push('rust');
+  return stacks.length ? stacks : ['generic'];
+}
 
-  // Update the scope description with detected stack
-  const stackSummary = [
-    ...stack.runtime,
-    ...stack.ui,
-    ...stack.database,
-    ...stack.payments,
-  ].filter(Boolean).join(', ') || 'generic';
+function writeIfChanged(path, content) {
+  if (readFileSync(path, 'utf8') === content) return false;
+  writeFileSync(path, content);
+  return true;
+}
 
-  content = content.replace(
-    /This repo owns: \[describe what this project is.*?\]/,
-    `This repo owns: a project built with ${stackSummary}. Fill in the detailed scope.`
+function adaptAgents(stacks) {
+  const path = join(root, 'AGENTS.md');
+  if (!existsSync(path)) return;
+
+  const content = readFileSync(path, 'utf8');
+  const managedScope = /This repo owns: (?:\[describe what this project is[^\]\n]*\]\.?|a project built with [^\n]+\. Fill in the detailed scope\.)/;
+  if (!managedScope.test(content)) {
+    console.log('  [KEEP] AGENTS.md scope is user-managed');
+    return;
+  }
+
+  const next = content.replace(
+    managedScope,
+    `This repo owns: a project built with ${stacks.join(', ')}. Fill in the detailed scope.`,
   );
-
-  writeFileSync(agentsPath, content);
-  console.log('  [OK] AGENTS.md scope updated');
+  console.log(`  [${writeIfChanged(path, next) ? 'OK' : 'KEEP'}] AGENTS.md managed scope`);
 }
 
-// ── .bounds/root.yaml language detection ────────────────────────────────
+function adaptBounds(stacks) {
+  const path = join(root, '.bounds', 'root.yaml');
+  if (!existsSync(path)) return;
 
-const boundsPath = join(root, '.bounds', 'root.yaml');
-if (existsSync(boundsPath)) {
-  let boundsContent = readFileSync(boundsPath, 'utf8');
-  const detectedLangs = [];
-  if (existsSync(join(root, 'package.json')) || existsSync(join(root, 'tsconfig.json'))) detectedLangs.push('typescript');
-  if (existsSync(join(root, 'requirements.txt')) || existsSync(join(root, 'pyproject.toml'))) detectedLangs.push('python');
-  if (existsSync(join(root, 'go.mod'))) detectedLangs.push('go');
-  if (existsSync(join(root, 'Cargo.toml'))) detectedLangs.push('rust');
-  if (detectedLangs.length === 0) detectedLangs.push('typescript'); // fallback
-
-  const langLine = `languages:\n${detectedLangs.map(l => `  - ${l}`).join('\n')}`;
-  boundsContent = boundsContent.replace(/languages:\n(  - \w+\n?)+/, langLine + '\n');
-  writeFileSync(boundsPath, boundsContent);
-  console.log(`  [OK] .bounds/root.yaml languages set to: ${detectedLangs.join(', ')}`);
-}
-
-console.log('\nAdaptation complete. Review the constitution and AGENTS.md for accuracy.');
-
-function parseExplicitStack(str) {
-  const parts = str.replace('--stack=', '').split(',');
-  const stack = { runtime: [], database: [], payments: [], ui: [], cloud: [] };
-  for (const p of parts) {
-    if (['nextjs', 'remix', 'astro', 'sveltekit', 'express', 'fastify', 'trpc'].includes(p)) stack.runtime.push(p);
-    if (['react', 'svelte', 'vue', 'solid'].includes(p)) stack.ui.push(p);
-    if (['supabase', 'postgres', 'mysql', 'mongodb'].includes(p)) stack.database.push(p);
-    if (['stripe', 'square', 'paypal'].includes(p)) stack.payments.push(p);
+  const languages = [...new Set(stacks
+    .filter((stack) => stack !== 'generic')
+    .map((stack) => stack === 'javascript' ? 'typescript' : stack))];
+  if (languages.length === 0) {
+    console.log('  [KEEP] .bounds/root.yaml languages (generic stack)');
+    return;
   }
-  return stack;
+
+  const content = readFileSync(path, 'utf8');
+  const languageBlock = /^languages:\s*\n(?:[ \t]+-[^\n]*\n?)+/m;
+  if (!languageBlock.test(content)) {
+    console.log('  [KEEP] .bounds/root.yaml has no managed languages block');
+    return;
+  }
+
+  const replacement = `languages:\n${languages.map((language) => `  - ${language}`).join('\n')}\n`;
+  const next = content.replace(languageBlock, replacement);
+  console.log(`  [${writeIfChanged(path, next) ? 'OK' : 'KEEP'}] .bounds/root.yaml languages: ${languages.join(', ')}`);
+}
+
+function main() {
+  const explicit = parseArgs(process.argv.slice(2));
+  const stacks = explicit === undefined ? detectStacks() : parseStacks(explicit);
+  console.log(`Detected stacks: ${stacks.join(', ')}`);
+  adaptAgents(stacks);
+  adaptBounds(stacks);
+  console.log('Adaptation complete. Review the managed scope and Bounds languages for accuracy.');
+}
+
+try {
+  main();
+} catch (error) {
+  if (error instanceof UsageError) {
+    console.error(`USAGE: ${error.message}`);
+    process.exitCode = 2;
+  } else {
+    console.error(`FAIL: ${error.message}`);
+    process.exitCode = 1;
+  }
 }

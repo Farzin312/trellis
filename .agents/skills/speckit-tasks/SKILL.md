@@ -1,5 +1,6 @@
 ---
-phase: tasks
+name: speckit-tasks
+disable-model-invocation: true
 description: Break the plan into atomic, path-referenced work units with [TEST] pairs.
 ---
 
@@ -23,4 +24,4 @@ Read `plan.md`, `contracts.md`, `risks.md`. Produce `tasks.md`:
 
 ## Next Phase
 
-Fill checklists (`/checklist`), then `/analyze`.
+Invoke `speckit-checklist`, then `speckit-analyze`.

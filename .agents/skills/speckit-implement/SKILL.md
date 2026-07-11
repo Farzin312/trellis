@@ -1,5 +1,6 @@
 ---
-phase: implement
+name: speckit-implement
+disable-model-invocation: true
 description: Execute tasks in order. TDD: [TEST] first, then implementation.
 ---
 
@@ -11,7 +12,7 @@ Execute `tasks.md` in order. For each task:
 2. Write the minimum implementation to pass (Green).
 3. Refactor if needed.
 
-## Delegation (Tier 3)
+## Delegation
 
 If handoff loops are enabled, dispatch by file path:
 - `app/api/**` -> `api-routes` skill
@@ -31,4 +32,4 @@ Each subagent receives only: task ID, done-when, file paths, FR/SC refs.
 
 ## Next Phase
 
-Hand off to `/review`, then `/verify`.
+Invoke `speckit-review`, then `speckit-verify`.

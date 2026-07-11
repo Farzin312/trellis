@@ -1,28 +1,59 @@
 {
-  "name": "ai-ready-scaffold",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Cloneable AI-agent-ready project scaffold: SDD pipeline, code graph, boundary enforcement, evals, handoff loops, migration safety — all free, all cross-tool.",
+  "name": "trellis-agent-toolkit",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Dependency-free, repository-local governance and verification toolkit for AI coding agents.",
   "license": "MIT",
+  "author": "Farzin",
+  "type": "module",
   "bin": {
     "trellis": "./.trellis/cli.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Farzin312/trellis.git"
+  },
+  "homepage": "https://github.com/Farzin312/trellis#readme",
+  "bugs": {
+    "url": "https://github.com/Farzin312/trellis/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "agent-skills",
+    "developer-tools",
+    "spec-driven-development",
+    "verification"
+  ],
+  "files": [
+    ".agents/",
+    ".bounds/",
+    ".env.example",
+    ".github/copilot-instructions.md",
+    ".github/workflows/ci.yml",
+    ".specify/",
+    ".trellis/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "LICENSE",
+    "README.md",
+    "docs/"
+  ],
   "scripts": {
     "init": "bash .trellis/init.sh",
-    "lint": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic",
+    "lint": "npm run check",
+    "test:self": "node --test .trellis/tests/*.test.mjs",
     "test": "node .trellis/scripts/run-evals.mjs",
+    "check": "npm run check:mandates && npm run skills:health && npm run docs:check && npm run check:agnostic && npm run check:ponytail && npm run check:migrations && npm run handoffs:validate && npm run check:integrations && npm test",
     "docs:sync": "node .trellis/scripts/docs-sync.mjs",
     "docs:check": "node .trellis/scripts/docs-sync.mjs --check",
     "check:mandates": "node .trellis/scripts/check-mandate-sync.mjs",
-    "check:commands": "node .trellis/scripts/check-command-sync.mjs",
-    "check:breadcrumbs": "node .trellis/scripts/check-doc-breadcrumbs.mjs",
     "check:agnostic": "node .trellis/scripts/check-agnostic.mjs",
+    "check:ponytail": "node .trellis/scripts/check-ponytail.mjs",
     "check:migrations": "node .trellis/scripts/check-migration-safety.mjs",
-    "check:graph": "node .trellis/scripts/check-graph-freshness.mjs",
-    "check:all": "npm run check:mandates && npm run check:commands && npm run check:breadcrumbs && npm run check:agnostic && npm run check:migrations && node .trellis/scripts/run-evals.mjs",
+    "check:integrations": "node .trellis/scripts/check-integrations.mjs",
     "eval": "node .trellis/scripts/run-evals.mjs",
     "metrics": "node .trellis/scripts/metrics.mjs",
     "evolve": "node .trellis/scripts/adapt-to-project.mjs",
@@ -34,14 +65,6 @@
     "services:stop": "node .trellis/scripts/services.mjs stop all",
     "services:status": "node .trellis/scripts/services.mjs status"
   },
-  "devDependencies": {
-    "@stryker-mutator/core": "^8.7.1",
-    "@stryker-mutator/vitest-runner": "^8.7.1",
-    "fast-check": "^3.23.2",
-    "vitest": "^4.1.4",
-    "zod": "^3.25.0"
-  },
-  "optionalDependencies": {},
-  "_comment_devDeps": "DevDeps are for JS/TS adopting projects. Non-JS projects can remove them. Framework scripts (.trellis/scripts/*.mjs) only require Node.js.",
-  "_comment_templates": "Per-stack config templates live in .trellis/templates/. init.sh copies the matching ones."
+  "dependencies": {},
+  "devDependencies": {}
 }
