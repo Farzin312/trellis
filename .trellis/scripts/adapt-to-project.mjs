@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readProjectConfig, writeProjectConfig } from './config-core.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allowedStacks = ['generic', 'javascript', 'typescript', 'python', 'go', 'rust'];
@@ -75,6 +76,15 @@ function adaptAgents(stacks) {
   if (!existsSync(path)) return;
 
   const content = readFileSync(path, 'utf8');
+  const managedBlock = /(<!-- trellis:scope:start -->\s*)[\s\S]*?(\s*<!-- trellis:scope:end -->)/;
+  if (managedBlock.test(content)) {
+    const next = content.replace(
+      managedBlock,
+      `$1\nThis repo owns: a project built with ${stacks.join(', ')}. Define its precise scope here.\n$2`,
+    );
+    console.log(`  [${writeIfChanged(path, next) ? 'OK' : 'KEEP'}] AGENTS.md managed scope`);
+    return;
+  }
   const managedScope = /This repo owns: (?:\[describe what this project is[^\]\n]*\]\.?|a project built with [^\n]+\. Fill in the detailed scope\.)/;
   if (!managedScope.test(content)) {
     console.log('  [KEEP] AGENTS.md scope is user-managed');
@@ -112,10 +122,23 @@ function adaptBounds(stacks) {
   console.log(`  [${writeIfChanged(path, next) ? 'OK' : 'KEEP'}] .bounds/root.yaml languages: ${languages.join(', ')}`);
 }
 
+function adaptConfig(stacks) {
+  const path = join(root, '.trellis', 'config.json');
+  if (!existsSync(path)) return;
+  const config = readProjectConfig(root);
+  if (JSON.stringify(config.stacks) === JSON.stringify(stacks)) {
+    console.log('  [KEEP] .trellis/config.json stacks');
+    return;
+  }
+  writeProjectConfig(root, { ...config, stacks });
+  console.log(`  [OK] .trellis/config.json stacks: ${stacks.join(', ')}`);
+}
+
 function main() {
   const explicit = parseArgs(process.argv.slice(2));
   const stacks = explicit === undefined ? detectStacks() : parseStacks(explicit);
   console.log(`Detected stacks: ${stacks.join(', ')}`);
+  adaptConfig(stacks);
   adaptAgents(stacks);
   adaptBounds(stacks);
   console.log('Adaptation complete. Review the managed scope and Bounds languages for accuracy.');

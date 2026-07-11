@@ -1,57 +1,22 @@
 # Contributing to Trellis
 
-> Parent: `docs/README.md`
+> Parent: [documentation index](./README.md)
 
-Trellis is open source (MIT). Contributions welcome. This guide explains how.
+Contributions should preserve the dependency-free core, conservative claims,
+and explicit boundary between Trellis and adopting-project responsibilities.
 
-## The One Rule
+## Workflow
 
-Trellis must work for ANY project, not just one stack. Every contribution is
-checked against this principle.
+1. Create or update an SDD chain for non-trivial behavior.
+2. Add a failing standard-library test for the intended contract.
+3. Implement the smallest sufficient change.
+4. Update CLI help, package metadata, skills, and living docs together.
+5. Run `npm run check` and record any optional skips or external proof honestly.
+6. Submit a focused pull request explaining the problem, trade-off, and evidence.
 
-## Before You Contribute
+Stack adapters need fixtures for valid, invalid, mixed, absent-toolchain, and
+failing-toolchain cases. Optional integrations need explicit configuration,
+readiness checks, actionable failures, and accurate license documentation.
 
-1. Read [DESIGN.md](./DESIGN.md) — the 5 design principles.
-2. Run `node .trellis/scripts/check-agnostic.mjs` — your changes must pass this.
-
-## What You Can Contribute
-
-### Framework improvements (Trellis itself)
-- New eval scripts
-- New handoff specialists
-- CI workflow improvements
-- Documentation improvements
-- Evolution agent enhancements
-- Bug fixes in existing scripts
-
-### Stack adapters
-- New detection patterns for `adapt-to-project.mjs` (e.g., detect a new
-  frontend framework)
-- New constitution adaptation rules for a specific stack
-
-### Tool integrations
-- Wire up a new open-source tool (verify license is free/open-source first)
-- Improve existing tool integration configs
-
-## Process
-
-Trellis uses its own SDD pipeline for framework changes:
-
-1. Fork and clone
-2. Create a spec: `/specify <your change>`
-3. Follow the SDD flow through verify
-4. `node .trellis/scripts/check-agnostic.mjs` must pass
-5. `npm run docs:check` must pass
-6. Open a PR
-
-## What Gets Rejected
-
-- Changes that hardcode a specific stack into framework-core files
-- Changes that add non-free dependencies to the core framework
-- Changes that bypass the SDD pipeline for non-trivial work
-- Changes that remove a universal principle without justification
-
-## Credit
-
-Contributors are credited in release notes. Significant contributions get a
-mention in docs/credits.md.
+Changes that silently rewrite user-owned files, hide failures, add unjustified
+core dependencies, or claim untested compatibility are not acceptable.

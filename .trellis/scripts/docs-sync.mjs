@@ -1,105 +1,81 @@
 #!/usr/bin/env node
-/**
- * docs-sync.mjs
- *
- * The documentation accuracy pipeline. Runs in two modes:
- *   --check: read-only verification (CI gate). Fails on drift.
- *   default: regenerates auto-docs + fixes breadcrumbs.
- *
- * Steps:
- *   1. Check/fix parent-child breadcrumbs on all docs
- *   2. Check for broken doc links
- *   3. (Future) regenerate API reference from JSDoc
- *   4. (Future) regenerate bug-fix index
- *   5. (Future) regenerate table snapshots from migrations
- *
- * Usage:
- *   node .trellis/scripts/docs-sync.mjs            # regenerate + fix
- *   node .trellis/scripts/docs-sync.mjs --check    # read-only verification
- */
+/** Read-only documentation structure and local-link validation. */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
-import { join, dirname, relative } from 'path';
-import { fileURLToPath } from 'url';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..', '..');
-const docsDir = join(root, 'docs');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const docsRoot = join(root, 'docs');
 const args = process.argv.slice(2);
-const checkOnly = args.includes('--check');
 
-if (!existsSync(docsDir)) {
-  console.log('SKIP: no docs/ directory');
+if (args.length > 1 || (args.length === 1 && args[0] !== '--check')) {
+  console.error('Usage: docs-sync.mjs [--check]');
+  process.exit(2);
+}
+
+if (!existsSync(docsRoot)) {
+  console.log('SKIP: no docs directory');
   process.exit(0);
+}
+
+function markdownFiles(directory, output = []) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) markdownFiles(path, output);
+    else if (entry.isFile() && entry.name.endsWith('.md')) output.push(path);
+  }
+  return output.sort();
+}
+
+function withoutCode(markdown) {
+  return markdown
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/~~~[\s\S]*?~~~/g, '')
+    .replace(/`[^`\n]*`/g, '');
+}
+
+function linkTarget(doc, rawTarget) {
+  const clean = rawTarget.trim().replace(/^<|>$/g, '');
+  if (!clean || clean.startsWith('#') || /^(?:https?:|mailto:|tel:)/i.test(clean)) return null;
+  const pathPart = clean.split('#', 1)[0].split('?', 1)[0];
+  if (!pathPart) return null;
+  try {
+    return resolve(dirname(doc), decodeURIComponent(pathPart));
+  } catch {
+    return resolve(dirname(doc), pathPart);
+  }
 }
 
 let errors = 0;
-let fixed = 0;
-
-// ── Step 1: Breadcrumb checks ──────────────────────────────────────────
-
-function getAllDocs(dir) {
-  const results = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...getAllDocs(fullPath));
-    } else if (entry.name.endsWith('.md')) {
-      results.push(fullPath);
-    }
-  }
-  return results;
-}
-
-const docs = getAllDocs(docsDir);
-
-for (const doc of docs) {
+for (const doc of markdownFiles(docsRoot)) {
+  const relativePath = relative(root, doc);
+  const docsRelative = relative(docsRoot, doc);
   const content = readFileSync(doc, 'utf8');
-  const relPath = relative(docsDir, doc);
-  const lines = content.split('\n');
+  const topLevelExempt = !docsRelative.includes('/') && ['README.md', 'STRUCTURE.md'].includes(docsRelative);
 
-  // Check: every doc should have a > Parent: line (except README.md and STRUCTURE.md at top level)
-  const isTopLevelIndex = relPath === 'README.md' || relPath === 'STRUCTURE.md' || relPath === 'README-FOR-AGENTS.md';
-  const hasParent = content.match(/^>\s*Parent:/m);
-
-  if (!isTopLevelIndex && !hasParent) {
-    if (checkOnly) {
-      console.error(`FAIL: ${relPath} missing "> Parent:" breadcrumb`);
-      errors++;
-    } else {
-      // Can't auto-fix parent (we don't know the correct parent)
-      console.warn(`WARN: ${relPath} missing "> Parent:" breadcrumb — add manually`);
-    }
+  if (!topLevelExempt && !/^> Parent:\s+/m.test(content)) {
+    console.error(`FAIL: ${relativePath} missing > Parent: breadcrumb`);
+    errors++;
   }
 
-  // Check: all markdown links resolve to real files
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  let match;
-  while ((match = linkRegex.exec(content)) !== null) {
-    const linkText = match[1];
-    const linkTarget = match[2];
-    // Skip http links and anchors
-    if (linkTarget.startsWith('http') || linkTarget.startsWith('#')) continue;
-    // Strip any #anchor
-    const filePath = linkTarget.split('#')[0];
-    if (!filePath) continue;
-    const resolved = join(dirname(doc), filePath);
-    if (!existsSync(resolved)) {
-      console.error(`FAIL: ${relPath} has broken link: [${linkText}](${linkTarget})`);
+  const text = withoutCode(content);
+  const linkPattern = /!?\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+  for (const match of text.matchAll(linkPattern)) {
+    const target = linkTarget(doc, match[1]);
+    if (!target) continue;
+    const exists = existsSync(target)
+      && (statSync(target).isFile() || (statSync(target).isDirectory() && existsSync(join(target, 'README.md'))));
+    if (!exists) {
+      console.error(`FAIL: ${relativePath} has broken link: ${match[1]}`);
       errors++;
     }
   }
 }
 
-if (checkOnly) {
-  if (errors === 0) {
-    console.log('PASS: docs-sync check — no drift detected');
-    process.exit(0);
-  } else {
-    console.error(`FAIL: docs-sync check — ${errors} errors found`);
-    process.exit(1);
-  }
-} else {
-  console.log(`PASS: docs-sync complete — ${fixed} fixes applied, ${errors} errors remaining`);
-  process.exit(0);
+if (errors > 0) {
+  console.error(`FAIL: documentation structure has ${errors} error(s)`);
+  process.exit(1);
 }
+
+console.log('PASS: documentation structure and local links valid');

@@ -4,10 +4,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ConfigError, readProjectConfig } from './config-core.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const configPath = join(root, '.trellis', 'config.json');
-const supported = new Set(['graphify', 'bounds', 'phoenix']);
 let failures = 0;
 
 function fail(integration, reason, next) {
@@ -23,19 +22,13 @@ function run(command, args) {
   return spawnSync(command, args, { cwd: root, encoding: 'utf8' });
 }
 
-let enabled = [];
-if (existsSync(configPath)) {
-  try {
-    const config = JSON.parse(readFileSync(configPath, 'utf8'));
-    if (!Array.isArray(config.enabled_integrations)
-      || config.enabled_integrations.some((name) => typeof name !== 'string' || !supported.has(name))) {
-      throw new Error('enabled_integrations must contain only graphify, bounds, or phoenix');
-    }
-    enabled = [...new Set(config.enabled_integrations)];
-  } catch (error) {
-    console.error(`FAIL integration=config reason=invalid-config next=${JSON.stringify(error.message)}`);
-    process.exit(1);
-  }
+let enabled;
+try {
+  enabled = readProjectConfig(root).enabled_integrations;
+} catch (error) {
+  const detail = error instanceof ConfigError ? error.message : `read failed: ${error.message}`;
+  console.error(`FAIL integration=config reason=invalid-config next=${JSON.stringify(detail)}`);
+  process.exit(1);
 }
 
 if (!enabled.includes('graphify')) {

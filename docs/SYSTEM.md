@@ -30,7 +30,6 @@ only when explicitly requested or configured.
 | `trellis eval` | Run required toolkit self-tests and configured project tests |
 | `trellis graph [path] [--update]` | Invoke Graphify only when configured and available |
 | `trellis metrics [--recent\|--raw]` | Validate and summarize the optional JSONL ledger |
-| `trellis handoffs [list\|validate]` | Inspect the static handoff registry |
 | `trellis evolve [--stack=<value>]` | Re-run deterministic project adaptation |
 | `trellis services <start\|stop\|status\|ports> [phoenix]` | Manage the bundled Phoenix compose service |
 | `trellis version` / `trellis --version` | Print the version from `package.json` |

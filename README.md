@@ -22,8 +22,7 @@ rewrite arbitrary project policy.
   described as successful evidence.
 
 Trellis provides workflow and verification infrastructure. It does not
-guarantee an agent's output, install application dependencies, or configure
-application authentication. Authentication, authorization, secrets, and money
+guarantee an agent's output or install application dependencies. Trellis does not configure application authentication. Authentication, authorization, secrets, and money
 flows remain the adopting project's responsibility and must fail closed.
 
 ## Prerequisites and support
@@ -31,7 +30,7 @@ flows remain the adopting project's responsibility and must fail closed.
 Core use requires:
 
 - Git
-- Node.js 18 or newer
+- Node.js 20 or newer
 - a shell supported by Node and Git
 - at least one AI coding agent if you want to run the Agent Skills
 
@@ -78,7 +77,7 @@ checkout instead.
 To configure a checkout that already contains Trellis:
 
 ```bash
-trellis init "My Project" --stack=typescript --agents=codex,claude
+trellis init "My Project" --stack=typescript
 ```
 
 Add `--with-graphify` or `--with-bounds` only when you want and can satisfy that

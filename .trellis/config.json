@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "project_name": "Trellis",
+  "project_slug": "trellis",
+  "stacks": [
+    "javascript"
+  ],
+  "enabled_integrations": []
+}

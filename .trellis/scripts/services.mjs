@@ -1,166 +1,81 @@
 #!/usr/bin/env node
-/**
- * services.mjs — Manage Trellis's optional Docker services.
- *
- * Usage:
- *   node .trellis/scripts/services.mjs start [phoenix|all]        # Boot services
- *   node .trellis/scripts/services.mjs stop  [phoenix|all]        # Stop services
- *   node .trellis/scripts/services.mjs status                     # Check running services
- *   node .trellis/scripts/services.mjs ports                      # Show port assignments
- *
- * Services are optional Tier 3 features. Most projects don't need them.
- * This script gracefully skips if Docker is not installed or not running.
- */
+/** Manage explicitly requested optional local services. */
 
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = join(__dirname, '..', '..');
-
-// Mem0 is NOT managed here: it self-hosts from its own multi-service stack
-// (pip install mem0ai for in-process, or mem0's official `cd server && make
-// bootstrap`). See docs/self-hosted-services.md.
-const SERVICES = {
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const services = {
   phoenix: {
-    compose: '.trellis/services/docker-compose.phoenix.yml',
-    name: 'Arize Phoenix (Agent Observability)',
+    compose: join(root, '.trellis', 'services', 'docker-compose.phoenix.yml'),
+    label: 'Arize Phoenix',
     port: 6006,
-    url: 'http://localhost:6006',
   },
 };
 
-function dockerAvailable() {
-  try {
-    execSync('docker info', { stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
+function usage() {
+  console.error('Usage: services.mjs start|stop|status|ports [phoenix|all]');
+  process.exit(2);
 }
 
-function getAction() {
-  const action = process.argv[2] || 'status';
-  const target = process.argv[3] || 'all';
-  return { action, target };
-}
+const [action, target = 'all', ...rest] = process.argv.slice(2);
+if (rest.length || !['start', 'stop', 'status', 'ports'].includes(action)
+  || !['all', ...Object.keys(services)].includes(target)) usage();
 
-function startService(key) {
-  const svc = SERVICES[key];
-  if (!svc) {
-    console.error(`Unknown service: ${key}`);
-    return false;
-  }
-  const composePath = join(root, svc.compose);
-  if (!existsSync(composePath)) {
-    console.log(`SKIP: ${svc.compose} not found`);
-    return false;
-  }
-  try {
-    execSync(`docker compose -f ${svc.compose} up -d`, {
-      cwd: root,
-      stdio: 'pipe',
-    });
-    console.log(`STARTED: ${svc.name}`);
-    console.log(`  URL: ${svc.url}`);
-    console.log(`  Port: ${svc.port}`);
-    return true;
-  } catch (e) {
-    console.error(`FAIL: could not start ${key} — ${e.message.split('\n')[0]}`);
-    return false;
-  }
-}
-
-function stopService(key) {
-  const svc = SERVICES[key];
-  if (!svc) {
-    console.error(`Unknown service: ${key}`);
-    return false;
-  }
-  const composePath = join(root, svc.compose);
-  if (!existsSync(composePath)) {
-    console.log(`SKIP: ${svc.compose} not found`);
-    return false;
-  }
-  try {
-    execSync(`docker compose -f ${svc.compose} down`, {
-      cwd: root,
-      stdio: 'pipe',
-    });
-    console.log(`STOPPED: ${svc.name}`);
-    return true;
-  } catch {
-    console.log(`SKIP: ${key} not running or not installed`);
-    return false;
-  }
-}
-
-function statusService(key) {
-  const svc = SERVICES[key];
-  if (!svc) return;
-  const composePath = join(root, svc.compose);
-  if (!existsSync(composePath)) {
-    console.log(`  ${key}: not configured (${svc.compose} not found)`);
-    return;
-  }
-  try {
-    const output = execSync(
-      `docker compose -f ${svc.compose} ps --format json 2>/dev/null`,
-      { cwd: root, stdio: 'pipe', encoding: 'utf-8' }
-    ).trim();
-    if (!output) {
-      console.log(`  ${key}: stopped`);
-      return;
-    }
-    const lines = output.split('\n').filter(Boolean);
-    const running = lines.filter(l => {
-      try { return JSON.parse(l).State === 'running'; } catch { return false; }
-    }).length;
-    console.log(`  ${key}: ${running > 0 ? 'RUNNING' : 'stopped'} (port ${svc.port})`);
-  } catch {
-    console.log(`  ${key}: stopped`);
-  }
-}
-
-const { action, target } = getAction();
-
-if (!dockerAvailable()) {
-  console.log('SKIP: Docker is not installed or not running.');
-  console.log('  Trellis works without Docker. Phoenix is optional.');
-  console.log('  Install Docker: https://docs.docker.com/get-docker/');
+const keys = target === 'all' ? Object.keys(services) : [target];
+if (action === 'ports') {
+  for (const key of keys) console.log(`${key}: ${services[key].port} (${services[key].label})`);
   process.exit(0);
 }
 
-const keys = target === 'all' ? Object.keys(SERVICES) : [target];
-
-switch (action) {
-  case 'start':
-    console.log('Starting services...\n');
-    for (const k of keys) startService(k);
-    console.log('\nDone. These are optional Tier 3 services.');
-    break;
-
-  case 'stop':
-    console.log('Stopping services...\n');
-    for (const k of keys) stopService(k);
-    console.log('\nDone.');
-    break;
-
-  case 'ports':
-    console.log('Port assignments:\n');
-    for (const [k, svc] of Object.entries(SERVICES)) {
-      console.log(`  ${k}: ${svc.port} (${svc.name})`);
-    }
-    break;
-
-  case 'status':
-  default:
-    console.log('Service status:\n');
-    for (const k of keys) statusService(k);
-    console.log('\n  Ports: run "node .trellis/scripts/services.mjs ports"');
-    console.log('  Start: run "node .trellis/scripts/services.mjs start all"');
-    console.log('  Stop:  run "node .trellis/scripts/services.mjs stop all"');
-    break;
+function docker(args, options = {}) {
+  return spawnSync('docker', args, { cwd: root, encoding: 'utf8', ...options });
 }
+
+const info = docker(['info']);
+if (info.error || info.status !== 0) {
+  if (action === 'status') {
+    console.log('SKIP: Docker is unavailable; optional services were not inspected');
+    process.exit(0);
+  }
+  console.error('FAIL: Docker is not installed or not running');
+  process.exit(1);
+}
+
+let failures = 0;
+for (const key of keys) {
+  const service = services[key];
+  if (!existsSync(service.compose)) {
+    console.error(`FAIL: ${key} compose file is missing`);
+    failures++;
+    continue;
+  }
+
+  if (action === 'status') {
+    const result = docker(['compose', '-f', service.compose, 'ps', '--format', 'json']);
+    if (result.status !== 0) {
+      console.error(`FAIL: could not inspect ${key}`);
+      failures++;
+    } else {
+      const running = result.stdout.split('\n').filter(Boolean).some((line) => {
+        try { return JSON.parse(line).State === 'running'; } catch { return false; }
+      });
+      console.log(`${key}: ${running ? 'running' : 'stopped'}`);
+    }
+    continue;
+  }
+
+  const composeArgs = ['compose', '-f', service.compose, action === 'start' ? 'up' : 'down'];
+  if (action === 'start') composeArgs.push('-d');
+  const result = docker(composeArgs);
+  if (result.error || result.status !== 0) {
+    console.error(`FAIL: could not ${action} ${key}`);
+    failures++;
+  } else {
+    console.log(`PASS: ${key} ${action === 'start' ? 'started' : 'stopped'}`);
+  }
+}
+
+process.exit(failures > 0 ? 1 : 0);

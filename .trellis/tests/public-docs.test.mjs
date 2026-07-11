@@ -124,8 +124,8 @@ test('durable guidance shares one stack-agnostic nine-phase contract', () => {
   const phaseOrder = 'Specify -> Clarify -> Plan -> Tasks -> Checklist -> Analyze -> Implement -> Review -> Verify';
   const guidance = durableGuidance.map(read).join('\n');
 
-  assert.match(read('AGENTS.md'), new RegExp(phaseOrder.replaceAll(' -> ', ' \\[-–—>]*> ')));
-  assert.match(read('docs/sdd/sdd.md'), new RegExp(phaseOrder.replaceAll(' -> ', ' \\[-–—>]*> ')));
+  assert.ok(read('AGENTS.md').includes(phaseOrder));
+  assert.ok(read('docs/sdd/sdd.md').includes(phaseOrder));
   assert.doesNotMatch(guidance, /Server Components by default|Supabase|PostgREST|Stripe/i);
   assert.match(guidance, /does not configure application authentication/i);
   assert.match(read('AGENTS.md'), /npm run check/);

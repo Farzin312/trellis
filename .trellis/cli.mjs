@@ -24,24 +24,19 @@ const STACKS = new Set(['generic', 'javascript', 'typescript', 'python', 'go', '
 // Explicit product payload. Never replace this with a live-worktree denylist.
 const SCAFFOLD_PATHS = [
   '.agents',
-  '.bounds',
   '.env.example',
-  '.github/copilot-instructions.md',
   '.github/workflows/ci.yml',
   '.gitignore',
   '.specify/memory',
   '.specify/templates',
-  '.trellis/agents/context',
-  '.trellis/agents/handoffs',
+  '.trellis/LICENSE',
   '.trellis/cli.mjs',
   '.trellis/init.sh',
   '.trellis/scripts',
   '.trellis/services',
-  '.trellis/templates',
   '.trellis/tests',
   'AGENTS.md',
   'CLAUDE.md',
-  'LICENSE',
   'docs/DESIGN.md',
   'docs/README-FOR-AGENTS.md',
   'docs/README.md',
@@ -68,13 +63,14 @@ const SCAFFOLD_PATHS = [
 
 const HELP = AI
   ? `TRELLIS CLI [ai]. exit 0=success, 1=operation failed, 2=invalid usage.
-new <name> [--stack=x] [--with-graphify] [--with-bounds]  create a curated child scaffold atomically.
+new <name> [--stack=x] [--with-graphify] [--with-bounds] create a curated child scaffold atomically.
 init [name] [--stack=x] [--with-graphify] [--with-bounds] configure this Trellis checkout.
 check             run the repository's single aggregate gate.
 eval              run required framework tests and configured project evals.
+map [--json]      print a bounded, read-only structural repository map.
+config show|enable|disable [integration] inspect or manage optional integrations.
 graph [path] [--update] build or update configured Graphify data.
 metrics [--recent|--raw] summarize the optional local run ledger.
-handoffs list|validate   inspect the static handoff registry.
 evolve [--stack=x]       re-run deterministic project adaptation.
 services start|stop|status|ports [phoenix] manage the optional service.
 spec              show how to start the SDD skill flow.
@@ -85,7 +81,7 @@ version           print Trellis version.
 Usage:
   trellis new <name> [--stack=x] [--with-graphify] [--with-bounds]
   trellis init [name] [--stack=x] [--with-graphify] [--with-bounds]
-  trellis check | eval | graph | metrics | handoffs | evolve | services | spec
+  trellis check | eval | map | config | graph | metrics | evolve | services | spec
   trellis version | --version
 
 Run "trellis help --ai" for the compact command contract.
@@ -142,7 +138,10 @@ function parseSetupArgs(input, { requireName = false } = {}) {
   for (const arg of input) {
     if (arg === '--with-graphify') integrations.push('graphify');
     else if (arg === '--with-bounds') integrations.push('bounds');
-    else if (arg.startsWith('--stack=')) stack = arg.slice('--stack='.length);
+    else if (arg.startsWith('--stack=')) {
+      if (stack !== null) return { error: '--stack may only be provided once' };
+      stack = arg.slice('--stack='.length);
+    }
     else if (arg.startsWith('-')) return { error: `unknown option ${arg}` };
     else if (name === null) name = arg;
     else return { error: `unexpected operand ${arg}` };
@@ -152,13 +151,14 @@ function parseSetupArgs(input, { requireName = false } = {}) {
   if (name && (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name) || name === '.' || name === '..')) {
     return { error: 'project name must be one safe child-directory basename' };
   }
-  if (stack) {
-    const values = stack.split(',').filter(Boolean);
-    if (values.length === 0 || values.some((value) => !STACKS.has(value))) {
+  if (stack !== null) {
+    const values = stack.split(',').map((value) => value.trim());
+    if (values.some((value) => !value || !STACKS.has(value))
+      || (values.includes('generic') && new Set(values).size > 1)) {
       return { error: `unsupported stack ${stack}` };
     }
+    stack = [...new Set(values)].join(',');
   }
-
   return { name, stack, integrations: [...new Set(integrations)] };
 }
 
@@ -257,16 +257,26 @@ switch (command) {
     else runProjectScript('run-evals.mjs');
     break;
 
+  case 'map':
+    if (args.length > 1 || (args[0] && args[0] !== '--json')) {
+      usage('map accepts only --json');
+    } else runProjectScript('repo-map.mjs', args);
+    break;
+
+  case 'config':
+    if ((args[0] === 'show' && args.length === 1)
+      || (['enable', 'disable'].includes(args[0]) && args.length === 2
+        && ['graphify', 'bounds'].includes(args[1]))) {
+      runProjectScript('config.mjs', args);
+    } else {
+      usage('config requires show or enable|disable graphify|bounds');
+    }
+    break;
+
   case 'metrics':
     if (args.some((arg) => !['--recent', '--raw'].includes(arg)) || args.length > 1) {
       usage('metrics accepts at most one of --recent or --raw');
     } else runProjectScript('metrics.mjs', args);
-    break;
-
-  case 'handoffs':
-    if (args.length !== 1 || !['list', 'validate'].includes(args[0])) {
-      usage('handoffs requires list or validate');
-    } else runProjectScript('handoff-engine.mjs', args);
     break;
 
   case 'evolve': {
@@ -297,13 +307,24 @@ switch (command) {
       fail('graphify is not installed; enable it explicitly during init');
       break;
     }
+    try {
+      const config = JSON.parse(readFileSync(join(projectRoot, '.trellis', 'config.json'), 'utf8'));
+      if (!config.enabled_integrations?.includes('graphify')) {
+        fail('graphify is not enabled in .trellis/config.json');
+        break;
+      }
+    } catch {
+      fail('cannot read .trellis/config.json');
+      break;
+    }
     run('graphify', update ? ['update', path] : [path]);
     break;
   }
 
   case 'services':
-    if (args.length < 1 || args.length > 2 || !['start', 'stop', 'status', 'ports'].includes(args[0])) {
-      usage('services requires start|stop|status|ports and optional phoenix');
+    if (args.length < 1 || args.length > 2 || !['start', 'stop', 'status', 'ports'].includes(args[0])
+      || (args[1] && !['phoenix', 'all'].includes(args[1]))) {
+      usage('services requires start|stop|status|ports and optional phoenix|all');
     } else runProjectScript('services.mjs', args);
     break;
 

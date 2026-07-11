@@ -21,6 +21,10 @@ function fixture(extraFiles = {}) {
   mkdirSync(join(project, '.specify', 'memory'), { recursive: true });
   mkdirSync(join(project, '.bounds'), { recursive: true });
   cpSync(sourceScript, join(project, '.trellis', 'scripts', 'adapt-to-project.mjs'));
+  cpSync(
+    join(root, '.trellis', 'scripts', 'config-core.mjs'),
+    join(project, '.trellis', 'scripts', 'config-core.mjs'),
+  );
   writeFileSync(
     join(project, 'AGENTS.md'),
     '# Project\n\nThis repo owns: [describe what this project is — fill in after init].\n\nUser notes stay.\n',

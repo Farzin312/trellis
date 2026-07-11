@@ -1,37 +1,26 @@
 ---
 name: speckit-verify
-disable-model-invocation: true
-description: Empirical sign-off. Tests pass, routes correct, docs synced, graph parity.
+description: Produce empirical sign-off for a reviewed Trellis change. Use after Review to run configured gates, map evidence to success criteria, and distinguish complete, partial, and blocked proof.
 ---
 
-## Task
+# Verify
 
-Verify the implementation empirically. Produce `verify.md`:
+Read the spec success criteria, tasks, analysis, and review. Run the repository's
+aggregate gate plus any feature-specific commands required by the plan. Continue
+independent safe checks after failures to produce a complete picture.
 
-1. `npm run test` — full suite passes. Count MUST NOT decrease.
-2. `npm run lint` — exits 0.
-3. `npm run build` — succeeds.
-4. `npm run docs:check` — no drift.
-5. `npm run test:mutation` — mutation score meets threshold (if configured).
-6. Route audit — all new routes follow the 8-step discipline.
-7. Bounds validate — exits clean (if installed).
+Write `verify.md` with, for each criterion and command:
 
-Every item MUST be marked `[X]` with empirical evidence (test output, command output, doc-check output).
+- command or inspection;
+- exit status;
+- relevant output or artifact;
+- result: `PASS`, `FAIL`, `WARN`, or `SKIP`;
+- remaining limitation or external proof owner.
 
-## Rules
+Use `quality-gates` for the empirical sweep. Do not infer production behavior,
+external service state, owner approval, or retroactive evidence from local green
+commands. A skip is not a pass.
 
-- No item flips to `[X]` without evidence.
-- Halt on first failure.
-- SDD Status flips to COMPLETE only when all items pass.
-
-## SDD Status
-
-- [ ] All tests pass (full suite, count not decreased)
-- [ ] Lint exits 0
-- [ ] Build succeeds
-- [ ] Docs synced (npm run docs:check passes)
-- [ ] Mutation score meets threshold (if configured)
-- [ ] Route audit complete
-- [ ] Bounds validate clean (if installed)
-
-**SDD Status: COMPLETE / BLOCKED**
+Set final status to `COMPLETE` only when all required criteria have evidence and
+no blocking review item remains. Otherwise use `PARTIAL` or `BLOCKED` and state
+the exact open condition.

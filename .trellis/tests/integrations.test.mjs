@@ -13,6 +13,10 @@ function fixture(enabled = []) {
   const cwd = mkdtempSync(join(tmpdir(), 'trellis-integrations-'));
   mkdirSync(join(cwd, '.trellis', 'scripts'), { recursive: true });
   copyFileSync(source, join(cwd, '.trellis', 'scripts', 'check-integrations.mjs'));
+  copyFileSync(
+    join(root, '.trellis', 'scripts', 'config-core.mjs'),
+    join(cwd, '.trellis', 'scripts', 'config-core.mjs'),
+  );
   writeFileSync(join(cwd, '.trellis', 'config.json'), JSON.stringify({
     schema_version: 1,
     project_name: 'Fixture',

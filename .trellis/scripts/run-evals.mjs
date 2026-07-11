@@ -20,7 +20,10 @@ function report(status, kind, name, detail = '') {
 }
 
 function runRequired(name, command, args) {
-  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
+  // Node's test runner sets NODE_TEST_CONTEXT. Do not leak it into nested
+  // project test processes, where it changes reporter and exit semantics.
+  const { NODE_TEST_CONTEXT: _testContext, ...cleanEnv } = process.env;
+  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', env: cleanEnv });
   if (!result.error && result.status === 0) {
     report('PASS', 'required', name);
     return;

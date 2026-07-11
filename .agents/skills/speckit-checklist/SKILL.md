@@ -1,25 +1,19 @@
 ---
 name: speckit-checklist
-disable-model-invocation: true
-description: Fill spec-quality checklists before Analyze. Validates the spec is complete, not the code.
+description: Validate specification and plan quality before solution analysis. Use after Tasks to complete required requirement and risk checklists; this phase evaluates artifacts, not implementation.
 ---
 
-## Task
+# Checklist
 
-Fill the required checklists before Analyze runs. These validate SPEC QUALITY — not code correctness.
+Create or complete `checklists/requirements.md`. Add a security and money
+checklist when the feature touches trust boundaries, user data, permissions,
+payments, secrets, or migrations. Add domain-specific checklists only when they
+cover a real risk not already represented.
 
-| Checklist | Required? | When |
-|-----------|-----------|------|
-| `checklists/requirements.md` | **Always** | After Tasks, before Analyze |
-| `checklists/security-and-money.md` | When spec touches auth, money, audit, or migrations | After Tasks, before Analyze |
-| Additional domain checklists | Suggested for complex features | Before Analyze |
+Check that requirements are testable, success criteria measurable, assumptions
+visible, edge cases covered, contracts consistent, risks mitigated, and tasks
+traceable. Unresolved required items block Analyze from passing.
 
-## Rules
+Do not mark code correctness here; that belongs to Verify.
 
-- Incomplete required checklists block `analysis.md` from reaching `Result: PASS`.
-- Checklists validate the spec and plan quality BEFORE code is written.
-- `verify.md` validates implementation AFTER code is done. Different phases, do not merge.
-
-## Next Phase
-
-Invoke `speckit-analyze`.
+Next: `speckit-analyze`.

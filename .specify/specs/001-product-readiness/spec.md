@@ -15,18 +15,20 @@ Trellis presents itself as a portable, production-grade toolkit for AI-agent wor
 - **FR-001**: A maintainer can prove that a clean checkout exposes every documented core CLI workflow without relying on globally installed optional tools.
 - **FR-002**: Every quality-gate summary distinguishes executed passes, permitted skips, warnings, and blocking failures without describing skipped evidence as passed evidence.
 - **FR-003**: The repository has deterministic, runnable tests for its own load-bearing CLI, initialization, generation, drift-check, and evaluation behavior.
-- **FR-004**: Canonical agent skills and SDD commands remain deterministically synchronized across every configured agent platform.
-- **FR-005**: Initialization and project creation preserve user work, handle repeated execution safely, and behave correctly for supported stacks, tiers, agent selections, and filesystem locations.
+- **FR-004**: Canonical Agent Skills use the shared repository path supported by Codex, OpenCode, and Copilot, with only the required Claude compatibility mirror generated deterministically.
+- **FR-005**: Initialization and project creation preserve user work, handle repeated execution safely, and behave correctly for supported stacks and filesystem locations.
 - **FR-006**: Optional integrations report absence, staleness, zero coverage, and partial setup with an actionable next step and without false success.
 - **FR-007**: Documentation and marketing claims identify the supported scope, prerequisites, evidence, limitations, and genuine differentiators without absolute or unprovable language.
 - **FR-008**: Metrics and evaluation output remain token-efficient, deterministic, and machine-actionable while retaining enough detail to diagnose failures.
 - **FR-009**: Maintainers can run one documented local command that exercises all mandatory repository gates and returns non-zero when mandatory evidence is absent or broken.
 - **FR-010**: Generated files, templates, documentation references, and package metadata contain no placeholder product identity or contradictory support claims in a release-ready checkout.
 - **FR-011**: A first-time adopter sees a concise public journey from value proposition through prerequisites, installation, first successful workflow, troubleshooting, licensing, and contribution paths without internal process noise or duplicated prose.
+- **FR-012**: An agent or maintainer can obtain a bounded, read-only structural repository map without an LLM, cache, or optional integration; deeper graph and boundary capabilities remain explicit opt-ins.
+- **FR-013**: A maintainer can inspect, enable, and disable supported optional integrations through a validated atomic CLI contract, and repeated initialization applies only explicitly requested configuration changes.
 
 ### Security Requirements
 
-- **SC-001**: User-controlled names, paths, stack values, tier values, agent selections, environment values, and CLI arguments cannot cause command injection or writes outside the intended target.
+- **SC-001**: User-controlled names, paths, stack values, environment values, and CLI arguments cannot cause command injection or writes outside the intended target.
 - **SC-002**: Initialization and generation never overwrite non-generated user files silently and never expose or persist secret values.
 - **SC-003**: Optional networked services remain opt-in, pinned or constrained to supported versions, and isolated from mandatory offline workflows.
 
@@ -40,6 +42,8 @@ Trellis presents itself as a portable, production-grade toolkit for AI-agent wor
 - **VAL-002**: Repository checks validate effective coverage, not merely tool exit status, for tests, boundaries, generated artifacts, and documentation.
 - **VAL-003**: Release metadata uses one canonical product name, package identity, executable mapping, supported runtime range, and version source.
 - **VAL-004**: Public documentation clearly separates adopter guidance, maintainer guidance, generated project content, and historical evidence while keeping each reachable through deliberate navigation.
+- **VAL-005**: Repository mapping excludes ignored build, VCS, dependency, secret, and Trellis-history paths; produces stable ordering; and reports counts and documented systems without claiming semantic dependency analysis.
+- **VAL-006**: Configuration rejects unsupported schema versions, stacks, agents, integrations, duplicates, and malformed JSON before mutation while preserving unknown project-owned fields.
 
 ### Invariants
 
@@ -57,8 +61,9 @@ Trellis presents itself as a portable, production-grade toolkit for AI-agent wor
 - **EDGE-004**: Interrupted initialization, repeated initialization, partial generated mirrors, read-only targets, and target-name collisions.
 - **EDGE-005**: Unknown stack, mixed-language repository, monorepo, package metadata without a lockfile, and supported runtime/dependency engine mismatch.
 - **EDGE-006**: Corrupt metrics records, missing pricing data, unknown models, concurrent metric writes, and very large run histories.
-- **EDGE-007**: Agent lists containing whitespace, duplicates, unknown agents, no active agents, and only a subset of supported agents.
+- **EDGE-007**: Missing native platform directories, legacy prompt directories, and attempts to configure platform copies that the canonical shared skill path makes unnecessary.
 - **EDGE-008**: Markdown references containing anchors, external URLs, generated paths, code spans, and archived documents.
+- **EDGE-009**: Large trees, symlinks, unreadable entries, nested manifests, paths with spaces, and repositories with no documented systems.
 
 ## Clarification Log
 
@@ -67,6 +72,8 @@ Trellis presents itself as a portable, production-grade toolkit for AI-agent wor
 - “Perfect” means all mandatory gates and stated acceptance criteria pass in the environments available to this repository; it does not mean defect-free under every unknowable future environment.
 - “Any and all projects” means stack-agnostic core behavior plus explicitly documented adapters and limitations, not unsupported universal compatibility.
 - “No other product is truly like this” is replaced by evidence-backed differentiation; competitor superiority is out of scope unless independently demonstrated.
+- `.codex/` is not a repository skill source. Codex consumes `AGENTS.md` and `.agents/skills/`; Claude alone needs the generated `.claude/skills/` compatibility mirror.
+- Cheap orientation is an on-demand structural map. Graphify remains the optional deeper symbol/dependency graph and Bounds remains optional boundary enforcement after real ownership is configured.
 
 ## Out of Scope
 

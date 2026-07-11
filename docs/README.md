@@ -43,8 +43,8 @@ placeholder product identity.
 ## History and evidence
 
 - [Bug-fix register](./bug-fixes/README.md) — append-only maintainer history
-- [Active specifications](../.specify/specs/) — point-in-time delivery records,
-  not living adopter guidance
+- `.specify/specs/` — point-in-time delivery records, not living adopter
+  guidance
 
 Living docs follow current code. Historical records remain reachable but do not
 override current behavior.
