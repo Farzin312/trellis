@@ -2,6 +2,7 @@ import {
   closeSync,
   existsSync,
   fsyncSync,
+  lstatSync,
   openSync,
   readFileSync,
   renameSync,
@@ -77,8 +78,20 @@ export function configPath(root) {
   return join(root, '.trellis', 'config.json');
 }
 
+function assertSafeConfigPath(root) {
+  const directory = join(root, '.trellis');
+  const path = configPath(root);
+  if (existsSync(directory) && lstatSync(directory).isSymbolicLink()) {
+    throw new ConfigError('.trellis must not be a symbolic link');
+  }
+  if (existsSync(path) && lstatSync(path).isSymbolicLink()) {
+    throw new ConfigError('.trellis/config.json must not be a symbolic link');
+  }
+}
+
 export function readProjectConfig(root) {
   const path = configPath(root);
+  assertSafeConfigPath(root);
   if (!existsSync(path)) throw new ConfigError('missing .trellis/config.json; run trellis init');
   let value;
   try {
@@ -91,6 +104,7 @@ export function readProjectConfig(root) {
 
 export function writeProjectConfig(root, value) {
   const path = configPath(root);
+  assertSafeConfigPath(root);
   const config = validateConfig(value);
   const temporary = join(dirname(path), `.config.json.tmp-${process.pid}-${Date.now()}`);
   const mode = existsSync(path) ? statSync(path).mode & 0o777 : 0o644;

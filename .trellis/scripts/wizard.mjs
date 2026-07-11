@@ -29,6 +29,14 @@ export function buildInitArgs({ name, stack, graphify, bounds }) {
   return args;
 }
 
+export function parseYesNo(answer, fallback) {
+  const normalized = answer.trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (['y', 'yes'].includes(normalized)) return true;
+  if (['n', 'no'].includes(normalized)) return false;
+  return null;
+}
+
 async function main() {
   const rl = createInterface({ input, output });
 
@@ -39,9 +47,9 @@ async function main() {
 
   async function askYesNo(question, fallback) {
     for (;;) {
-      const answer = (await ask(question, fallback ? 'Y/n' : 'y/N')).toLowerCase();
-      if (['y', 'yes', 'y/n'].includes(answer)) return true;
-      if (['n', 'no'].includes(answer)) return false;
+      const answer = await rl.question(`${question} [${fallback ? 'Y/n' : 'y/N'}]: `);
+      const parsed = parseYesNo(answer, fallback);
+      if (parsed !== null) return parsed;
       console.log('  Enter yes or no.');
     }
   }
@@ -64,10 +72,23 @@ async function main() {
   const name = existing?.project_name || await ask('\nProject name', basename(root));
   if (existing) console.log(`\n  Existing project identity: ${name}`);
 
-  const stackLabel = await askChoice('Stack?', Object.keys(STACKS), 'auto-detect');
-  const stack = STACKS[stackLabel];
-  const graphify = await askYesNo('Enable Graphify as a project-wide requirement (installation is separate)?', false);
-  const bounds = await askYesNo('Enable Bounds as a project-wide requirement (installation is separate)?', false);
+  let stackLabel;
+  let stack;
+  let graphify;
+  let bounds;
+  if (existing) {
+    stackLabel = `keep configured (${existing.stacks.join(', ')})`;
+    stack = '';
+    graphify = existing.enabled_integrations.includes('graphify');
+    bounds = existing.enabled_integrations.includes('bounds');
+    console.log('\n  Existing stack and integration gates will keep configured values.');
+    console.log('  Use trellis config enable|disable <graphify|bounds> to change a gate.');
+  } else {
+    stackLabel = await askChoice('Stack?', Object.keys(STACKS), 'auto-detect');
+    stack = STACKS[stackLabel];
+    graphify = await askYesNo('Enable Graphify as a project-wide requirement (installation is separate)?', false);
+    bounds = await askYesNo('Enable Bounds as a project-wide requirement (installation is separate)?', false);
+  }
 
   console.log('\n  Plan');
   console.log('  ----');

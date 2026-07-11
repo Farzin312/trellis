@@ -32,10 +32,18 @@ test('the npm archive contains the adopter product and excludes maintainer histo
     encoding: 'utf8',
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  const files = JSON.parse(result.stdout)[0].files.map(({ path }) => path);
+  const entries = JSON.parse(result.stdout)[0].files;
+  const files = entries.map(({ path }) => path);
+  assert.equal(entries.find(({ path }) => path === '.trellis/cli.mjs')?.mode, 0o755);
+  assert.equal(entries.find(({ path }) => path === '.trellis/init.sh')?.mode, 0o755);
   for (const required of [
     '.agents/skills/sdd/SKILL.md',
+    '.gitattributes',
+    '.github/workflows/ci.yml',
+    '.specify/templates/spec-template.md',
     '.trellis/cli.mjs',
+    '.trellis/init.sh',
+    '.trellis/services/docker-compose.phoenix.yml',
     '.trellis/tests/cli.test.mjs',
     'README.md',
     'LICENSE',

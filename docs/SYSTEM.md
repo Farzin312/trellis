@@ -27,7 +27,7 @@ only when explicitly requested or configured.
 | `trellis new <name>` | Create a new project from the allowlisted scaffold payload |
 | `trellis init [name]` | Configure a checkout that already contains Trellis |
 | `trellis check` | Run the same aggregate gate as `npm run check` |
-| `trellis eval` | Run required toolkit self-tests and configured project tests |
+| `trellis eval` | Run toolkit self-tests plus one project aggregate or fallback test adapters |
 | `trellis map [--json]` | Print a bounded read-only structural repository map |
 | `trellis config show` | Validate and display project configuration without writing |
 | `trellis config enable\|disable <graphify\|bounds>` | Atomically manage project-wide optional requirements |

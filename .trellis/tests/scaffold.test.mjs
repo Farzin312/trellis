@@ -7,6 +7,7 @@ const cli = readFileSync(new URL('../cli.mjs', import.meta.url), 'utf8');
 
 test('scaffold uses an explicit payload and atomic target publication', () => {
   assert.match(cli, /SCAFFOLD_PATHS/);
+  assert.match(cli, /'\.gitattributes'/);
   assert.match(cli, /mkdtempSync/);
   assert.match(cli, /renameSync/);
   assert.doesNotMatch(cli, /cpSync\(templateRoot,\s*target/);

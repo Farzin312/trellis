@@ -6,6 +6,11 @@ Trellis separates tested automation from guidance that requires project-owned
 wiring. A language having a third-party test or analysis tool does not mean
 Trellis installs or configures that tool.
 
+For every stack, the preferred integration is a package script named
+`check:project`. It is the project-owned aggregate for build, lint, type, test,
+migration, browser, and integration evidence. When present, Trellis runs it once
+and suppresses automatic language test adapters to avoid duplicate work.
+
 ## Tested automation
 
 Repository fixtures cover manifest detection and mixed-stack reporting for:
@@ -13,7 +18,7 @@ Repository fixtures cover manifest detection and mixed-stack reporting for:
 | Stack value | Detected evidence | Project test behavior |
 |---|---|---|
 | `generic` | No recognized manifest or an explicit value | Core Trellis checks only |
-| `javascript` / `typescript` | `package.json` and TypeScript metadata | Runs the configured package test command without recursion into Trellis's own wrapper |
+| `javascript` / `typescript` | `package.json` and TypeScript metadata | Runs `check:project`, or the legacy `test:project` fallback, without recursion into Trellis's wrapper |
 | `python` | `pyproject.toml` or `requirements.txt` | Runs the configured Python test command when its toolchain is present |
 | `go` | `go.mod` | Runs the configured Go test command when its toolchain is present |
 | `rust` | `Cargo.toml` | Runs the configured Cargo test command when its toolchain is present |
@@ -21,6 +26,9 @@ Repository fixtures cover manifest detection and mixed-stack reporting for:
 Auto-detection reports every detected stack; it does not discard a mixed
 project after finding the first manifest. Explicit `--stack` values are
 validated against the supported vocabulary.
+
+Without `check:project`, the Python, Go, and Rust rows are fallback discovery,
+not a substitute for a complete project gate.
 
 The core Agent Skills, SDD artifacts, mandate, documentation checks, and Node
 self-tests do not depend on an adopting project's language.

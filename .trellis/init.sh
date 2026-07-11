@@ -45,6 +45,17 @@ NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
   exit 1
 }
 
+if [ -f package.json ] && ! node -e '
+  const fs = require("node:fs");
+  let pkg;
+  try { pkg = JSON.parse(fs.readFileSync("package.json", "utf8")); }
+  catch { process.exit(2); }
+  if (!pkg || Array.isArray(pkg) || typeof pkg !== "object") process.exit(2);
+'; then
+  echo "FAIL: package.json must contain a valid JSON object." >&2
+  exit 1
+fi
+
 CONFIG_EXISTS=false
 [ -f .trellis/config.json ] && CONFIG_EXISTS=true
 
@@ -92,7 +103,16 @@ else
   if [ -f tsconfig.json ]; then
     DETECT_ARGS+=(typescript)
   elif [ -f package.json ]; then
-    DETECT_ARGS+=(javascript)
+    if ! PACKAGE_STACK="$(node -e '
+      const fs = require("node:fs");
+      const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+      const dependencies = { ...pkg.dependencies, ...pkg.devDependencies };
+      process.stdout.write(dependencies.typescript ? "typescript" : "javascript");
+    ')"; then
+      echo "FAIL: package.json must contain a valid JSON object." >&2
+      exit 1
+    fi
+    DETECT_ARGS+=("$PACKAGE_STACK")
   fi
   { [ -f pyproject.toml ] || [ -f requirements.txt ]; } && DETECT_ARGS+=(python)
   [ -f go.mod ] && DETECT_ARGS+=(go)

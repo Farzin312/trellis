@@ -20,6 +20,7 @@ const MAX_SYSTEMS = 50;
 const MAX_TOP_LEVEL = 100;
 const excludedDirectories = new Set([
   '.git',
+  '.claude/skills',
   '.aws',
   '.gnupg',
   '.kube',
@@ -61,7 +62,7 @@ const files = [];
 
 function excluded(relativePath, name, isDirectory) {
   if (sensitiveNames.test(name) && name !== '.env.example') return true;
-  if (!isDirectory) return false;
+  if (!isDirectory) return relativePath === '.bounds/cache.db';
   return excludedDirectories.has(relativePath)
     || excludedDirectories.has(name)
     || /(?:^|\/)\.specify\/specs(?:\/|$)/.test(relativePath)

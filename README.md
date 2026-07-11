@@ -15,8 +15,9 @@ rewrite arbitrary project policy.
 - `AGENTS.md` holds durable repository guidance. Agent Skills are authored in
   `.agents/skills/`; `.claude/skills/` is the generated Claude compatibility
   mirror.
-- `trellis eval` runs required toolkit self-tests and configured project tests,
-  reporting passes, failures, warnings, and skips separately.
+- `trellis eval` runs required toolkit self-tests and one configured
+  `check:project` gate (or conservative language-test fallbacks), reporting
+  passes, failures, warnings, and skips separately.
 - `trellis map` prints a bounded structural repository map without an LLM or
   optional tool.
 - `npm run check` is the release gate for this repository.
@@ -179,7 +180,9 @@ remain visible and are not counted as passed evidence.
   needs it. A skip is expected, not a pass.
 - **The target directory already exists:** choose a new directory for
   `trellis new`. Brownfield adoption requires a reviewed merge.
-- **Machine-readable output is needed:** append `--ai` or set `TRELLIS_AI=1`.
+- **Compact agent-oriented output is needed:** append `--ai` or set
+  `TRELLIS_AI=1`. Use command-specific structured output such as `map --json`
+  when a parser needs JSON.
 
 The documentation map is at [docs/README.md](docs/README.md).
 

@@ -140,6 +140,29 @@ test('auto-detection treats a package with tsconfig as TypeScript instead of dup
   }
 });
 
+test('auto-detection recognizes a TypeScript dependency and rejects invalid package metadata before config creation', () => {
+  const typed = fixture();
+  const invalid = fixture();
+  try {
+    writeFileSync(join(typed, 'package.json'), '{"devDependencies":{"typescript":"latest"}}\n');
+    const typedResult = run(typed, 'Typed Project');
+    assert.equal(typedResult.status, 0, typedResult.stdout + typedResult.stderr);
+    assert.deepEqual(
+      JSON.parse(readFileSync(join(typed, '.trellis/config.json'), 'utf8')).stacks,
+      ['typescript'],
+    );
+
+    writeFileSync(join(invalid, 'package.json'), '{broken');
+    const invalidResult = run(invalid, 'Broken Project', '--stack=generic');
+    assert.equal(invalidResult.status, 1, invalidResult.stdout + invalidResult.stderr);
+    assert.match(invalidResult.stderr, /package\.json must contain a valid JSON object/i);
+    assert.equal(existsSync(join(invalid, '.trellis/config.json')), false);
+  } finally {
+    rmSync(typed, { recursive: true, force: true });
+    rmSync(invalid, { recursive: true, force: true });
+  }
+});
+
 test('repeated initialization applies only explicitly requested managed changes', () => {
   const project = fixture();
   try {

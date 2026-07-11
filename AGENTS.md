@@ -76,7 +76,7 @@ Phoenix is an explicit local service, not part of core verification.
 ## Verification commands
 
 - `npm run check` — the single aggregate repository gate
-- `npm test` — toolkit self-tests plus configured project-test dispatch
+- `npm test` — toolkit self-tests plus `check:project` or language-test fallback dispatch
 - `npm run docs:check` — read-only breadcrumb and local-link validation
 - `npm run skills:generate` — update the Claude compatibility mirror
 - `npm run skills:health` — validate canonical skills and mirror parity

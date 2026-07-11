@@ -7,6 +7,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -118,5 +119,30 @@ test('unknown commands and integrations are usage errors; missing config is oper
   } finally {
     rmSync(project, { recursive: true, force: true });
     rmSync(missing, { recursive: true, force: true });
+  }
+});
+
+test('configuration commands refuse a symlinked project config', () => {
+  const project = fixture(null);
+  try {
+    const target = join(project, 'user-owned.json');
+    const content = `${JSON.stringify({
+      schema_version: 1,
+      project_name: 'Outside',
+      project_slug: 'outside',
+      stacks: ['generic'],
+      enabled_integrations: [],
+    }, null, 2)}\n`;
+    writeFileSync(target, content);
+    symlinkSync(target, join(project, '.trellis', 'config.json'));
+
+    for (const args of [['show'], ['enable', 'graphify']]) {
+      const result = run(project, ...args);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stderr, /config\.json.*symbolic link/i);
+      assert.equal(readFileSync(target, 'utf8'), content);
+    }
+  } finally {
+    rmSync(project, { recursive: true, force: true });
   }
 });

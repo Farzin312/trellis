@@ -26,6 +26,7 @@ const STACKS = new Set(['generic', 'javascript', 'typescript', 'python', 'go', '
 const SCAFFOLD_PATHS = [
   '.agents',
   '.env.example',
+  '.gitattributes',
   '.github/workflows/ci.yml',
   '.specify/memory',
   '.specify/templates',

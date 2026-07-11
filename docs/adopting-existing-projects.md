@@ -26,17 +26,19 @@ application.
    not copy the reference project's generated identity, `README.md`, root
    license, or package metadata blindly.
 4. Merge the Trellis package scripts into the existing `package.json`. Preserve
-   the application's real test command as `test:project`; Trellis uses `test`
-   for its evidence runner and `check` for the aggregate gate. If the project
-   already owns those script names, choose and document an intentional merge
-   before continuing.
+   the application's real test command as `test:project`, then define one
+   `check:project` script that runs every blocking application gate, for example
+   lint, build, type checks, `test:project`, migration checks, and browser tests.
+   Trellis uses `test` for its evidence runner and `check` for the repository
+   aggregate. Never call either wrapper from `check:project`; that is recursive.
+   If the project already owns these script names, choose and document an
+   intentional merge before continuing.
 5. Merge `AGENTS.md` by meaning. Keep one cross-agent mandate. `CLAUDE.md` must
    import `@AGENTS.md` on its first line; Claude-specific instructions may
    remain below the import.
 6. Merge `.gitignore` and CI deliberately. The blocking CI contract is
-   `npm ci` followed by `npm run check`; add project build, lint, type, browser,
-   or integration evidence to `test:project` or another command invoked by the
-   aggregate gate.
+   `npm ci` followed by `npm run check`; keep application evidence behind
+   `check:project` so local and CI execution cannot drift.
 7. Run initialization only after `.trellis/` and the reviewed package contract
    are present:
 

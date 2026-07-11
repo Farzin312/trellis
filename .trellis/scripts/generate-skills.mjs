@@ -3,6 +3,7 @@
 import {
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -17,6 +18,18 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const sourceDir = join(root, '.agents', 'skills');
 const targetDir = join(root, '.claude', 'skills');
 const manifestPath = join(root, '.trellis', 'generated-skills.json');
+
+function rejectSymlink(path, label) {
+  if (existsSync(path) && lstatSync(path).isSymbolicLink()) {
+    console.error(`FAIL: ${label} must not be a symbolic link`);
+    process.exit(1);
+  }
+}
+
+rejectSymlink(join(root, '.agents'), 'canonical skill parent');
+rejectSymlink(sourceDir, 'canonical skill root');
+rejectSymlink(join(root, '.claude'), 'Claude configuration root');
+rejectSymlink(targetDir, 'Claude skill mirror');
 
 if (!existsSync(sourceDir)) {
   console.error('FAIL: canonical .agents/skills directory is missing');

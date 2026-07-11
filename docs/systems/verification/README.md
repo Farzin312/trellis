@@ -5,7 +5,7 @@
 ## Ownership
 
 Verification owns the single aggregate gate, framework self-tests, configured
-project-test dispatch, documentation structure checks, optional-integration
+project-gate and fallback test dispatch, documentation structure checks, optional-integration
 readiness, migration static warnings, and release/scaffold smoke evidence.
 
 ## Public Surface

@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 /** Adapt Trellis-owned project metadata to canonical root-language stacks. */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readProjectConfig, writeProjectConfig } from './config-core.mjs';
 
@@ -52,6 +63,9 @@ function detectStacks() {
     let usesTypeScript = hasTypeScriptConfig;
     if (hasPackage) {
       const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+      if (!pkg || Array.isArray(pkg) || typeof pkg !== 'object') {
+        throw new Error('package.json must contain a JSON object');
+      }
       const dependencies = { ...pkg.dependencies, ...pkg.devDependencies };
       usesTypeScript ||= Boolean(dependencies.typescript);
     }
@@ -67,8 +81,28 @@ function detectStacks() {
 
 function writeIfChanged(path, content) {
   if (readFileSync(path, 'utf8') === content) return false;
-  writeFileSync(path, content);
+  const temporary = join(dirname(path), `.${basename(path)}.tmp-${process.pid}-${Date.now()}`);
+  let descriptor;
+  try {
+    descriptor = openSync(temporary, 'wx', statSync(path).mode & 0o777);
+    writeFileSync(descriptor, content, 'utf8');
+    fsyncSync(descriptor);
+    closeSync(descriptor);
+    descriptor = undefined;
+    renameSync(temporary, path);
+  } catch (error) {
+    if (descriptor !== undefined) closeSync(descriptor);
+    if (existsSync(temporary)) unlinkSync(temporary);
+    throw error;
+  }
   return true;
+}
+
+function validateAgentsTarget() {
+  const path = join(root, 'AGENTS.md');
+  if (existsSync(path) && lstatSync(path).isSymbolicLink()) {
+    throw new Error('AGENTS.md must not be a symbolic link');
+  }
 }
 
 function adaptAgents(stacks) {
@@ -116,6 +150,7 @@ function main() {
   }
   const explicit = parseArgs(process.argv.slice(2));
   const stacks = explicit === undefined ? detectStacks() : parseStacks(explicit);
+  validateAgentsTarget();
   console.log(`Detected stacks: ${stacks.join(', ')}`);
   adaptConfig(stacks);
   adaptAgents(stacks);

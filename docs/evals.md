@@ -22,13 +22,13 @@ integration can fail and block when its configuration promises that capability.
 
 ```bash
 npm run test:self # toolkit standard-library self-tests only
-npm test          # toolkit self-tests plus configured project tests
+npm test          # toolkit self-tests plus the configured project gate/adapters
 trellis eval      # same evidence runner as npm test
 npm run check     # single maintainer/release gate
 ```
 
-Use `--ai` with the Trellis CLI for concise machine-readable progress. The eval
-summary ends with:
+Use `--ai` with the Trellis CLI for concise agent-oriented progress. The eval
+summary itself ends with one stable machine-readable line:
 
 ```text
 RESULT required_pass=<n> required_fail=<n> optional_pass=<n> optional_skip=<n> optional_warn=<n>
@@ -43,9 +43,21 @@ checks referenced by `package.json`. It includes public claim tests, package and
 CLI contracts, generated-file drift checks, and documentation link/breadcrumb
 verification. The exact list in the executable package scripts is authoritative.
 
-When a supported project manifest exposes a configured project test command,
-`trellis eval` executes it as project evidence. A present but broken test setup
-is a failure with the underlying command and exit status.
+The preferred application contract is one project-owned `check:project` package
+script. Put every blocking application command there: build, lint, type checks,
+tests, migration validation, and any project-specific integration or browser
+gate. Trellis executes that script exactly once and does not also run its
+language adapters, which avoids duplicate suites in mixed-stack repositories.
+
+`check:project` must not call `npm run check`, `npm test`, `trellis check`,
+`trellis eval`, or the Trellis eval script; those paths recurse and fail before
+execution. It may call project-owned scripts such as `test:project`.
+
+For compatibility, a repository without `check:project` can expose
+`test:project`; Trellis runs it and then evaluates detected Python, Go, and Rust
+test evidence. Test files without a configured JavaScript project command are a
+warning. A present but broken command is a required failure with its exit
+status. Missing evidence remains an explicit skip or warning, never a pass.
 
 ## Optional evidence
 

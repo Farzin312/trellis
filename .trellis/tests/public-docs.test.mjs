@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
@@ -102,6 +102,11 @@ test('capability docs describe only configured or implemented behavior', () => {
   for (const status of ['PASS', 'FAIL', 'WARN', 'SKIP']) assert.match(evals, new RegExp(`\\b${status}\\b`));
   assert.match(evals, /required checks/i);
   assert.match(evals, /optional checks/i);
+  assert.match(evals, /check:project/);
+  assert.match(evals, /build.*lint.*type.*test/is);
+
+  const adoption = read('docs/adopting-existing-projects.md');
+  assert.match(adoption, /check:project/);
 
   const languages = read('docs/language-support.md');
   assert.match(languages, /Tested automation/);
@@ -145,6 +150,22 @@ test('Agent Skills paths use the canonical source and Claude mirror only', () =>
   assert.doesNotMatch(text, /\.codex\/(?:agents|prompts)\//);
   assert.doesNotMatch(text, /\.opencode\/command\//);
   assert.doesNotMatch(text, /\.claude\/commands\//);
+});
+
+test('the shipped skill catalog stays within Codex initial-discovery metadata budget', () => {
+  const names = readdirSync(new URL('../../.agents/skills/', import.meta.url));
+  const metadata = names.map((name) => {
+    const skill = read(`.agents/skills/${name}/SKILL.md`);
+    const description = skill.match(/^description:\s*(.+)$/m)?.[1] || '';
+    return `${name}: ${description}`;
+  }).join('\n');
+  assert.ok(metadata.length <= 8000, `skill metadata is ${metadata.length} characters`);
+  for (const name of names) {
+    const url = new URL(`../../.agents/skills/${name}/SKILL.md`, import.meta.url);
+    const content = readFileSync(url, 'utf8');
+    assert.ok(statSync(url).size <= 20_000, `${name} exceeds the Trellis built-in 20KB budget`);
+    assert.ok(content.split('\n').length <= 500, `${name} exceeds the 500-line recommendation`);
+  }
 });
 
 test('durable guidance shares one stack-agnostic nine-phase contract', () => {

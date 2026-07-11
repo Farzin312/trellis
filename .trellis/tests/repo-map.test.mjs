@@ -28,6 +28,8 @@ function fixture() {
   mkdirSync(join(project, 'docs', 'systems', 'billing'), { recursive: true });
   mkdirSync(join(project, 'node_modules', 'leak'), { recursive: true });
   mkdirSync(join(project, '.ssh'), { recursive: true });
+  mkdirSync(join(project, '.claude', 'skills', 'generated'), { recursive: true });
+  mkdirSync(join(project, '.bounds'), { recursive: true });
   mkdirSync(join(project, 'dist'), { recursive: true });
   mkdirSync(join(project, '.specify', 'specs', 'secret-history'), { recursive: true });
   mkdirSync(join(project, 'packages', 'nested', '.specify', 'specs', 'private-history'), { recursive: true });
@@ -45,6 +47,8 @@ function fixture() {
   writeFileSync(join(project, '.env'), 'SECRET=do-not-map\n');
   writeFileSync(join(project, '.npmrc'), '//registry.example/:_authToken=secret\n');
   writeFileSync(join(project, '.ssh', 'id_rsa'), 'private\n');
+  writeFileSync(join(project, '.claude', 'skills', 'generated', 'SKILL.md'), 'generated mirror\n');
+  writeFileSync(join(project, '.bounds', 'cache.db'), 'binary cache\n');
   writeFileSync(join(project, 'node_modules', 'leak', 'secret.js'), 'secret\n');
   writeFileSync(join(project, 'dist', 'generated.js'), 'generated\n');
   writeFileSync(join(project, '.specify', 'specs', 'secret-history', 'spec.md'), 'history\n');
@@ -84,6 +88,8 @@ test('JSON map is stable, bounded, read-only, and excludes non-source trees', ()
     assert.deepEqual(map.manifests, ['package.json']);
     assert.equal(map.summary.tests, 1);
     assert.equal(map.truncated, false);
+    assert.equal(map.top_level.some(({ path }) => path === '.claude'), false);
+    assert.equal(map.extensions['.db'], undefined);
     assert.deepEqual(map.systems, [{
       name: 'billing',
       path: 'docs/systems/billing/README.md',

@@ -13,6 +13,22 @@ const counts = {
   optional_skip: 0,
   optional_warn: 0,
 };
+const DISCOVERY_EXCLUDES = new Set([
+  '.cache',
+  '.git',
+  '.next',
+  '.trellis',
+  '.turbo',
+  '.venv',
+  'build',
+  'coverage',
+  'dist',
+  'graphify-out',
+  'node_modules',
+  'target',
+  'vendor',
+  'venv',
+]);
 
 function report(status, kind, name, detail = '') {
   counts[`${kind}_${status.toLowerCase()}`]++;
@@ -39,7 +55,7 @@ function runRequired(name, command, args) {
 function walk(dir, files = []) {
   if (!existsSync(dir)) return files;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (['.git', '.trellis', 'node_modules', 'graphify-out'].includes(entry.name)) continue;
+    if (DISCOVERY_EXCLUDES.has(entry.name)) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) walk(path, files);
     else if (entry.isFile()) files.push(path);
@@ -76,6 +92,7 @@ const pythonTests = projectFiles.filter((path) => /(?:^|\/)(?:test_.*|.*_test)\.
 const goTests = projectFiles.filter((path) => /_test\.go$/.test(path));
 const rustFiles = projectFiles.filter((path) => path.endsWith('.rs'));
 let detectedManifest = false;
+let projectAggregateConfigured = false;
 
 const packagePath = join(root, 'package.json');
 if (existsSync(packagePath)) {
@@ -83,6 +100,25 @@ if (existsSync(packagePath)) {
   const pkg = readPackage(packagePath);
   if (!pkg) {
     report('FAIL', 'required', 'javascript-project-tests', 'invalid-package-json');
+  } else if (typeof pkg.scripts?.['check:project'] === 'string' && pkg.scripts['check:project'].trim()) {
+    projectAggregateConfigured = true;
+    const projectCommand = pkg.scripts['check:project'];
+    const checkCommand = typeof pkg.scripts.check === 'string' ? pkg.scripts.check : '';
+    const testCommand = typeof pkg.scripts.test === 'string' ? pkg.scripts.test : '';
+    const recursive = /(?:^|\s)trellis\s+(?:check|eval)(?:\s|$)|\.trellis\/scripts\/run-evals\.mjs/.test(projectCommand)
+      || (/\bnpm\s+(?:run\s+)?check(?:\s|$)/.test(projectCommand)
+        && /(?:trellis\s+(?:check|eval)|\.trellis\/scripts\/run-evals\.mjs)/.test(checkCommand))
+      || (/\bnpm\s+(?:run\s+)?test(?:\s|$)/.test(projectCommand)
+        && /\.trellis\/scripts\/run-evals\.mjs/.test(testCommand));
+    if (recursive) {
+      report('FAIL', 'required', 'project-check', 'recursive-project-check');
+    } else {
+      runRequired(
+        'project-check',
+        process.platform === 'win32' ? 'npm.cmd' : 'npm',
+        ['run', 'check:project'],
+      );
+    }
   } else if (typeof pkg.scripts?.['test:project'] === 'string' && pkg.scripts['test:project'].trim()) {
     const projectCommand = pkg.scripts['test:project'];
     const testCommand = typeof pkg.scripts.test === 'string' ? pkg.scripts.test : '';
@@ -107,7 +143,7 @@ if (existsSync(packagePath)) {
 
 const pyprojectPath = join(root, 'pyproject.toml');
 const requirementsPath = join(root, 'requirements.txt');
-if (existsSync(pyprojectPath) || existsSync(requirementsPath)) {
+if (!projectAggregateConfigured && (existsSync(pyprojectPath) || existsSync(requirementsPath))) {
   detectedManifest = true;
   if (pythonTests.length === 0) {
     report('SKIP', 'optional', 'python-project-tests', 'no-test-evidence');
@@ -125,13 +161,13 @@ if (existsSync(pyprojectPath) || existsSync(requirementsPath)) {
   }
 }
 
-if (existsSync(join(root, 'go.mod'))) {
+if (!projectAggregateConfigured && existsSync(join(root, 'go.mod'))) {
   detectedManifest = true;
   if (goTests.length > 0) runRequired('go-project-tests', 'go', ['test', './...']);
   else report('SKIP', 'optional', 'go-project-tests', 'no-test-evidence');
 }
 
-if (existsSync(join(root, 'Cargo.toml'))) {
+if (!projectAggregateConfigured && existsSync(join(root, 'Cargo.toml'))) {
   detectedManifest = true;
   const hasRustTests = rustFiles.some((path) => path.includes(`${join(root, 'tests')}/`)
     || readFileSync(path, 'utf8').includes('#[test]'));

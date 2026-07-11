@@ -47,6 +47,7 @@ test('clean scaffold installs and passes its own portable aggregate gate', { tim
     });
 
     assert.equal(existsSync(join(project, 'LICENSE')), false);
+    assert.equal(existsSync(join(project, '.gitattributes')), true);
     assert.equal(existsSync(join(project, '.trellis', 'LICENSE')), true);
     assert.equal(existsSync(join(project, '.codex')), false);
     assert.equal(existsSync(join(project, '.opencode')), false);

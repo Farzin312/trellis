@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -140,6 +141,25 @@ test('adaptation fails when the canonical Trellis configuration is missing', () 
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stderr, /missing \.trellis\/config\.json/i);
     assert.equal(readFileSync(join(project, 'AGENTS.md'), 'utf8'), agents);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+  }
+});
+
+test('adaptation refuses a symlinked mandate instead of modifying its target', () => {
+  const project = fixture();
+  try {
+    const userOwned = join(project, 'user-owned.md');
+    const config = readFileSync(join(project, '.trellis', 'config.json'), 'utf8');
+    writeFileSync(userOwned, 'This repo owns: user policy.\n');
+    rmSync(join(project, 'AGENTS.md'));
+    symlinkSync(userOwned, join(project, 'AGENTS.md'));
+
+    const result = run(project, '--stack=python');
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /AGENTS\.md.*symbolic link/i);
+    assert.equal(readFileSync(userOwned, 'utf8'), 'This repo owns: user policy.\n');
+    assert.equal(readFileSync(join(project, '.trellis', 'config.json'), 'utf8'), config);
   } finally {
     rmSync(project, { recursive: true, force: true });
   }

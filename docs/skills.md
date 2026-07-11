@@ -31,6 +31,11 @@ Compatibility reviewed: 2026-07-11.
 Platform discovery rules can change. Update the review date and public claim
 tests when changing this table.
 
+Codex initially budgets at most 8,000 characters when the model context size is
+unknown for the available-skill list. Trellis's release test keeps the shipped
+names and descriptions within that discovery budget; skill bodies remain
+progressively loaded only when selected.
+
 Codex needs no repository `.codex` directory for these skills: it reads the
 shared `.agents/skills/` tree and `AGENTS.md`. Trellis does not generate legacy
 custom-prompt or command mirrors. Claude is the only listed platform requiring a

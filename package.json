@@ -30,6 +30,7 @@
   "files": [
     ".agents/",
     ".env.example",
+    ".gitattributes",
     ".github/workflows/ci.yml",
     ".specify/memory/",
     ".specify/templates/",

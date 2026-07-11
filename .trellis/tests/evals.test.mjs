@@ -84,6 +84,24 @@ test('missing commands skip while unconfigured test evidence warns', () => {
   }
 });
 
+test('test discovery ignores dependency, build, and virtual-environment trees', () => {
+  const cwd = fixture();
+  try {
+    writeFileSync(join(cwd, 'package.json'), JSON.stringify({ scripts: {} }));
+    for (const directory of ['.venv', 'dist', 'vendor']) {
+      mkdirSync(join(cwd, directory), { recursive: true });
+      writeFileSync(join(cwd, directory, 'dependency.test.js'), 'throw new Error("not project evidence");\n');
+    }
+
+    const result = run(cwd);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /SKIP optional javascript-project-tests reason=not-configured/);
+    assert.doesNotMatch(result.stdout, /test-files-without-test:project/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test('recursive project test configuration fails without spawning itself', () => {
   const cwd = fixture();
   try {
@@ -97,6 +115,49 @@ test('recursive project test configuration fails without spawning itself', () =>
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stdout, /FAIL required javascript-project-tests reason=recursive-test-command/);
     assert.match(result.stdout, /required_fail=1/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('a project-owned aggregate check runs once and supersedes language test adapters', () => {
+  const cwd = fixture();
+  try {
+    writeFileSync(join(cwd, 'package.json'), JSON.stringify({
+      scripts: {
+        'check:project': 'node project-check.mjs',
+        'test:project': 'node should-not-run.mjs',
+      },
+    }));
+    writeFileSync(join(cwd, 'project-check.mjs'), "console.log('PROJECT_CHECK_OK');\n");
+    writeFileSync(join(cwd, 'should-not-run.mjs'), 'process.exit(9);\n');
+    writeFileSync(join(cwd, 'pyproject.toml'), '[project]\nname = "fixture"\n');
+    writeFileSync(join(cwd, 'test_app.py'), 'raise RuntimeError("should not run")\n');
+    writeFileSync(join(cwd, 'go.mod'), 'module example.test/fixture\n\ngo 1.21\n');
+    writeFileSync(join(cwd, 'widget_test.go'), 'package fixture\n');
+
+    const result = run(cwd);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /PASS required project-check/);
+    assert.match(result.stdout, /RESULT required_pass=2 required_fail=0 optional_pass=0 optional_skip=0 optional_warn=0$/m);
+    assert.doesNotMatch(result.stdout, /javascript-project-tests|python-project-tests|go-project-tests/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('a recursive project-owned aggregate check fails before it can spawn itself', () => {
+  const cwd = fixture();
+  try {
+    writeFileSync(join(cwd, 'package.json'), JSON.stringify({
+      scripts: {
+        check: 'node .trellis/scripts/run-evals.mjs',
+        'check:project': 'npm run check',
+      },
+    }));
+    const result = run(cwd);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /FAIL required project-check reason=recursive-project-check/);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }
