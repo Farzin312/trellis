@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,7 +14,10 @@ function fixture() {
   mkdirSync(join(cwd, '.trellis', 'scripts'), { recursive: true });
   mkdirSync(join(cwd, '.trellis', 'services'), { recursive: true });
   copyFileSync(source, join(cwd, '.trellis', 'scripts', 'services.mjs'));
-  writeFileSync(join(cwd, '.trellis', 'services', 'docker-compose.phoenix.yml'), 'services: {}\n');
+  copyFileSync(
+    join(root, '.trellis', 'services', 'docker-compose.phoenix.yml'),
+    join(cwd, '.trellis', 'services', 'docker-compose.phoenix.yml'),
+  );
   return cwd;
 }
 
@@ -116,5 +119,30 @@ test('Docker compose failures propagate and use argument-array execution', () =>
     assert.match(result.stderr, /FAIL: could not start phoenix/);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('service operations reject modified and symlinked compose payloads before Docker', () => {
+  for (const mode of ['modified', 'symlinked']) {
+    const cwd = fixture();
+    const outside = mkdtempSync(join(tmpdir(), 'trellis-compose-outside-'));
+    try {
+      const compose = join(cwd, '.trellis', 'services', 'docker-compose.phoenix.yml');
+      if (mode === 'modified') {
+        writeFileSync(compose, 'services:\n  attacker:\n    image: unsafe\n');
+      } else {
+        rmSync(compose);
+        const target = join(outside, 'compose.yml');
+        writeFileSync(target, 'services: {}\n');
+        symlinkSync(target, compose);
+      }
+      const result = run(cwd, ['start', 'phoenix'], { PATH: '' });
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stderr, /compose.*(?:differs|non-symlink)/i);
+      assert.doesNotMatch(result.stderr, /Docker is not installed/i);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
   }
 });

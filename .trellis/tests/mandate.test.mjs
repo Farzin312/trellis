@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -33,5 +33,30 @@ test('mandate repair prepends the import and preserves Claude-specific instructi
     assert.equal(checked.status, 0, checked.stdout + checked.stderr);
   } finally {
     rmSync(project, { recursive: true, force: true });
+  }
+});
+
+test('mandate repair rejects symlinked policy files without changing their targets', () => {
+  const project = mkdtempSync(join(tmpdir(), 'trellis-mandate-link-'));
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-mandate-outside-'));
+  try {
+    mkdirSync(join(project, '.trellis', 'scripts'), { recursive: true });
+    copyFileSync(
+      new URL('../scripts/check-mandate-sync.mjs', import.meta.url),
+      join(project, '.trellis', 'scripts', 'check-mandate-sync.mjs'),
+    );
+    writeFileSync(join(project, 'AGENTS.md'), '# Agent mandate\n');
+    const target = join(outside, 'CLAUDE.md');
+    writeFileSync(target, 'OUTSIDE\n');
+    symlinkSync(target, join(project, 'CLAUDE.md'));
+    const script = join(project, '.trellis', 'scripts', 'check-mandate-sync.mjs');
+
+    const result = spawnSync(process.execPath, [script, '--fix'], { cwd: project, encoding: 'utf8' });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /CLAUDE\.md.*non-symlink/i);
+    assert.equal(readFileSync(target, 'utf8'), 'OUTSIDE\n');
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

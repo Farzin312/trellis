@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative Trellis guided setup session</title>
+  <desc id="desc">A terminal transcript shows mandatory questions, a validated Core plus Graphify plan, and a final honest gate result.</desc>
+  <rect width="1200" height="560" rx="24" fill="#0b1020"/>
+  <rect width="1200" height="72" rx="24" fill="#101b31"/>
+  <rect y="48" width="1200" height="24" fill="#101b31"/>
+  <circle cx="42" cy="36" r="8" fill="#ff6f91"/><circle cx="68" cy="36" r="8" fill="#f2b95f"/><circle cx="94" cy="36" r="8" fill="#69dc8f"/>
+  <text x="128" y="44" fill="#f4f8ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24" font-weight="700">TRELLIS / GUIDED SETUP</text>
+  <text x="920" y="43" fill="#91a4c5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15">ILLUSTRATIVE SESSION</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <text x="55" y="126" fill="#62dcf5" font-size="24">$ trellis setup questions --json</text>
+    <text x="55" y="172" fill="#89efaa" font-size="22">✓ 11 mandatory decisions captured</text>
+    <text x="55" y="228" fill="#62dcf5" font-size="24">$ trellis setup plan --answers=/tmp/trellis.json</text>
+    <text x="55" y="274" fill="#aeb9ff" font-size="22">PROFILE  Trellis Core + Graphify</text>
+    <text x="88" y="320" fill="#d7e2f2" font-size="20">1  atomic core scaffold</text>
+    <text x="88" y="356" fill="#d7e2f2" font-size="20">2  complete check:project</text>
+    <text x="88" y="392" fill="#d7e2f2" font-size="20">3  install + verify selected add-on</text>
+    <text x="55" y="444" fill="#62dcf5" font-size="24">$ npm run check</text>
+    <text x="55" y="486" fill="#89efaa" font-size="19">PASS required framework-self-tests</text>
+    <text x="55" y="522" fill="#ffd48d" font-size="18">SKIP bounds reason=not-configured   required_fail=0</text>
+  </g>
+</svg>

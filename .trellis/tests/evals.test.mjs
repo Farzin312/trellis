@@ -162,3 +162,34 @@ test('a recursive project-owned aggregate check fails before it can spawn itself
     rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+test('indirect project-script recursion and script cycles fail before spawning', () => {
+  for (const scripts of [
+    {
+      check: 'npm test',
+      test: 'node .trellis/scripts/run-evals.mjs',
+      verify: 'npm run check',
+      'check:project': 'npm run verify',
+    },
+    {
+      verify: 'npm run check:project',
+      'check:project': 'npm run verify',
+    },
+    {
+      'check:project': 'node .trellis/cli.mjs check',
+    },
+    {
+      'check:project': './node_modules/.bin/trellis eval',
+    },
+  ]) {
+    const cwd = fixture();
+    try {
+      writeFileSync(join(cwd, 'package.json'), JSON.stringify({ scripts }));
+      const result = run(cwd);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stdout, /FAIL required project-check reason=recursive-project-check/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  }
+});

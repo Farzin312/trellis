@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -94,5 +94,22 @@ test('unknown options are usage errors', () => {
     assert.match(result.stderr, /Usage:/);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('symlinked root documentation is rejected instead of read outside the project', () => {
+  const cwd = fixture('# Guide\n\n> Parent: [Documentation](README.md)\n');
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-docs-outside-'));
+  try {
+    rmSync(join(cwd, 'README.md'));
+    writeFileSync(join(outside, 'README.md'), '# Outside private documentation\n');
+    symlinkSync(join(outside, 'README.md'), join(cwd, 'README.md'));
+    const result = run(cwd);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /README\.md.*regular non-symlink/i);
+    assert.doesNotMatch(result.stdout + result.stderr, /Outside private documentation/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

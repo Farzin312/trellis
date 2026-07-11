@@ -3,9 +3,9 @@
 import {
   appendFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
-  statSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +31,9 @@ function validationError(record) {
   if (unknown) return `unknown field ${unknown}`;
   for (const field of stringFields) {
     if (record[field] !== undefined && typeof record[field] !== 'string') return `${field} must be a string`;
+    if (record[field] !== undefined && (record[field].length > 4096 || /\p{Cc}/u.test(record[field]))) {
+      return `${field} must contain at most 4096 characters and no controls`;
+    }
   }
   for (const field of numberFields) {
     if (record[field] === undefined) continue;
@@ -44,7 +47,16 @@ function validationError(record) {
 
 function readRuns() {
   if (!existsSync(runsFile)) return [];
-  if (statSync(runsFile).size > MAX_LEDGER_BYTES) {
+  if (existsSync(metricsDir) && lstatSync(metricsDir).isSymbolicLink()) {
+    console.error('FAIL: .trellis/metrics must not be a symbolic link');
+    process.exit(1);
+  }
+  const details = lstatSync(runsFile);
+  if (details.isSymbolicLink() || !details.isFile()) {
+    console.error('FAIL: runs.jsonl must be a regular non-symlink file');
+    process.exit(1);
+  }
+  if (details.size > MAX_LEDGER_BYTES) {
     console.error(`FAIL: runs.jsonl exceeds ${MAX_LEDGER_BYTES} bytes; archive old records before summarizing`);
     process.exit(1);
   }
@@ -89,6 +101,14 @@ function appendRun(input) {
   const serialized = JSON.stringify(record);
   if (Buffer.byteLength(serialized) > MAX_RECORD_BYTES) {
     console.error(`FAIL: record exceeds ${MAX_RECORD_BYTES} bytes`);
+    process.exit(1);
+  }
+  if (existsSync(metricsDir) && lstatSync(metricsDir).isSymbolicLink()) {
+    console.error('FAIL: .trellis/metrics must not be a symbolic link');
+    process.exit(1);
+  }
+  if (existsSync(runsFile) && (lstatSync(runsFile).isSymbolicLink() || !lstatSync(runsFile).isFile())) {
+    console.error('FAIL: runs.jsonl must be a regular non-symlink file');
     process.exit(1);
   }
   mkdirSync(metricsDir, { recursive: true });
@@ -154,6 +174,10 @@ for (const run of runs) {
   value.runs++;
   value.tokens += (run.tokens_in ?? 0) + (run.tokens_out ?? 0);
   value.cost += run.est_cost_usd ?? 0;
+  if (!Number.isSafeInteger(value.tokens) || !Number.isFinite(value.cost)) {
+    console.error(`FAIL: metrics totals for agent ${JSON.stringify(agent)} exceed the safe numeric range`);
+    process.exit(1);
+  }
   byAgent.set(agent, value);
 }
 

@@ -7,12 +7,14 @@
 The control plane owns validated CLI dispatch, atomic project creation,
 idempotent initialization, project configuration, structural repository mapping,
 skill generation, metrics display, and optional Graphify, Bounds, and Phoenix
-operations.
+operations. It also owns the mandatory guided-setup questionnaire and read-only
+plan contract.
 
 ## Public Surface
 
 - `trellis help --ai`
 - `trellis new` and `trellis init`
+- `trellis setup questions` and `trellis setup plan`
 - `trellis map` and `trellis config`
 - `trellis graph`, `trellis metrics`, and `trellis services`
 - `.trellis/config.json` schema version 1
@@ -34,7 +36,9 @@ generation reads canonical Agent Skills.
 
 Arguments are validated before writes or process execution. Child processes use
 argument arrays. Scaffold creation publishes atomically from an allowlisted
-payload, and repeated initialization preserves user-owned files.
+payload, repeated initialization preserves user-owned files, managed mutation
+rejects symlinked policy surfaces, and Docker service actions require the exact
+reviewed compose payload.
 
 ## Failure and operation
 
@@ -44,4 +48,5 @@ Optional-tool absence is a skip only when the integration is not configured.
 ## Verification
 
 See `.trellis/tests/cli.test.mjs`, `config.test.mjs`, `init.test.mjs`,
-`repo-map.test.mjs`, `services.test.mjs`, and `scaffold-smoke.test.mjs`.
+`repo-map.test.mjs`, `services.test.mjs`, `setup.test.mjs`, and
+`scaffold-smoke.test.mjs`.

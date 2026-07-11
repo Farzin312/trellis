@@ -22,7 +22,10 @@ project-owned and must fail closed.
 
 1. **Use SDD before non-trivial code.** Follow
    `Specify -> Clarify -> Plan -> Tasks -> Checklist -> Analyze -> Implement -> Review -> Verify`
-   and keep the artifact chain under `.specify/specs/<NNN>-<slug>/`.
+   and keep the artifact chain under `.specify/specs/<NNN>-<slug>/`. Clarify asks
+   evidence-backed A/B/C/D questions until material ambiguity is resolved.
+   Analyze repairs fixable artifact defects, re-runs, and blocks code until the
+   full chain passes.
 2. **Treat runtime behavior as the current truth.** If living docs disagree with
    coherent code, update the docs in the same change. If runtime behavior is
    internally contradictory or unsafe, surface and fix the code concern.
@@ -80,6 +83,8 @@ Phoenix is an explicit local service, not part of core verification.
 - `npm run docs:check` — read-only breadcrumb and local-link validation
 - `npm run skills:generate` — update the Claude compatibility mirror
 - `npm run skills:health` — validate canonical skills and mirror parity
+- `trellis setup questions|plan` — collect mandatory adoption inputs and render
+  a validated no-write plan
 - `trellis metrics` — summarize only provider-supplied local metrics
 
 Use `trellis help --ai` or `TRELLIS_AI=1` for the terse executable command

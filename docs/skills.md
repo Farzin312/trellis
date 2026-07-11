@@ -14,8 +14,9 @@ compatibility mirror.
         +-> .claude/skills/<name>/SKILL.md   generated compatibility mirror
 ```
 
-Do not hand-edit the Claude mirror. The generator updates only Trellis-owned
-mirror paths and preserves unrelated user files.
+Do not hand-edit the Claude mirror. The generator updates only manifest-owned
+mirror paths and does not delete an untracked Claude-only skill, but health fails
+that split ownership: move the skill to `.agents/skills/` and regenerate.
 
 ## Compatibility
 
@@ -84,4 +85,13 @@ npm run skills:generate  # regenerate the Claude mirror
 npm run skills:health    # validate canonical skills and mirror drift
 ```
 
-Missing, malformed, oversized, or drifted canonical skills fail the health gate.
+Missing, malformed, unsafe, or drifted canonical skills fail the health gate.
+Specification-valid external skills may exceed the recommended 500-line
+instruction budget; that produces a warning and should prompt progressive
+disclosure through `references/`, not an incompatible 20KB hard failure. A 1MB
+safety limit still prevents unbounded instruction files. Trellis's own shipped
+skills remain under 20KB and 500 lines.
+
+The bundled `trellis-setup` skill owns the AI-assisted installation interview.
+Third-party cross-agent skills, such as Graphify's project-scoped `agents`
+install, also belong in the canonical tree before mirror generation.

@@ -1,7 +1,18 @@
 #!/usr/bin/env node
 /** Validate Claude's native import of the canonical cross-agent mandate. */
 
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  existsSync,
+  fsyncSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,12 +30,32 @@ const fix = args[0] === '--fix';
 
 function writeClaude(content) {
   const temporary = `${claudeFile}.tmp-${process.pid}-${Date.now()}`;
-  writeFileSync(temporary, content);
-  renameSync(temporary, claudeFile);
+  const mode = existsSync(claudeFile) ? statSync(claudeFile).mode & 0o777 : 0o644;
+  let descriptor;
+  try {
+    descriptor = openSync(temporary, 'wx', mode);
+    writeFileSync(descriptor, content, 'utf8');
+    fsyncSync(descriptor);
+    closeSync(descriptor);
+    descriptor = undefined;
+    renameSync(temporary, claudeFile);
+  } catch (error) {
+    if (descriptor !== undefined) closeSync(descriptor);
+    if (existsSync(temporary)) unlinkSync(temporary);
+    throw error;
+  }
 }
 
 if (!existsSync(agentsFile)) {
   console.error('FAIL: AGENTS.md not found');
+  process.exit(1);
+}
+if (lstatSync(agentsFile).isSymbolicLink() || !lstatSync(agentsFile).isFile()) {
+  console.error('FAIL: AGENTS.md must be a regular non-symlink file');
+  process.exit(1);
+}
+if (existsSync(claudeFile) && (lstatSync(claudeFile).isSymbolicLink() || !lstatSync(claudeFile).isFile())) {
+  console.error('FAIL: CLAUDE.md must be a regular non-symlink file');
   process.exit(1);
 }
 

@@ -22,6 +22,29 @@ test('help supports the conventional --help alias', () => {
   const result = run(['--help']);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Usage:/);
+  assert.match(result.stdout, /trellis setup/);
+});
+
+test('guided setup questions work before a target contains Trellis', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'trellis-setup-cli-'));
+  try {
+    const result = run(['setup', 'questions', '--json'], cwd);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.ok(output.required_fields.includes('project_scope'));
+
+    for (const args of [
+      ['setup'],
+      ['setup', 'questions', '--answers=x'],
+      ['setup', 'plan'],
+      ['setup', 'unknown'],
+    ]) {
+      const invalid = run(args, cwd);
+      assert.equal(invalid.status, 2, `${args.join(' ')}\n${invalid.stdout}\n${invalid.stderr}`);
+    }
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
 });
 
 test('Graphify wrapper requires project configuration and uses the current update contract', () => {
@@ -86,6 +109,7 @@ test('CLI rejects unsafe names, traversal, unknown flags, and missing operands',
     ['new', '../escape'],
     ['new', 'bad;touch-proof'],
     ['new', 'a'.repeat(201)],
+    ['init', `unsafe\u009bname`],
     ['new', 'valid-name', '--unknown'],
     ['metrics', '--unknown'],
   ]) {

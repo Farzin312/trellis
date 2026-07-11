@@ -30,6 +30,12 @@ Do not write implementation code before Analyze passes. If evidence changes the
 requirements or architecture, update the earlier artifact and re-run downstream
 gates rather than silently re-planning.
 
+Clarify asks one to three evidence-backed A/B/C/D questions per batch and keeps
+opening batches until material ambiguity is resolved. Analyze is active, not
+report-only: repair fixable defects in their owning artifacts, update downstream
+references, and re-run the full analysis. Only an unresolved owner decision or
+infeasible requirement may remain a blocker.
+
 Delegate bounded independent work by task ID, target paths, done condition, and
 requirement references. Give specialists only the relevant artifact excerpts and
 return compact evidence. Parallelize only tasks without shared write ownership.

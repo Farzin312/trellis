@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,6 +56,7 @@ test('unknown fields and unsafe integers fail the stable ledger schema', () => {
   for (const line of [
     '{"agent":"codex","invented":true}',
     `{"tokens_in":${Number.MAX_SAFE_INTEGER + 1}}`,
+    JSON.stringify({ agent: 'codex\u001b[2J' }),
   ]) {
     const cwd = fixture([line]);
     try {
@@ -91,6 +92,39 @@ test('unknown options are usage errors', () => {
     const result = run(cwd, ['--unknown']);
     assert.equal(result.status, 2, result.stdout + result.stderr);
     assert.match(result.stderr, /Usage:/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('symlinked ledgers are rejected instead of reading outside the project', () => {
+  const cwd = fixture([]);
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-metrics-outside-'));
+  try {
+    const ledger = join(cwd, '.trellis', 'metrics', 'runs.jsonl');
+    rmSync(ledger);
+    writeFileSync(join(outside, 'runs.jsonl'), '{"agent":"outside-secret","tokens_in":1}\n');
+    symlinkSync(join(outside, 'runs.jsonl'), ledger);
+    const result = run(cwd, ['--raw']);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /runs\.jsonl.*non-symlink/i);
+    assert.doesNotMatch(result.stdout, /outside-secret/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('combined per-agent token totals cannot exceed the safe numeric range', () => {
+  const cwd = fixture([JSON.stringify({
+    agent: 'codex',
+    tokens_in: Number.MAX_SAFE_INTEGER,
+    tokens_out: Number.MAX_SAFE_INTEGER,
+  })]);
+  try {
+    const result = run(cwd);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /totals for agent.*safe numeric range/i);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }

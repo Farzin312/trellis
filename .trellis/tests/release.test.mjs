@@ -45,11 +45,18 @@ test('the npm archive contains the adopter product and excludes maintainer histo
     '.trellis/init.sh',
     '.trellis/services/docker-compose.phoenix.yml',
     '.trellis/tests/cli.test.mjs',
+    '.trellis/tests/setup.test.mjs',
+    'assets/brand/trellis-wordmark-light.svg',
+    'assets/readme/setup-demo.gif',
+    'assets/readme/sdd-workflow.svg',
     'README.md',
+    'CONTRIBUTING.md',
     'LICENSE',
     'SECURITY.md',
     'CHANGELOG.md',
     'docs/adopting-existing-projects.md',
+    'docs/AI-SETUP.md',
+    'docs/manual-setup.md',
   ]) assert.ok(files.includes(required), `missing from package: ${required}`);
   for (const path of files) {
     assert.doesNotMatch(path, /^(?:\.claude|\.specify\/specs|docs\/bug-fixes\/2026|graphify-out)(?:\/|$)/);

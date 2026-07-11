@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -80,5 +80,22 @@ test('conflicting adapter configuration fails instead of double-counting files',
     assert.match(result.stderr, /FAIL: ambiguous migration tool evidence.*atlas.*drizzle/i);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('symlinked migration trees fail instead of scanning outside the project', () => {
+  const cwd = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-migrations-outside-'));
+  try {
+    writeFileSync(join(cwd, 'drizzle.config.ts'), 'export default {};\n');
+    writeFileSync(join(outside, '0001_secret.sql'), 'CREATE TABLE secret_customer_data (id int);\n');
+    symlinkSync(outside, join(cwd, 'migrations'));
+    const result = run(cwd);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /must be project-local and non-symlink/i);
+    assert.doesNotMatch(result.stdout + result.stderr, /secret_customer_data/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

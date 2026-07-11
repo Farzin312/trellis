@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /** Read-only documentation structure and local-link validation. */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const docsRoot = join(root, 'docs');
 const args = process.argv.slice(2);
+const MAX_DOC_BYTES = 5 * 1024 * 1024;
 
 if (args.length > 0) {
   console.error('Usage: check-docs.mjs');
@@ -53,6 +54,17 @@ const rootDocs = ['README.md', 'AGENTS.md', 'CLAUDE.md']
   .filter((path) => existsSync(path));
 for (const doc of [...rootDocs, ...markdownFiles(docsRoot)]) {
   const relativePath = relative(root, doc);
+  const details = lstatSync(doc);
+  if (details.isSymbolicLink() || !details.isFile()) {
+    console.error(`FAIL: ${relativePath} must be a regular non-symlink documentation file`);
+    errors++;
+    continue;
+  }
+  if (details.size > MAX_DOC_BYTES) {
+    console.error(`FAIL: ${relativePath} exceeds the ${MAX_DOC_BYTES}-byte documentation safety limit`);
+    errors++;
+    continue;
+  }
   const docsRelative = relative(docsRoot, doc);
   const content = readFileSync(doc, 'utf8');
   const insideDocs = !docsRelative.startsWith('..');

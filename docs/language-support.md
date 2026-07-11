@@ -19,16 +19,17 @@ Repository fixtures cover manifest detection and mixed-stack reporting for:
 |---|---|---|
 | `generic` | No recognized manifest or an explicit value | Core Trellis checks only |
 | `javascript` / `typescript` | `package.json` and TypeScript metadata | Runs `check:project`, or the legacy `test:project` fallback, without recursion into Trellis's wrapper |
-| `python` | `pyproject.toml` or `requirements.txt` | Runs the configured Python test command when its toolchain is present |
-| `go` | `go.mod` | Runs the configured Go test command when its toolchain is present |
-| `rust` | `Cargo.toml` | Runs the configured Cargo test command when its toolchain is present |
+| `python` | `pyproject.toml` or `requirements.txt` plus discovered test files | Runs `python3 -m pytest -q` when pytest markers exist; otherwise `python3 -m unittest discover` |
+| `go` | `go.mod` plus `_test.go` files | Runs `go test ./...` |
+| `rust` | `Cargo.toml` plus `tests/*.rs` or `#[test]` | Runs `cargo test` |
 
 Auto-detection reports every detected stack; it does not discard a mixed
 project after finding the first manifest. Explicit `--stack` values are
 validated against the supported vocabulary.
 
 Without `check:project`, the Python, Go, and Rust rows are fallback discovery,
-not a substitute for a complete project gate.
+not a substitute for a complete project gate. A selected fallback with a
+missing or failing toolchain is a required failure, not a skip.
 
 The core Agent Skills, SDD artifacts, mandate, documentation checks, and Node
 self-tests do not depend on an adopting project's language.

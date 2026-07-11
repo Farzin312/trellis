@@ -16,15 +16,23 @@ const counts = {
 const DISCOVERY_EXCLUDES = new Set([
   '.cache',
   '.git',
+  '.mypy_cache',
   '.next',
+  '.pnpm-store',
+  '.pytest_cache',
+  '.ruff_cache',
   '.trellis',
+  '.tox',
   '.turbo',
   '.venv',
+  '.yarn',
+  '__pycache__',
   'build',
   'coverage',
   'dist',
   'graphify-out',
   'node_modules',
+  'out',
   'target',
   'vendor',
   'venv',
@@ -72,6 +80,41 @@ function readPackage(path) {
   }
 }
 
+function referencedScripts(command) {
+  const references = [];
+  for (const match of command.matchAll(/\bnpm(?:\.cmd)?\s+run(?:-script)?\s+(?:--silent\s+)?([A-Za-z0-9:_-]+)/g)) {
+    references.push(match[1]);
+  }
+  for (const match of command.matchAll(/\bnpm(?:\.cmd)?\s+(test|start|stop|restart)(?:\s|$)/g)) {
+    references.push(match[1]);
+  }
+  return [...new Set(references)];
+}
+
+function recursiveProjectScript(scripts, start) {
+  const visiting = new Set();
+  const visited = new Set();
+
+  function visit(name) {
+    if (visiting.has(name)) return true;
+    if (visited.has(name)) return false;
+    const command = typeof scripts[name] === 'string' ? scripts[name] : '';
+    if (!command) return false;
+    if (/(?:^|[\s/])trellis(?:\.cmd)?\s+(?:check|eval)(?:\s|$)|\.trellis\/(?:cli\.mjs\s+(?:check|eval)(?:\s|$)|scripts\/run-evals\.mjs)/.test(command)) {
+      return true;
+    }
+    visiting.add(name);
+    for (const reference of referencedScripts(command)) {
+      if (visit(reference)) return true;
+    }
+    visiting.delete(name);
+    visited.add(name);
+    return false;
+  }
+
+  return visit(start);
+}
+
 const selfTestDir = join(root, '.trellis', 'tests');
 const selfTests = existsSync(selfTestDir)
   ? readdirSync(selfTestDir)
@@ -102,15 +145,7 @@ if (existsSync(packagePath)) {
     report('FAIL', 'required', 'javascript-project-tests', 'invalid-package-json');
   } else if (typeof pkg.scripts?.['check:project'] === 'string' && pkg.scripts['check:project'].trim()) {
     projectAggregateConfigured = true;
-    const projectCommand = pkg.scripts['check:project'];
-    const checkCommand = typeof pkg.scripts.check === 'string' ? pkg.scripts.check : '';
-    const testCommand = typeof pkg.scripts.test === 'string' ? pkg.scripts.test : '';
-    const recursive = /(?:^|\s)trellis\s+(?:check|eval)(?:\s|$)|\.trellis\/scripts\/run-evals\.mjs/.test(projectCommand)
-      || (/\bnpm\s+(?:run\s+)?check(?:\s|$)/.test(projectCommand)
-        && /(?:trellis\s+(?:check|eval)|\.trellis\/scripts\/run-evals\.mjs)/.test(checkCommand))
-      || (/\bnpm\s+(?:run\s+)?test(?:\s|$)/.test(projectCommand)
-        && /\.trellis\/scripts\/run-evals\.mjs/.test(testCommand));
-    if (recursive) {
+    if (recursiveProjectScript(pkg.scripts, 'check:project')) {
       report('FAIL', 'required', 'project-check', 'recursive-project-check');
     } else {
       runRequired(
@@ -120,12 +155,7 @@ if (existsSync(packagePath)) {
       );
     }
   } else if (typeof pkg.scripts?.['test:project'] === 'string' && pkg.scripts['test:project'].trim()) {
-    const projectCommand = pkg.scripts['test:project'];
-    const testCommand = typeof pkg.scripts.test === 'string' ? pkg.scripts.test : '';
-    const recursive = /(?:^|\s)trellis\s+eval(?:\s|$)|\.trellis\/scripts\/run-evals\.mjs/.test(projectCommand)
-      || (/\bnpm\s+(?:run\s+)?test(?:\s|$)/.test(projectCommand)
-        && /\.trellis\/scripts\/run-evals\.mjs/.test(testCommand));
-    if (recursive) {
+    if (recursiveProjectScript(pkg.scripts, 'test:project')) {
       report('FAIL', 'required', 'javascript-project-tests', 'recursive-test-command');
     } else {
       runRequired(

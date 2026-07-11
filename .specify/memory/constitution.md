@@ -17,12 +17,17 @@ Specify -> Clarify -> Plan -> Tasks -> Checklist -> Analyze -> Implement -> Revi
 ```
 
 Keep the chain under `.specify/specs/` and preserve open external-proof gaps.
+Clarify continues with evidence-backed A/B/C/D questions until material
+ambiguity is resolved. Analyze repairs fixable artifact defects, re-runs, and
+never substitutes implementation code for a passing pre-code chain.
 
 ## III. Safe project boundaries
 
 Trellis changes only Trellis-owned surfaces during generation and adaptation.
 Brownfield adoption is a reviewed merge. The toolkit does not configure
 application authentication, authorization, money, secrets, or database policy.
+Guided adoption collects mandatory project context and shows a validated,
+read-only plan before any target mutation or external installation.
 
 ## IV. Minimal, portable core
 

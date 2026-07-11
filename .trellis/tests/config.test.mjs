@@ -87,6 +87,8 @@ test('invalid config and unsupported mutations fail before changing bytes', () =
     { schema_version: 2, project_name: 'X', project_slug: 'x', stacks: ['generic'], enabled_integrations: [] },
     { schema_version: 1, project_name: 'X', project_slug: 'x', stacks: ['python', 'python'], enabled_integrations: [] },
     { schema_version: 1, project_name: ' X ', project_slug: 'x', stacks: ['generic'], enabled_integrations: [] },
+    { schema_version: 1, project_name: 'X/Y', project_slug: 'x-y', stacks: ['generic'], enabled_integrations: [] },
+    { schema_version: 1, project_name: `X\u009bY`, project_slug: 'x-y', stacks: ['generic'], enabled_integrations: [] },
     { schema_version: 1, project_name: 'X', project_slug: 'x', stacks: ['generic'], enabled_integrations: ['unknown'] },
   ]) {
     const project = fixture(config);

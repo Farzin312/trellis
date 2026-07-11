@@ -13,6 +13,10 @@ project policy, and historical evidence have separate routes.
   integration
 - [Existing repository adoption](./adopting-existing-projects.md) — safe,
   reviewed brownfield merge
+- [AI-assisted setup](./AI-SETUP.md) — mandatory interview, validated plan, and
+  reviewed agent execution
+- [Manual setup](./manual-setup.md) — the same decisions and commands without an
+  AI dependency
 - [Repository mapping](./repository-mapping.md) — dependency-free orientation
   and explicit Graphify/Bounds setup
 - [Optional Phoenix service](./self-hosted-services.md) — Docker setup and
@@ -30,7 +34,7 @@ project policy, and historical evidence have separate routes.
 - [Agent Skills](./skills.md) — canonical sources and Claude mirror generation
 - [Evolution](./evolution.md) — explicit adaptation and deterministic health checks
 - [Documentation rules](./STRUCTURE.md) — ownership, breadcrumbs, and audiences
-- [Contributing](./contributing.md) — repository change process
+- [Contributing](../CONTRIBUTING.md) — repository change process
 - [Security policy](../SECURITY.md) — private reporting and supported scope
 
 ## Generated project guidance

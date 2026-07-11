@@ -19,9 +19,10 @@ trellis map
 trellis map --json
 ```
 
-The command scans at most 100,000 accepted files, skips symlinks, dependencies,
-build output, VCS data, common environment/private-key/credential files and
-dot-directories, metrics, and active specification history, then reports
+The command scans at most 100,000 accepted files, skips symlinks, dependency and
+virtual-environment trees, build/caching output, VCS and common sensitive
+configuration paths, the generated Claude skill mirror, Bounds cache data,
+metrics, and active specification history, then reports
 manifests, configured stacks, aggregate top-level composition, tests,
 extensions, and subsystem documents under `docs/systems/`. It never reads more
 than 1 MB from configuration or a subsystem index. It is read-only and does not
@@ -58,11 +59,19 @@ contract:
 
 ```bash
 uv tool install graphifyy==0.9.10
+graphify install --project --platform agents
+npm run skills:generate
 trellis config enable graphify
 trellis graph
 graphify query "where is request authorization enforced?" --budget 800
 npm run check:integrations
 ```
+
+The project-scoped `agents` install writes the Graphify skill to the canonical
+`.agents/skills/` tree; Trellis then mirrors it to Claude. It does not require a
+`.codex` directory. The skill is larger than Trellis's built-ins, so skill health
+may emit the Agent Skills 500-line efficiency recommendation without rejecting
+an otherwise specification-valid external skill.
 
 `trellis graph` runs `graphify update .`, which performs project-root code
 extraction without an LLM. Trellis intentionally does not expose a scoped path:
@@ -77,10 +86,14 @@ graph.
 
 Graphify's semantic extraction for documents or richer inferred relationships
 is a separate upstream workflow and may require a model credential. Consult
-[Graphify upstream](https://github.com/safishamsi/graphify) for those options.
+[Graphify upstream](https://github.com/Graphify-Labs/graphify) for those options.
 
-To stop requiring Graphify, run `trellis config disable graphify`. Remove the
-tool or `graphify-out/` separately only when no user needs them.
+To stop requiring Graphify, run `trellis config disable graphify`. Graphify
+0.9.10's `uninstall` command is broad across detected platforms and has no
+project/platform selector, so do not use it for a scoped Trellis cleanup. After
+reviewing ownership, remove only `.agents/skills/graphify/`, run
+`npm run skills:generate` to prune its manifest-owned Claude mirror, and remove
+the CLI or `graphify-out/` separately only when no user needs them.
 
 ## Bounds
 
@@ -91,12 +104,12 @@ is useful only after maintainers define or review real subsystem ownership:
 
 ```bash
 pipx install "git+https://github.com/Farzin312/bounds.git@a504befeeea7448791538e2a6f8ad1f2259932eb"
-trellis config enable bounds
 bounds guide
 bounds init --root
 bounds discover --apply
 bounds coverage
 bounds preflight --fail-on-unowned
+trellis config enable bounds
 npm run check:integrations
 ```
 

@@ -28,9 +28,15 @@ What problem does this solve? One paragraph. No solution language.
 ### Edge Cases
 - **EDGE-001**: <requirement>
 
+## Success Criteria
+
+- **SUCCESS-001**: <measurable outcome and evidence threshold>
+
 ## Clarification Log
 
-(Append questions and answers here during the Clarify phase.)
+| Question | Resolution | Evidence or owner | Rationale | Affected IDs |
+|---|---|---|---|---|
+| Q001 | <A/B/C/D answer> | <repository evidence or owner> | <why> | FR-001 |
 
 ## Out of Scope
 

@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -207,5 +208,25 @@ test('removed tiers and malformed operands fail before project files change', ()
     } finally {
       rmSync(project, { recursive: true, force: true });
     }
+  }
+});
+
+test('initialization rejects symlinked managed policy before creating config', () => {
+  const project = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-init-outside-'));
+  try {
+    const target = join(outside, 'AGENTS.md');
+    writeFileSync(target, 'USER POLICY\n');
+    rmSync(join(project, 'AGENTS.md'));
+    symlinkSync(target, join(project, 'AGENTS.md'));
+
+    const result = run(project, 'Unsafe Project', '--stack=generic');
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /AGENTS\.md.*symbolic link/i);
+    assert.equal(readFileSync(target, 'utf8'), 'USER POLICY\n');
+    assert.equal(existsSync(join(project, '.trellis/config.json')), false);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

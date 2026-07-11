@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Produce a bounded, read-only structural repository map. */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateConfig } from './config-core.mjs';
@@ -22,20 +22,31 @@ const excludedDirectories = new Set([
   '.git',
   '.claude/skills',
   '.aws',
+  '.cache',
   '.gnupg',
   '.kube',
+  '.mypy_cache',
   '.next',
+  '.pnpm-store',
+  '.pytest_cache',
+  '.ruff_cache',
   '.ssh',
   '.specify/specs',
+  '.tox',
   '.trellis/metrics',
   '.vercel',
+  '.venv',
+  '.yarn',
+  '__pycache__',
   'build',
   'coverage',
   'dist',
   'graphify-out',
   'node_modules',
+  'out',
   'target',
   'vendor',
+  'venv',
 ]);
 const manifestNames = new Set([
   'Cargo.toml',
@@ -53,7 +64,8 @@ const manifestNames = new Set([
   'tsconfig.json',
 ]);
 const sensitiveNames = /^(?:\.env(?:\..*)?|\.netrc|\.npmrc|\.pypirc|credentials(?:\.json)?|id_(?:dsa|ecdsa|ed25519|rsa)|.*(?:service[-_]?account|credential).*\.json|.*\.(?:key|pem|p12|pfx))$/i;
-const testName = /(?:^|[._-])(?:test|spec)(?:[._-]|$)|^test_/i;
+const testDirectory = /(?:^|\/)(?:tests?|__tests__)(?:\/|$)/i;
+const testName = /^(?:test_.+|.+(?:[._-](?:test|spec)))\.(?:[cm]?[jt]sx?|py|go|rs|rb|java|kt|swift|php)$/i;
 const compare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
 let acceptedFiles = 0;
@@ -109,7 +121,10 @@ let config = null;
 const configPath = join(root, '.trellis', 'config.json');
 if (existsSync(configPath)) {
   try {
-    if (statSync(configPath).size > MAX_READ_BYTES) throw new Error(`file exceeds ${MAX_READ_BYTES} bytes`);
+    const details = lstatSync(configPath);
+    if (details.isSymbolicLink()) throw new Error('symbolic links are not accepted');
+    if (!details.isFile()) throw new Error('path is not a regular file');
+    if (details.size > MAX_READ_BYTES) throw new Error(`file exceeds ${MAX_READ_BYTES} bytes`);
     config = validateConfig(JSON.parse(readFileSync(configPath, 'utf8')));
   } catch (error) {
     warnings.push(`invalid .trellis/config.json: ${error.message}`);
@@ -157,7 +172,7 @@ for (const file of files) {
   topLevel.set(group, value);
   const ext = extension(file.path);
   extensions.set(ext, (extensions.get(ext) || 0) + 1);
-  if (testName.test(basename(file.path))) tests++;
+  if (testDirectory.test(file.path) || testName.test(basename(file.path))) tests++;
   if (file.path.endsWith('.md')) docs++;
   totalBytes += file.size;
 }

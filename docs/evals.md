@@ -50,8 +50,10 @@ gate. Trellis executes that script exactly once and does not also run its
 language adapters, which avoids duplicate suites in mixed-stack repositories.
 
 `check:project` must not call `npm run check`, `npm test`, `trellis check`,
-`trellis eval`, or the Trellis eval script; those paths recurse and fail before
-execution. It may call project-owned scripts such as `test:project`.
+`trellis eval`, or the Trellis eval script, directly or through another npm
+script. Trellis traverses referenced npm scripts and rejects both wrapper
+reachability and script cycles before execution. It may call project-owned
+scripts such as `test:project`.
 
 For compatibility, a repository without `check:project` can expose
 `test:project`; Trellis runs it and then evaluates detected Python, Go, and Rust

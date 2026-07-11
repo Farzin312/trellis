@@ -53,6 +53,14 @@ reject malformed input. Merging Trellis into an unrelated repository requires
 human review because package files, mandates, hooks, and CI may already be owned
 by that project.
 
+### Guided, not unattended, adoption
+
+`trellis setup` separates mandatory decisions and read-only planning from
+execution. AI and human paths share one answer schema. Trellis does not turn
+optional capabilities into product editions, install global tools, or attempt a
+universal brownfield merge; the plan names those external owners and waits for
+explicit approval.
+
 ## Supported extension points
 
 - Add or update a workflow in `.agents/skills/`, then regenerate the Claude mirror.

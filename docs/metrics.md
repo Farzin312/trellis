@@ -18,9 +18,11 @@ trellis metrics --raw     # validated JSONL output
 Every nonblank line is parsed and validated before any summary is printed. A
 malformed record exits non-zero and identifies its line.
 
-Records are limited to 64 KiB and the active ledger to 50 MiB. Archive older
-records before that bound; Trellis refuses an oversized ledger instead of
-loading unbounded history or emitting imprecise totals.
+Records are limited to 64 KiB, string fields to 4,096 control-free characters,
+and the active ledger to 50 MiB. The metrics directory and ledger must be
+regular non-symlink project paths. Archive older records before the byte bound;
+Trellis refuses redirected or oversized input instead of exposing outside
+content, loading unbounded history, or emitting imprecise totals.
 
 ## Accepted record
 

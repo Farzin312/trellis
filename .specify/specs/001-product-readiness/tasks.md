@@ -56,7 +56,6 @@
 | T050 | Prune only obsolete Trellis-owned generated and unsupported files | cleanup | legacy generated paths and retired scripts | FR-004, FR-007, FR-010, INV-001 | T049 | — |
 | T051 | Document the root-cause fixes and migration impact in the append-only bug register | docs | `docs/bug-fixes/2026-07-11-product-readiness.md` | FR-007, FR-010 | T050 | — |
 | T052 | Generate the Claude mirror and update all artifact references | generated | `.claude/skills/**` and documentation references | FR-004, INV-001 | T018, T020, T044, T050 | — |
-| T053 | Run formatter-free syntax checks, self-tests, `npm ci`, `npm run check`, package dry-run, scaffold smoke, and configured-integration readiness | verify | repository | FR-001–FR-013, SC-001–SC-003, VAL-001–VAL-006, INV-001–INV-005 | T051, T052, T057, T061 | — |
 | T054 | [TEST] Prove repository mapping is read-only, bounded, stable, excludes sensitive/generated trees, and reports documented systems | test | `.trellis/tests/repo-map.test.mjs` | FR-012, SC-001, VAL-005, EDGE-001, EDGE-009 | — | [P] |
 | T055 | Implement the dependency-free structural map and expose it through strict CLI parsing | impl | `.trellis/scripts/repo-map.mjs`, `.trellis/cli.mjs` | FR-012, SC-001, VAL-005 | T054 | — |
 | T056 | Document the core map versus optional Graphify and Bounds responsibilities without compatibility overclaims | docs | `README.md`, `docs/SYSTEM.md`, `docs/language-support.md` | FR-006, FR-007, FR-012, VAL-005 | T055 | — |
@@ -65,7 +64,41 @@
 | T059 | Implement the shared configuration validator and CLI management surface | impl | `.trellis/scripts/config.mjs`, `.trellis/cli.mjs` | FR-006, FR-013, SC-002, VAL-006 | T058 | — |
 | T060 | Make repeated initialization update only explicitly requested managed configuration | impl | `.trellis/init.sh`, `.trellis/tests/init.test.mjs` | FR-005, FR-013, INV-005 | T059 | — |
 | T061 | Document Graphify and Bounds enablement, prerequisites, readiness, operation, and removal with current command evidence | docs | `README.md`, `docs/SYSTEM.md`, `docs/language-support.md`, `docs/README.md` | FR-006, FR-007, FR-013, VAL-004 | T059, T060 | — |
+| T062 | [TEST] Prove `check:project` runs once, suppresses fallback adapters, and rejects recursive wrappers | test | `.trellis/tests/evals.test.mjs` | FR-014, SUCCESS-004 | — | [P] |
+| T063 | Implement and document the preferred project-owned aggregate gate while retaining `test:project` compatibility | impl | `.trellis/scripts/run-evals.mjs`, `README.md`, `docs/evals.md`, `docs/language-support.md`, `docs/adopting-existing-projects.md` | FR-014 | T062 | — |
+| T064 | [TEST] Prove the human wizard's displayed yes/no defaults match actual behavior and existing configuration is described truthfully | test | `.trellis/tests/wizard.test.mjs` | FR-005, SC-004, EDGE-010 | — | [P] |
+| T065 | Fix human wizard defaults and preserve existing setup choices without pretending to auto-detect or disable them | impl | `.trellis/scripts/wizard.mjs` | FR-005, SC-004 | T064 | — |
+| T066 | [TEST] Prove adaptation, config, and skill generation refuse symlinked mutation roots without changing targets | test | `.trellis/tests/adapt.test.mjs`, `.trellis/tests/config.test.mjs`, `.trellis/tests/skills.test.mjs` | SC-001, SC-002, SC-004, EDGE-009 | — | [P] |
+| T067 | Harden policy, config, and generated-skill writes with symlink rejection and atomic publication | impl | `.trellis/scripts/adapt-to-project.mjs`, `.trellis/scripts/config-core.mjs`, `.trellis/scripts/generate-skills.mjs` | SC-001, SC-002, SC-004 | T066 | — |
+| T068 | [TEST] Prove canonical health rejects mirror-only drift but accepts specification-valid large external skills with an efficiency warning | test | `.trellis/tests/skills.test.mjs`, `.trellis/tests/public-docs.test.mjs` | FR-004, FR-008, INV-001 | — | [P] |
+| T069 | Validate manifest inventory and symlinks, retain a safety bound, and keep strict compact budgets on Trellis-owned skills only | impl | `.trellis/scripts/evolve-skills.mjs`, `docs/skills.md` | FR-004, FR-008, INV-001 | T068 | — |
+| T070 | [TEST] Prove the cheap repository map excludes generated Claude mirrors and Bounds cache data | test | `.trellis/tests/repo-map.test.mjs` | FR-012, VAL-005 | — | [P] |
+| T071 | Exclude duplicate/generated mapping noise and document the exact map boundary | impl | `.trellis/scripts/repo-map.mjs`, `docs/repository-mapping.md` | FR-012, VAL-005 | T070 | — |
+| T072 | [TEST] Prove guided questions and plans require every field, reject unsafe/unresolved answers, remain stable, and never write the target | test | `.trellis/tests/setup.test.mjs`, `.trellis/tests/cli.test.mjs` | FR-015, SC-004, VAL-007, SUCCESS-002 | — | [P] |
+| T073 | Implement the dependency-free setup question schema, plan renderer, and strict CLI surface | impl | `.trellis/scripts/setup-plan.mjs`, `.trellis/cli.mjs` | FR-015, SC-004, VAL-007 | T072 | — |
+| T074 | [TEST] Prove the bundled setup skill gates execution on the canonical questions, consent, reviewed merge, and verification | test | `.trellis/tests/sdd-skills.test.mjs`, `.trellis/tests/public-docs.test.mjs` | FR-015, SUCCESS-003 | T073 | — |
+| T075 | Add the portable `trellis-setup` Agent Skill and generate its Claude mirror | impl | `.agents/skills/trellis-setup/SKILL.md`, `.claude/skills/trellis-setup/SKILL.md` | FR-004, FR-015, SC-004 | T074 | — |
+| T076 | Publish aligned AI-assisted and manual setup guides with exact pinned optional-tool actions, pros, drawbacks, and completion checks | docs | `docs/AI-SETUP.md`, `docs/manual-setup.md`, `README.md`, `docs/README.md` | FR-007, FR-011, FR-015, SUCCESS-003 | T073, T075 | — |
+| T077 | [TEST] Prove Clarify requires labeled A/B/C/D choices and Analyze repairs fixable artifact gaps before re-running its hard gate | test | `.trellis/tests/sdd-skills.test.mjs`, `.trellis/tests/public-docs.test.mjs` | FR-017, SUCCESS-005 | — | [P] |
+| T078 | Harden Clarify and Analyze and add complete clarify/analysis/review/verify templates with traceability | impl | `.agents/skills/speckit-clarify/SKILL.md`, `.agents/skills/speckit-analyze/SKILL.md`, `.specify/templates/**`, `docs/sdd/sdd.md` | FR-017, SUCCESS-005 | T077 | — |
+| T079 | [TEST] Prove README brand assets exist, are bounded, have meaningful alt text, and do not carry essential unsupported animation | test | `.trellis/tests/public-docs.test.mjs`, `.trellis/tests/release.test.mjs` | FR-016, EDGE-011, SUCCESS-006 | — | [P] |
+| T080 | Add the Trellis mark, static workflow/product diagrams, and an evidence-first GitHub README hierarchy | docs | `assets/brand/**`, `assets/readme/**`, `README.md` | FR-007, FR-011, FR-016, SUCCESS-006 | T079 | — |
+| T081 | Regenerate all managed skill mirrors and synchronize package/scaffold/document references | generated | `.claude/skills/**`, `.trellis/generated-skills.json`, `package.json`, `.trellis/cli.mjs`, documentation | FR-004, FR-010, FR-015, FR-017 | T069, T075, T078, T080 | — |
+| T084 | [TEST] Prove guided setup exposes a complete answer shape and applies dependency authority independently to every selected add-on | test | `.trellis/tests/setup.test.mjs`, `.trellis/tests/public-docs.test.mjs` | FR-015, SC-004, SUCCESS-002, SUCCESS-003 | T072 | — |
+| T085 | Implement per-capability dependency policy, safe installer prerequisites, and a non-default answer example shared by CLI and manuals | impl | `.trellis/scripts/setup-plan.mjs`, `.agents/skills/trellis-setup/SKILL.md`, `docs/AI-SETUP.md`, `docs/manual-setup.md` | FR-015, SC-004, VAL-007 | T084 | — |
+| T086 | [TEST] Prove init, generated manifests/trees, maps, metrics, migrations, integrations, and services reject traversal, symlink, oversized, or modified privileged inputs before side effects | test | `.trellis/tests/{init,skills,repo-map,metrics,migrations,integrations,services,mandate}.test.mjs` | SC-001, SC-002, SC-003, SC-005, VAL-008, SUCCESS-007 | — | [P] |
+| T087 | Harden every tested repository trust boundary with regular-file checks, canonical path grammar, bounded reads, atomic manifests, and Compose payload verification | impl | `.trellis/init.sh`, `.trellis/scripts/{generate-skills,repo-map,metrics,check-migration-safety,check-integrations,check-mandate-sync,services}.mjs` | SC-001, SC-002, SC-003, SC-005, VAL-008 | T086 | — |
+| T088 | Promote GitHub-recognized contribution guidance and synchronize security, system, mapping, service, licensing, changelog, and bug-fix documentation | docs | `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/**`, `package.json` | FR-007, FR-010, FR-011, SC-005, VAL-004 | T085, T087 | — |
+| T082 | Review every changed file for correctness, security, boundary drift, docs truth, accessibility, and excess complexity; fix all blockers | review | repository and `.specify/specs/001-product-readiness/review.md` | FR-001–FR-017, SC-001–SC-005 | T081, T085, T087, T088 | — |
+| T053 | Run formatter-free syntax checks, self-tests, `npm ci`, `npm run check`, package dry-run, scaffold smoke, and configured-integration readiness | verify | repository | FR-001–FR-017, SC-001–SC-005, VAL-001–VAL-008, INV-001–INV-005 | T082 | — |
+| T083 | Record empirical feature, package, clean-scaffold, Node 22/24, visual-asset, and optional-integration evidence | verify | repository and `.specify/specs/001-product-readiness/verify.md` | SUCCESS-001–SUCCESS-007 | T053 | — |
 
 Markers:
 - `[TEST]` — run to observed failure before its paired implementation.
 - `[P]` — parallel-safe only after its listed dependencies pass.
+
+## Completion status
+
+T001–T088 are complete. Blocking dispositions are recorded in `review.md`; the
+final command, package, runtime, service, visual, and external-limit evidence is
+recorded in `verify.md`.

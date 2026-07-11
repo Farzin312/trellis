@@ -35,6 +35,16 @@ for arg in "$@"; do
   esac
 done
 
+# Fail before any managed write when a mutable policy or metadata surface is a
+# symlink. Brownfield repositories may use symlinks intentionally, but replacing
+# or adapting them requires an explicit manual merge rather than implicit init.
+for path in AGENTS.md CLAUDE.md package.json package-lock.json README.md docs/README.md .agents .agents/skills .claude .claude/skills; do
+  if [ -L "$path" ]; then
+    echo "FAIL: $path must not be a symbolic link during Trellis initialization." >&2
+    exit 1
+  fi
+done
+
 command -v node >/dev/null 2>&1 || {
   echo "FAIL: Node.js 22 or newer is required." >&2
   exit 1
@@ -208,7 +218,7 @@ if [ "$CONFIG_EXISTS" = false ]; then
       const path = require("node:path");
       fs.mkdirSync("docs", { recursive: true });
       const temporary = path.join("docs", `.README.md.tmp-${process.pid}-${Date.now()}`);
-      fs.writeFileSync(temporary, `# Project documentation\n\n> Parent: [project README](../README.md)\n\n## Agent guidance\n\n- [Agent routing](./README-FOR-AGENTS.md)\n- [Documentation structure](./STRUCTURE.md)\n- [Coding standards](./coding-standards.md)\n- [Spec-driven development](./sdd/sdd.md)\n\n## Toolkit references\n\n- [Repository mapping and optional architecture tools](./repository-mapping.md)\n- [Evaluation contract](./evals.md)\n- [Language support](./language-support.md)\n- [Metrics ledger](./metrics.md)\n- [Optional Phoenix service](./self-hosted-services.md)\n- [Agent Skills](./skills.md)\n- [Credits and licenses](./credits.md)\n\n## Project records\n\n- [System documentation](./systems/README.md)\n- [Bug-fix register](./bug-fixes/README.md)\n- Active delivery evidence lives under \`.specify/specs/\`.\n`);
+      fs.writeFileSync(temporary, `# Project documentation\n\n> Parent: [project README](../README.md)\n\n## Agent guidance\n\n- [Agent routing](./README-FOR-AGENTS.md)\n- [Documentation structure](./STRUCTURE.md)\n- [Coding standards](./coding-standards.md)\n- [Spec-driven development](./sdd/sdd.md)\n\n## Toolkit references\n\n- [AI-assisted setup](./AI-SETUP.md)\n- [Manual setup](./manual-setup.md)\n- [Repository mapping and optional architecture tools](./repository-mapping.md)\n- [Evaluation contract](./evals.md)\n- [Language support](./language-support.md)\n- [Metrics ledger](./metrics.md)\n- [Optional Phoenix service](./self-hosted-services.md)\n- [Agent Skills](./skills.md)\n- [Credits and licenses](./credits.md)\n\n## Project records\n\n- [System documentation](./systems/README.md)\n- [Bug-fix register](./bug-fixes/README.md)\n- Active delivery evidence lives under \`.specify/specs/\`.\n`);
       fs.renameSync(temporary, "docs/README.md");
     ' 
     echo "CREATE docs/README.md"

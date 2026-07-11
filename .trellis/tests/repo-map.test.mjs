@@ -31,6 +31,7 @@ function fixture() {
   mkdirSync(join(project, '.claude', 'skills', 'generated'), { recursive: true });
   mkdirSync(join(project, '.bounds'), { recursive: true });
   mkdirSync(join(project, 'dist'), { recursive: true });
+  mkdirSync(join(project, '.venv', 'package'), { recursive: true });
   mkdirSync(join(project, '.specify', 'specs', 'secret-history'), { recursive: true });
   mkdirSync(join(project, 'packages', 'nested', '.specify', 'specs', 'private-history'), { recursive: true });
   writeFileSync(join(project, 'package.json'), '{"name":"fixture","scripts":{"test:project":"node --test"}}\n');
@@ -43,6 +44,7 @@ function fixture() {
   }));
   writeFileSync(join(project, 'src', 'z.js'), 'export const z = 1;\n');
   writeFileSync(join(project, 'src', 'a.test.js'), 'export const test = true;\n');
+  writeFileSync(join(project, 'docs', 'spec-template.md'), '# Specification template\n');
   writeFileSync(join(project, 'path with spaces', 'worker.py'), 'value = 1\n');
   writeFileSync(join(project, '.env'), 'SECRET=do-not-map\n');
   writeFileSync(join(project, '.npmrc'), '//registry.example/:_authToken=secret\n');
@@ -51,6 +53,7 @@ function fixture() {
   writeFileSync(join(project, '.bounds', 'cache.db'), 'binary cache\n');
   writeFileSync(join(project, 'node_modules', 'leak', 'secret.js'), 'secret\n');
   writeFileSync(join(project, 'dist', 'generated.js'), 'generated\n');
+  writeFileSync(join(project, '.venv', 'package', 'dependency.py'), 'generated\n');
   writeFileSync(join(project, '.specify', 'specs', 'secret-history', 'spec.md'), 'history\n');
   writeFileSync(join(project, 'packages', 'nested', '.specify', 'specs', 'private-history', 'spec.md'), 'nested history\n');
   writeFileSync(
@@ -98,7 +101,7 @@ test('JSON map is stable, bounded, read-only, and excludes non-source trees', ()
     }]);
     assert.deepEqual(map.integrations, { bounds: false, graphify: false });
     const serialized = JSON.stringify(map);
-    for (const excluded of ['SECRET', '.npmrc', '.ssh', 'node_modules', 'generated.js', 'secret-history', 'private-history', 'outside.pem']) {
+    for (const excluded of ['SECRET', '.npmrc', '.ssh', '.venv', 'node_modules', 'generated.js', 'secret-history', 'private-history', 'outside.pem']) {
       assert.doesNotMatch(serialized, new RegExp(excluded));
     }
   } finally {
@@ -125,6 +128,31 @@ test('invalid configuration is reported and never trusted as map state', () => {
     assert.deepEqual(map.manifests, ['package.json', 'tsconfig.json']);
     assert.deepEqual(map.integrations, { bounds: false, graphify: false });
     assert.match(map.warnings.join('\n'), /invalid \.trellis\/config\.json/i);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('symlinked configuration is reported and never read as map state', () => {
+  const { project, outside } = fixture();
+  try {
+    rmSync(join(project, '.trellis', 'config.json'));
+    writeFileSync(join(outside, 'config.json'), JSON.stringify({
+      schema_version: 1,
+      project_name: 'Outside Secret Project',
+      project_slug: 'outside-secret-project',
+      stacks: ['rust'],
+      enabled_integrations: ['bounds'],
+    }));
+    symlinkSync(join(outside, 'config.json'), join(project, '.trellis', 'config.json'));
+    const result = run(project, ['--json']);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const map = JSON.parse(result.stdout);
+    assert.deepEqual(map.stacks, ['javascript']);
+    assert.deepEqual(map.integrations, { bounds: false, graphify: false });
+    assert.match(map.warnings.join('\n'), /symbolic links are not accepted/i);
+    assert.doesNotMatch(result.stdout, /Outside Secret Project/);
   } finally {
     rmSync(project, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });

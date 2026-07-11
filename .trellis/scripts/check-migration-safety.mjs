@@ -1,13 +1,36 @@
 #!/usr/bin/env node
 /** Detect one migration convention conservatively, then run structural checks. */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const adapterPath = join(dirname(fileURLToPath(import.meta.url)), 'migration-adapters.json');
 const args = process.argv.slice(2);
+const MAX_MIGRATION_BYTES = 64 * 1024 * 1024;
+
+function unsafe(path) {
+  console.error(`FAIL: migration safety input must be project-local and non-symlink: ${path}`);
+  process.exit(1);
+}
+
+function regularFile(path, { maxBytes = null } = {}) {
+  if (!existsSync(path)) return false;
+  const details = lstatSync(path);
+  if (details.isSymbolicLink()) unsafe(path);
+  if (!details.isFile()) return false;
+  if (maxBytes !== null && details.size > maxBytes) {
+    console.error(`FAIL: migration safety input exceeds ${maxBytes} bytes: ${path}`);
+    process.exit(1);
+  }
+  return true;
+}
+
+if (!regularFile(adapterPath, { maxBytes: 1024 * 1024 })) {
+  console.error('FAIL: migration adapter metadata must be a regular file');
+  process.exit(1);
+}
 
 if (args.length > 1 || (args.length === 1 && args[0] !== '--list-adapters')) {
   console.error('Usage: check-migration-safety.mjs [--list-adapters]');
@@ -36,14 +59,17 @@ function wildcard(pattern) {
 }
 
 function collect(directory, pattern) {
-  if (!existsSync(directory) || !statSync(directory).isDirectory()) return [];
+  if (!existsSync(directory)) return [];
+  const details = lstatSync(directory);
+  if (details.isSymbolicLink()) unsafe(directory);
+  if (!details.isDirectory()) return [];
   if (pattern.includes('/')) {
     const [directoryPattern, filePattern] = pattern.split('/');
     const directoryRegex = wildcard(directoryPattern);
     return readdirSync(directory, { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && directoryRegex.test(entry.name))
       .map((entry) => join(directory, entry.name, filePattern))
-      .filter((path) => existsSync(path));
+      .filter((path) => regularFile(path, { maxBytes: MAX_MIGRATION_BYTES }));
   }
   const matcher = wildcard(pattern);
   return readdirSync(directory, { withFileTypes: true })
@@ -54,7 +80,7 @@ function collect(directory, pattern) {
 
 function packageUsesNodePgMigrate() {
   const path = join(root, 'package.json');
-  if (!existsSync(path)) return false;
+  if (!regularFile(path, { maxBytes: 16 * 1024 * 1024 })) return false;
   try {
     const pkg = JSON.parse(readFileSync(path, 'utf8'));
     return Boolean(pkg.dependencies?.['node-pg-migrate']
@@ -68,7 +94,12 @@ function packageUsesNodePgMigrate() {
 function configEvidence(key, adapter) {
   const markers = (adapter.detect.configMarkers || []).filter((marker) => marker !== 'package.json');
   if (key === 'node-pg-migrate' && packageUsesNodePgMigrate()) return true;
-  return markers.some((marker) => existsSync(join(root, marker)));
+  return markers.some((marker) => {
+    const path = join(root, marker);
+    if (!existsSync(path)) return false;
+    if (lstatSync(path).isSymbolicLink()) unsafe(path);
+    return true;
+  });
 }
 
 function filesFor(adapter) {
@@ -95,9 +126,16 @@ function rawSqlFiles() {
   const files = [];
   for (const directory of ['migrations', 'db/migrations']) {
     const path = join(root, directory);
-    if (!existsSync(path) || !statSync(path).isDirectory()) continue;
+    if (!existsSync(path)) continue;
+    const details = lstatSync(path);
+    if (details.isSymbolicLink()) unsafe(path);
+    if (!details.isDirectory()) continue;
     for (const entry of readdirSync(path, { withFileTypes: true })) {
-      if (entry.isFile() && entry.name.endsWith('.sql')) files.push(join(path, entry.name));
+      if (entry.isFile() && entry.name.endsWith('.sql')) {
+        const file = join(path, entry.name);
+        regularFile(file, { maxBytes: MAX_MIGRATION_BYTES });
+        files.push(file);
+      }
     }
   }
   return files.sort();
@@ -151,6 +189,7 @@ if (detected.key !== 'golang-migrate') {
 }
 
 for (const file of detected.files) {
+  regularFile(file, { maxBytes: MAX_MIGRATION_BYTES });
   const content = readFileSync(file, 'utf8');
   for (const match of content.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?["`]?([\w-]+)/gi)) {
     if (!detected.adapter.rlsCheckable) break;

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -111,6 +111,23 @@ test('configured Graphify accepts a structurally valid non-empty artifact withou
     assert.doesNotMatch(result.stdout, /current|fresh/i);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('configured Graphify refuses a symlinked artifact tree', () => {
+  const cwd = fixture(['graphify']);
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-graph-outside-'));
+  try {
+    const bin = fakeCommand(cwd, 'graphify', "console.log('graphify 1.0');");
+    writeFileSync(join(outside, 'graph.json'), JSON.stringify({ nodes: [{ id: 'outside' }], links: [] }));
+    symlinkSync(outside, join(cwd, 'graphify-out'));
+    const result = run(cwd, { PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /graphify reason=unsafe-artifact-path/i);
+    assert.doesNotMatch(result.stdout, /PASS integration=graphify/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });
 

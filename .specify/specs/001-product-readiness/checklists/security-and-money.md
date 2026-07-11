@@ -9,6 +9,10 @@
 - [x] Optional network installations are explicit, version-constrained, and excluded from the offline core.
 - [x] No secret is required, read, printed, copied, or persisted by the core.
 - [x] Corrupt external metadata cannot reach shell evaluation.
+- [x] Generated manifest paths cannot traverse outside their owned mirror.
+- [x] Managed read and write surfaces reject symlink redirection before content disclosure or mutation.
+- [x] Docker service actions authenticate the complete reviewed Compose payload before execution.
+- [x] Parsed answer, metrics, migration, and integration artifacts have explicit safety bounds.
 - [x] Unknown services, stacks, integrations, commands, and flags fail closed.
 - [x] The generated policy does not claim application auth is configured.
 - [x] No money-handling surface is introduced.

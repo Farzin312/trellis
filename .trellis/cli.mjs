@@ -41,6 +41,9 @@ const SCAFFOLD_PATHS = [
   'docs/README-FOR-AGENTS.md',
   'docs/STRUCTURE.md',
   'docs/_subsystem-template.md',
+  'docs/AI-SETUP.md',
+  'docs/adopting-existing-projects.md',
+  'docs/manual-setup.md',
   'docs/bug-fixes/README.md',
   'docs/bug-fixes/_template.md',
   'docs/coding-standards.md',
@@ -70,6 +73,7 @@ const PORTABLE_TESTS = [
   'repo-map.test.mjs',
   'sdd-skills.test.mjs',
   'services.test.mjs',
+  'setup.test.mjs',
   'skills.test.mjs',
   'wizard.test.mjs',
 ];
@@ -78,6 +82,7 @@ const HELP = AI
   ? `TRELLIS CLI [ai]. exit 0=success, 1=operation failed, 2=invalid usage.
 new <name> [--stack=x] [--with-graphify] [--with-bounds] create a curated child scaffold atomically.
 init [name] [--stack=x] [--with-graphify] [--with-bounds] configure this Trellis checkout.
+setup questions|plan     collect mandatory inputs or render a read-only guided adoption plan.
 check             run the repository's single aggregate gate.
 eval              run required framework tests and configured project evals.
 map [--json]      print a bounded, read-only structural repository map.
@@ -94,6 +99,8 @@ version           print Trellis version.
 Usage:
   trellis new <name> [--stack=x] [--with-graphify] [--with-bounds]
   trellis init [name] [--stack=x] [--with-graphify] [--with-bounds]
+  trellis setup questions [--json]
+  trellis setup plan --answers=<path> [--json]
   trellis check | eval | map | config | graph | metrics | evolve | services | spec
   trellis version | --version
 
@@ -119,8 +126,12 @@ function run(file, fileArgs = [], options = {}) {
       ...options,
     });
     return true;
-  } catch {
-    fail(`${basename(file)} failed`);
+  } catch (error) {
+    const status = Number.isInteger(error?.status) && [1, 2].includes(error.status)
+      ? error.status
+      : 1;
+    console.error(AI ? `FAIL: ${basename(file)} exit=${status}` : `${basename(file)} failed (exit ${status})`);
+    process.exitCode = status;
     return false;
   }
 }
@@ -167,7 +178,7 @@ function parseSetupArgs(input, { requireName = false } = {}) {
     return { error: 'project name must be a safe child-directory basename of at most 200 characters' };
   }
   if (name && !requireName
-    && (!name.trim() || name !== name.trim() || name.length > 200 || /[\\/\u0000-\u001f]/.test(name))) {
+    && (!name.trim() || name !== name.trim() || name.length > 200 || /[\\/\p{Cc}]/u.test(name))) {
     return { error: 'project display name must be 1-200 characters without slashes or control characters' };
   }
   if (stack !== null) {
@@ -225,6 +236,26 @@ switch (command) {
     if (args.length) usage('help accepts no operands');
     else process.stdout.write(HELP);
     break;
+
+  case 'setup': {
+    const [action, ...setupArgs] = args;
+    const jsonCount = setupArgs.filter((arg) => arg === '--json').length;
+    const answerArgs = setupArgs.filter((arg) => arg.startsWith('--answers='));
+    const validQuestions = action === 'questions'
+      && jsonCount <= 1
+      && setupArgs.every((arg) => arg === '--json');
+    const validPlan = action === 'plan'
+      && jsonCount <= 1
+      && answerArgs.length === 1
+      && answerArgs[0].length > '--answers='.length
+      && setupArgs.every((arg) => arg === '--json' || arg.startsWith('--answers='));
+    if (!validQuestions && !validPlan) {
+      usage('setup requires questions [--json] or plan --answers=<path> [--json]');
+    } else {
+      run(process.execPath, [join(packageRoot, '.trellis', 'scripts', 'setup-plan.mjs'), action, ...setupArgs]);
+    }
+    break;
+  }
 
   case 'new': {
     const parsed = parseSetupArgs(args, { requireName: true });

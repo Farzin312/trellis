@@ -42,6 +42,16 @@ test('legacy platform mirrors are absent', () => {
   ]) assert.equal(existsSync(join(root, path)), false, path);
 });
 
+test('the guided setup skill gates mutation on mandatory answers and approval', () => {
+  const content = readFileSync(join(canonical, 'trellis-setup', 'SKILL.md'), 'utf8');
+  assert.match(content, /trellis setup questions --json/);
+  assert.match(content, /do not (?:write|modify|install|download).*until/is);
+  assert.match(content, /every mandatory answer/i);
+  assert.match(content, /brownfield.*review/is);
+  assert.match(content, /external.*approval/is);
+  assert.match(content, /npm run check/);
+});
+
 test('skill generation refuses a symlinked Claude mirror root', () => {
   const project = mkdtempSync(join(tmpdir(), 'trellis-skills-'));
   const outside = mkdtempSync(join(tmpdir(), 'trellis-skills-outside-'));
@@ -67,6 +77,72 @@ test('skill generation refuses a symlinked Claude mirror root', () => {
   } finally {
     rmSync(project, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('skill generation rejects nested canonical symlinks before changing the mirror', () => {
+  const project = mkdtempSync(join(tmpdir(), 'trellis-skill-source-link-'));
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-skill-secret-'));
+  try {
+    for (const base of ['.agents/skills/example', '.claude/skills/example', '.trellis/scripts']) {
+      mkdirSync(join(project, base), { recursive: true });
+    }
+    const skill = '---\nname: example\ndescription: Example.\n---\n';
+    writeFileSync(join(project, '.agents', 'skills', 'example', 'SKILL.md'), skill);
+    writeFileSync(join(project, '.claude', 'skills', 'example', 'SKILL.md'), 'UNCHANGED\n');
+    writeFileSync(join(outside, 'secret.txt'), 'SECRET\n');
+    symlinkSync(join(outside, 'secret.txt'), join(project, '.agents', 'skills', 'example', 'reference.txt'));
+    writeFileSync(join(project, '.trellis', 'generated-skills.json'), JSON.stringify({
+      schema_version: 1,
+      files: ['.claude/skills/example'],
+    }));
+    cpSync(
+      join(root, '.trellis', 'scripts', 'generate-skills.mjs'),
+      join(project, '.trellis', 'scripts', 'generate-skills.mjs'),
+    );
+
+    const result = spawnSync(process.execPath, ['.trellis/scripts/generate-skills.mjs'], {
+      cwd: project,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /canonical skill example contains a symbolic link/i);
+    assert.equal(readFileSync(join(project, '.claude', 'skills', 'example', 'SKILL.md'), 'utf8'), 'UNCHANGED\n');
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('skill generation rejects traversal in its manifest before pruning or copying', () => {
+  const project = mkdtempSync(join(tmpdir(), 'trellis-skill-manifest-'));
+  try {
+    for (const base of ['.agents/skills/example', '.claude/skills/example', '.trellis/scripts']) {
+      mkdirSync(join(project, base), { recursive: true });
+    }
+    const skill = '---\nname: example\ndescription: Example.\n---\n';
+    writeFileSync(join(project, '.agents', 'skills', 'example', 'SKILL.md'), skill);
+    writeFileSync(join(project, '.claude', 'skills', 'example', 'SKILL.md'), 'UNCHANGED\n');
+    writeFileSync(join(project, 'outside'), 'KEEP\n');
+    writeFileSync(join(project, '.trellis', 'generated-skills.json'), JSON.stringify({
+      schema_version: 1,
+      files: ['.claude/skills/../../outside'],
+    }));
+    cpSync(
+      join(root, '.trellis', 'scripts', 'generate-skills.mjs'),
+      join(project, '.trellis', 'scripts', 'generate-skills.mjs'),
+    );
+
+    const result = spawnSync(process.execPath, ['.trellis/scripts/generate-skills.mjs'], {
+      cwd: project,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /generated-skills\.json/i);
+    assert.equal(readFileSync(join(project, 'outside'), 'utf8'), 'KEEP\n');
+    assert.equal(readFileSync(join(project, '.claude', 'skills', 'example', 'SKILL.md'), 'utf8'), 'UNCHANGED\n');
+  } finally {
+    rmSync(project, { recursive: true, force: true });
   }
 });
 
@@ -97,6 +173,36 @@ test('skill health rejects an unexpected Claude-only skill', () => {
     assert.match(result.stderr, /unexpected Claude skill.*extra/i);
   } finally {
     rmSync(project, { recursive: true, force: true });
+  }
+});
+
+test('skill health rejects redirected roots without traversing them', () => {
+  const project = mkdtempSync(join(tmpdir(), 'trellis-skill-health-link-'));
+  const outside = mkdtempSync(join(tmpdir(), 'trellis-skill-health-outside-'));
+  try {
+    mkdirSync(join(project, '.trellis', 'scripts'), { recursive: true });
+    mkdirSync(join(project, '.claude', 'skills'), { recursive: true });
+    mkdirSync(join(outside, 'skills', 'private-skill'), { recursive: true });
+    writeFileSync(
+      join(outside, 'skills', 'private-skill', 'SKILL.md'),
+      '---\nname: private-skill\ndescription: Outside secret description.\n---\n',
+    );
+    symlinkSync(outside, join(project, '.agents'));
+    cpSync(
+      join(root, '.trellis', 'scripts', 'evolve-skills.mjs'),
+      join(project, '.trellis', 'scripts', 'evolve-skills.mjs'),
+    );
+
+    const result = spawnSync(process.execPath, ['.trellis/scripts/evolve-skills.mjs'], {
+      cwd: project,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /canonical skill parent.*symbolic link/i);
+    assert.doesNotMatch(result.stdout + result.stderr, /Outside secret description/);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });
 

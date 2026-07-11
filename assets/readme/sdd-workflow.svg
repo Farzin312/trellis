@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="520" viewBox="0 0 1400 520" role="img" aria-labelledby="title desc">
+  <title id="title">Trellis nine-phase SDD workflow</title>
+  <desc id="desc">Nine ordered phases move from specification through clarification, analysis, implementation, review, and empirical verification.</desc>
+  <rect width="1400" height="520" rx="28" fill="#0b1020"/>
+  <text x="62" y="64" fill="#f4f8ff" font-family="Inter, ui-sans-serif, system-ui" font-size="34" font-weight="700">Nine phases. Two hard gates. No evidence laundering.</text>
+  <text x="62" y="99" fill="#91a4c5" font-family="Inter, ui-sans-serif, system-ui" font-size="18">Clarify resolves material choices. Analyze repairs the artifact chain before code. Verify signs off with commands.</text>
+  <g font-family="Inter, ui-sans-serif, system-ui" text-anchor="middle">
+    <g transform="translate(54 150)">
+      <rect width="136" height="92" rx="16" fill="#102946" stroke="#27c3e6" stroke-width="2"/>
+      <text x="68" y="39" fill="#62dcf5" font-size="14" font-weight="700">01</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Specify</text>
+    </g>
+    <g transform="translate(202 150)">
+      <rect width="136" height="92" rx="16" fill="#102946" stroke="#27c3e6" stroke-width="2"/>
+      <text x="68" y="39" fill="#62dcf5" font-size="14" font-weight="700">02</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Clarify</text>
+    </g>
+    <g transform="translate(350 150)">
+      <rect width="136" height="92" rx="16" fill="#152243" stroke="#8295ff" stroke-width="2"/>
+      <text x="68" y="39" fill="#aeb9ff" font-size="14" font-weight="700">03</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Plan</text>
+    </g>
+    <g transform="translate(498 150)">
+      <rect width="136" height="92" rx="16" fill="#152243" stroke="#8295ff" stroke-width="2"/>
+      <text x="68" y="39" fill="#aeb9ff" font-size="14" font-weight="700">04</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Tasks</text>
+    </g>
+    <g transform="translate(646 150)">
+      <rect width="136" height="92" rx="16" fill="#152243" stroke="#8295ff" stroke-width="2"/>
+      <text x="68" y="39" fill="#aeb9ff" font-size="14" font-weight="700">05</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Checklist</text>
+    </g>
+    <g transform="translate(794 150)">
+      <rect width="136" height="92" rx="16" fill="#3a1d29" stroke="#ff6f91" stroke-width="3"/>
+      <text x="68" y="39" fill="#ff9cb3" font-size="14" font-weight="700">06 · GATE</text><text x="68" y="68" fill="#fff3f6" font-size="20" font-weight="700">Analyze</text>
+    </g>
+    <g transform="translate(942 150)">
+      <rect width="136" height="92" rx="16" fill="#163128" stroke="#69dc8f" stroke-width="2"/>
+      <text x="68" y="39" fill="#89efaa" font-size="14" font-weight="700">07</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Implement</text>
+    </g>
+    <g transform="translate(1090 150)">
+      <rect width="136" height="92" rx="16" fill="#332617" stroke="#f2b95f" stroke-width="2"/>
+      <text x="68" y="39" fill="#ffd48d" font-size="14" font-weight="700">08</text><text x="68" y="68" fill="#f4f8ff" font-size="20" font-weight="650">Review</text>
+    </g>
+    <g transform="translate(1238 150)">
+      <rect width="108" height="92" rx="16" fill="#281d3e" stroke="#ba8cff" stroke-width="3"/>
+      <text x="54" y="39" fill="#d5b7ff" font-size="14" font-weight="700">09 · GATE</text><text x="54" y="68" fill="#fbf7ff" font-size="18" font-weight="700">Verify</text>
+    </g>
+  </g>
+  <g fill="none" stroke="#536987" stroke-width="3"><path d="M190 196h12M338 196h12M486 196h12M634 196h12M782 196h12M930 196h12M1078 196h12M1226 196h12"/></g>
+  <g font-family="Inter, ui-sans-serif, system-ui">
+    <rect x="202" y="302" width="728" height="128" rx="18" fill="#111b2d" stroke="#364b69"/>
+    <text x="232" y="340" fill="#62dcf5" font-size="16" font-weight="700" letter-spacing="1">CLARIFY LOOP</text>
+    <text x="232" y="374" fill="#f4f8ff" font-size="20" font-weight="650">A / B / C / D choices with evidence and a recommendation</text>
+    <text x="232" y="405" fill="#91a4c5" font-size="16">Ask further batches until material ambiguity is resolved; record every answer.</text>
+    <path d="M862 302v-35H270v35" fill="none" stroke="#27c3e6" stroke-width="3" stroke-dasharray="7 7"/>
+    <rect x="958" y="302" width="388" height="128" rx="18" fill="#111b2d" stroke="#68465a"/>
+    <text x="988" y="340" fill="#ff9cb3" font-size="16" font-weight="700" letter-spacing="1">ANALYZE REPAIR LOOP</text>
+    <text x="988" y="374" fill="#f4f8ff" font-size="19" font-weight="650">Fix artifacts, then re-run the gate</text>
+    <text x="988" y="405" fill="#91a4c5" font-size="15">No production code until the chain passes.</text>
+    <path d="M998 302v-35H862v35" fill="none" stroke="#ff6f91" stroke-width="3" stroke-dasharray="7 7"/>
+  </g>
+  <text x="62" y="486" fill="#6f86a8" font-family="Inter, ui-sans-serif, system-ui" font-size="15">Specify → Clarify → Plan → Tasks → Checklist → Analyze → Implement → Review → Verify</text>
+</svg>

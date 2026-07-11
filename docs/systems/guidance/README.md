@@ -6,7 +6,9 @@
 
 Guidance owns durable cross-agent instructions, reusable Agent Skills, the
 nine-phase SDD contract, generic engineering policy, and the generated Claude
-compatibility mirror.
+compatibility mirror. The `trellis-setup` skill adds an informed adoption
+interview that cannot mutate a target before required answers, trade-offs, and
+final approval.
 
 ## Public Surface
 

@@ -1,9 +1,20 @@
 node_modules/
 .next/
+.turbo/
 .vercel/
 dist/
+build/
 coverage/
+target/
 *.tsbuildinfo
+
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
 
 .env
 .env.*

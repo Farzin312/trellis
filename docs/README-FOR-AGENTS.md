@@ -20,6 +20,10 @@ The stable phase order is:
 Specify -> Clarify -> Plan -> Tasks -> Checklist -> Analyze -> Implement -> Review -> Verify
 ```
 
+Clarify asks evidence-backed A/B/C/D questions in small batches until material
+ambiguity is resolved. Analyze repairs fixable artifact-chain defects and
+re-runs before implementation; it is not a report-only phase.
+
 ## Retrieval rules
 
 - Prefer a subsystem index over broad source reading.
@@ -30,6 +34,10 @@ Specify -> Clarify -> Plan -> Tasks -> Checklist -> Analyze -> Implement -> Revi
 - Use Graphify or Bounds only when `.trellis/config.json` enables them.
 - Run `npm run check` before claiming completion and report every skip or open
   external proof honestly.
+
+For adoption, use [AI-assisted setup](./AI-SETUP.md) or
+[manual setup](./manual-setup.md). Both routes require the same explicit inputs,
+read-only plan, trade-off review, and final evidence.
 
 Trellis does not configure application authentication or other adopting-project
 trust boundaries. Load `security-review` whenever those surfaces are touched.

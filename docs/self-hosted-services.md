@@ -14,8 +14,7 @@ Claude, Codex, OpenCode, Copilot, or application code.
 Prerequisites:
 
 - Docker with Compose support
-- ports 6006 (UI and OTLP HTTP) and 4317 (OTLP gRPC) available, or a
-  reviewed compose override
+- ports 6006 (UI and OTLP HTTP) and 4317 (OTLP gRPC) available
 - project-owned OpenTelemetry or Phoenix SDK instrumentation if traces are needed
 
 Commands:
@@ -37,6 +36,13 @@ telemetry and external resources, and binds both ports to `127.0.0.1`. `start`
 uses Docker Compose's wait mode and the `/healthz` container health check; the
 dashboard is available at `http://localhost:6006` after the command passes.
 
+Service operations verify that the compose path is a regular non-symlink file
+and that its SHA-256 digest matches the reviewed Trellis payload before Docker
+runs. The managed command does not accept arbitrary compose overrides. An
+intentional Phoenix upgrade or port change is a Trellis code change: review the
+compose file, immutable image digest, expected payload digest, docs, and tests
+together. A separate custom deployment remains project-owned.
+
 This is a local single-user default, not a production deployment. Before
 exposing Phoenix beyond localhost, configure authentication, TLS, database
 backups, retention, and network policy from current upstream guidance. Review
@@ -45,9 +51,9 @@ and update the pinned version and digest together rather than switching to
 
 ## License and boundary
 
-Phoenix uses the Elastic License 2.0. It is source-available and free to
-self-host subject to that license, but it is not OSI-certified open source.
-Review the upstream license before redistribution or hosted-service use.
+Phoenix uses the Elastic License 2.0. It is source-available but not
+OSI-certified open source. Review the operative upstream license before
+redistribution, hosted-service use, or other deployment decisions.
 
 Trellis manages only the bundled Phoenix compose file. Other memory,
 observability, or tracing products are separate project decisions and are not

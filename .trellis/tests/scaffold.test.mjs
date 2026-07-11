@@ -15,6 +15,7 @@ test('scaffold uses an explicit payload and atomic target publication', () => {
 
 test('scaffold payload excludes source secrets, histories, and active specs', () => {
   assert.match(cli, /\.env\.example/);
+  assert.match(cli, /'docs\/adopting-existing-projects\.md'/);
   assert.doesNotMatch(cli, /SCAFFOLD_PATHS[\s\S]*\.specify\/specs/);
   assert.doesNotMatch(cli, /SCAFFOLD_PATHS[\s\S]*\.trellis\/metrics/);
   assert.doesNotMatch(cli, /SCAFFOLD_PATHS[\s\S]*docs\/bug-fixes\/2026/);

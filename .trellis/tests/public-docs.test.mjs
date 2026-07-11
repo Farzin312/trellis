@@ -10,10 +10,13 @@ const publicDocs = [
   'README.md',
   'SECURITY.md',
   'CHANGELOG.md',
+  'CONTRIBUTING.md',
   'docs/README.md',
   'docs/DESIGN.md',
   'docs/SYSTEM.md',
   'docs/adopting-existing-projects.md',
+  'docs/AI-SETUP.md',
+  'docs/manual-setup.md',
   'docs/evals.md',
   'docs/language-support.md',
   'docs/metrics.md',
@@ -60,7 +63,8 @@ test('README is a complete, executable adopter journey', () => {
   assert.match(readme, new RegExp(`npm install -g \\.`));
   assert.match(readme, new RegExp(`${executable} --version`));
   assert.match(readme, /Compatibility reviewed: 2026-07-11/);
-  assert.match(readme, /WSL or Git Bash/);
+  assert.match(readme, /Windows users need WSL/);
+  assert.match(readme, /Git Bash.*not\s+CI-tested/is);
   assert.match(readme, /does not configure application authentication/i);
   assert.match(readme, /copyright and permission notice/i);
 });
@@ -126,6 +130,8 @@ test('capability docs describe only configured or implemented behavior', () => {
   assert.match(mapping, /trellis config enable graphify/);
   assert.match(mapping, /graphify update/);
   assert.match(mapping, /graphifyy==0\.9\.10/);
+  assert.doesNotMatch(mapping, /graphify uninstall --project/);
+  assert.match(mapping, /remove only `\.agents\/skills\/graphify\/`/);
   assert.match(mapping, /trellis config enable bounds/);
   assert.match(mapping, /git\+https:\/\/github\.com\/Farzin312\/bounds\.git@a504bef/);
   assert.doesNotMatch(mapping, /pipx install bounds-cli/);
@@ -178,6 +184,65 @@ test('durable guidance shares one stack-agnostic nine-phase contract', () => {
   assert.match(guidance, /does not configure application authentication/i);
   assert.match(read('AGENTS.md'), /npm run check/);
   assert.doesNotMatch(read('AGENTS.md'), /npm run (?:test:mutation|check:all)/);
+});
+
+test('AI and human setup guides share the mandatory validated planning contract', () => {
+  const readme = read('README.md');
+  const ai = read('docs/AI-SETUP.md');
+  const manual = read('docs/manual-setup.md');
+  for (const text of [ai, manual]) {
+    assert.match(text, /trellis setup questions --json/);
+    assert.match(text, /trellis setup plan --answers=/);
+    assert.match(text, /check:project/);
+    assert.match(text, /Graphify/);
+    assert.match(text, /Bounds/);
+    assert.match(text, /Phoenix/);
+    assert.match(text, /benefit/i);
+    assert.match(text, /drawback/i);
+    assert.match(text, /npm run check/);
+  }
+  assert.match(ai, /every mandatory answer/i);
+  assert.match(ai, /final approval/i);
+  assert.match(ai, /reviewed merge/i);
+  assert.match(manual, /git clone https:\/\/github\.com\/Farzin312\/trellis\.git/);
+  assert.match(readme, /AI-assisted setup/);
+  assert.match(readme, /Manual setup/);
+});
+
+test('README visual identity is accessible, bounded, and supplementary', () => {
+  const readme = read('README.md');
+  const assets = [
+    'assets/brand/trellis-mark.png',
+    'assets/brand/trellis-wordmark-light.svg',
+    'assets/brand/trellis-wordmark-dark.svg',
+    'assets/readme/setup-flow.svg',
+    'assets/readme/sdd-workflow.svg',
+    'assets/readme/setup-demo.gif',
+    'assets/readme/setup-demo.png',
+  ];
+  const budgets = {
+    '.png': 400_000,
+    '.svg': 100_000,
+    '.gif': 2_000_000,
+  };
+  for (const path of assets) {
+    const url = new URL(`../../${path}`, import.meta.url);
+    assert.ok(statSync(url).size <= budgets[path.slice(path.lastIndexOf('.'))], `${path} exceeds its size budget`);
+  }
+  assert.match(readme, /<picture>/);
+  assert.match(readme, /prefers-color-scheme: dark/);
+  assert.match(readme, /prefers-reduced-motion: reduce/);
+  assert.match(readme, /assets\/readme\/sdd-workflow\.svg/);
+  assert.match(readme, /assets\/readme\/setup-flow\.svg/);
+  const altText = [...readme.matchAll(/alt="([^"]+)"/g)].map((match) => match[1]);
+  assert.ok(altText.length >= 4);
+  for (const alt of altText) assert.ok(alt.length >= 40 && alt.length <= 150, `bad alt text: ${alt}`);
+  for (const path of assets.filter((path) => path.endsWith('.svg'))) {
+    const svg = read(path);
+    assert.doesNotMatch(svg, /<(?:script|animate|set)\b/i, path);
+  }
+  assert.match(readme, /Specify -> Clarify -> Plan -> Tasks -> Checklist -> Analyze -> Implement -> Review -> Verify/);
+  assert.match(readme, /Images are explanatory; the commands and text are authoritative/i);
 });
 
 test('dated bug records have parseable leading frontmatter and required routing fields', () => {

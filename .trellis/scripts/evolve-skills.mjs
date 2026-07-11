@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +11,7 @@ const manifestPath = join(root, '.trellis', 'generated-skills.json');
 const verbose = process.argv.includes('--report');
 let failures = 0;
 let warnings = 0;
+let unsafeRoots = false;
 
 function fail(message) {
   failures += 1;
@@ -20,6 +21,13 @@ function fail(message) {
 function warn(message) {
   warnings += 1;
   console.warn(`WARN: ${message}`);
+}
+
+function rejectRootSymlink(path, label) {
+  if (existsSync(path) && lstatSync(path).isSymbolicLink()) {
+    fail(`${label} must not be a symbolic link`);
+    unsafeRoots = true;
+  }
 }
 
 function filesUnder(dir, base = dir) {
@@ -53,7 +61,15 @@ function frontmatterDescription(frontmatter) {
   return parts.join(' ');
 }
 
-if (!existsSync(sourceDir)) {
+rejectRootSymlink(join(root, '.agents'), 'canonical skill parent');
+rejectRootSymlink(sourceDir, 'canonical skill root');
+rejectRootSymlink(join(root, '.claude'), 'Claude configuration root');
+rejectRootSymlink(mirrorDir, 'Claude skill mirror');
+rejectRootSymlink(manifestPath, 'generated skill manifest');
+
+if (unsafeRoots) {
+  // Root safety failures are already recorded. Do not traverse redirected trees.
+} else if (!existsSync(sourceDir)) {
   fail('.agents/skills is missing');
 } else {
   const names = readdirSync(sourceDir, { withFileTypes: true })

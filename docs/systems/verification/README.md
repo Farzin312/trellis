@@ -4,9 +4,10 @@
 
 ## Ownership
 
-Verification owns the single aggregate gate, framework self-tests, configured
-project-gate and fallback test dispatch, documentation structure checks, optional-integration
-readiness, migration static warnings, and release/scaffold smoke evidence.
+Verification owns the single aggregate gate, framework self-tests, the
+configured `check:project` gate or conservative language fallback dispatch,
+documentation structure checks, optional-integration readiness, migration
+static warnings, and release/scaffold smoke evidence.
 
 ## Public Surface
 

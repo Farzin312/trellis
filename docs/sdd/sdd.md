@@ -27,6 +27,16 @@ Each phase is a directly invocable Agent Skill at
 | Review | Implementation drift, boundary violations, security gaps, and excess complexity addressed |
 | Verify | Commands run from a clean-enough state; results and unresolved external proof recorded |
 
+Clarify resolves undiscoverable material choices in reviewable batches of one
+to three A/B/C/D options, each with a recommendation and consequence. It keeps
+asking further batches until material ambiguity is resolved; the format is not
+a cap on the total number of necessary questions.
+
+Analyze is an active pre-code repair gate. It builds end-to-end traceability,
+repairs fixable spec/plan/task/checklist defects in their owning artifacts, and
+re-runs itself. It returns to Clarify for a real owner decision and never fixes
+an artifact gap by writing implementation code early.
+
 ## Gates
 
 Do not implement before Analyze passes. Do not claim completion before Verify

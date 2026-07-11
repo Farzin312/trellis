@@ -24,8 +24,11 @@ with a concrete message.
 npm run skills:health
 ```
 
-The health check validates canonical `.agents/skills/` metadata, names, size,
-file parity, and generated `.claude/skills/` drift. The aggregate test suite
+The health check validates canonical `.agents/skills/` metadata, names, a 1MB
+safety bound, manifest inventory, symlinks, file parity, and generated
+`.claude/skills/` drift. Instructions over the Agent Skills 500-line
+recommendation warn rather than fail, while Trellis-owned release skills retain
+stricter compact budgets. The aggregate test suite
 separately validates the complete SDD phase inventory and order. Neither check
 decides that a new skill is needed.
 

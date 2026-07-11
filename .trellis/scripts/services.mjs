@@ -2,7 +2,8 @@
 /** Manage explicitly requested optional local services. */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const services = {
   phoenix: {
     compose: join(root, '.trellis', 'services', 'docker-compose.phoenix.yml'),
+    sha256: 'f34abef2c63f011f2e9637a7f092d8eb55754c5663213641f650ef441800ab04',
     label: 'Arize Phoenix',
     ports: [6006, 4317],
   },
@@ -34,6 +36,28 @@ function docker(args, options = {}) {
   return spawnSync('docker', args, { cwd: root, encoding: 'utf8', ...options });
 }
 
+function validCompose(key, service) {
+  if (!existsSync(service.compose)) {
+    console.error(`FAIL: ${key} compose file is missing`);
+    return false;
+  }
+  const details = lstatSync(service.compose);
+  if (details.isSymbolicLink() || !details.isFile()) {
+    console.error(`FAIL: ${key} compose path must be a regular non-symlink file`);
+    return false;
+  }
+  const digest = createHash('sha256').update(readFileSync(service.compose)).digest('hex');
+  if (digest !== service.sha256) {
+    console.error(`FAIL: ${key} compose file differs from the reviewed Trellis payload`);
+    return false;
+  }
+  return true;
+}
+
+for (const key of keys) {
+  if (!validCompose(key, services[key])) process.exit(1);
+}
+
 const info = docker(['info']);
 if (info.error || info.status !== 0) {
   console.error('FAIL: Docker is not installed or not running');
@@ -43,12 +67,6 @@ if (info.error || info.status !== 0) {
 let failures = 0;
 for (const key of keys) {
   const service = services[key];
-  if (!existsSync(service.compose)) {
-    console.error(`FAIL: ${key} compose file is missing`);
-    failures++;
-    continue;
-  }
-
   if (action === 'status') {
     const result = docker(['compose', '-f', service.compose, 'ps', '--format', 'json']);
     if (result.status !== 0) {

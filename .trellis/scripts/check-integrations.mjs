@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ConfigError, readProjectConfig } from './config-core.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const MAX_GRAPH_BYTES = 512 * 1024 * 1024;
 let failures = 0;
 
 function fail(integration, reason, next) {
@@ -40,9 +41,16 @@ if (!enabled.includes('graphify')) {
   } else if (version.status !== 0) {
     fail('graphify', 'command-failed', 'repair the Graphify installation');
   } else {
+    const graphDirectory = join(root, 'graphify-out');
     const graphPath = join(root, 'graphify-out', 'graph.json');
-    if (!existsSync(graphPath)) {
+    if (existsSync(graphDirectory) && lstatSync(graphDirectory).isSymbolicLink()) {
+      fail('graphify', 'unsafe-artifact-path', 'replace graphify-out with a project-local regular directory and rebuild');
+    } else if (!existsSync(graphPath)) {
       fail('graphify', 'missing-artifact', 'run trellis graph');
+    } else if (lstatSync(graphPath).isSymbolicLink() || !lstatSync(graphPath).isFile()) {
+      fail('graphify', 'unsafe-artifact-path', 'replace graphify-out/graph.json with a project-local regular file and rebuild');
+    } else if (lstatSync(graphPath).size > MAX_GRAPH_BYTES) {
+      fail('graphify', 'artifact-too-large', 'review the graph and rebuild an artifact below the 512 MiB safety limit');
     } else {
       let graph;
       try {
@@ -74,8 +82,13 @@ if (!enabled.includes('bounds')) {
     fail('bounds', 'missing-command', 'install the tested Bounds commit or another reviewed compatible version');
   } else if (version.status !== 0) {
     fail('bounds', 'command-failed', 'repair the Bounds installation');
+  } else if (existsSync(join(root, '.bounds')) && lstatSync(join(root, '.bounds')).isSymbolicLink()) {
+    fail('bounds', 'unsafe-config-path', 'replace .bounds with a project-local regular directory');
   } else if (!existsSync(join(root, '.bounds', 'root.yaml'))) {
     fail('bounds', 'missing-config', 'run bounds init --root and configure subsystem ownership');
+  } else if (lstatSync(join(root, '.bounds', 'root.yaml')).isSymbolicLink()
+    || !lstatSync(join(root, '.bounds', 'root.yaml')).isFile()) {
+    fail('bounds', 'unsafe-config-path', 'replace .bounds/root.yaml with a project-local regular file');
   } else {
     const coverageResult = run('bounds', ['coverage']);
     let coverage;

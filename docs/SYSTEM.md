@@ -26,6 +26,8 @@ only when explicitly requested or configured.
 |---|---|
 | `trellis new <name>` | Create a new project from the allowlisted scaffold payload |
 | `trellis init [name]` | Configure a checkout that already contains Trellis |
+| `trellis setup questions [--json]` | Emit the mandatory guided-adoption questionnaire without writing |
+| `trellis setup plan --answers=<path> [--json]` | Validate answers and render a deterministic no-write action plan |
 | `trellis check` | Run the same aggregate gate as `npm run check` |
 | `trellis eval` | Run toolkit self-tests plus one project aggregate or fallback test adapters |
 | `trellis map [--json]` | Print a bounded read-only structural repository map |
@@ -34,7 +36,7 @@ only when explicitly requested or configured.
 | `trellis graph` | Run `graphify update .` only when Graphify is configured and available |
 | `trellis metrics [--recent\|--raw]` | Validate and summarize the optional JSONL ledger |
 | `trellis evolve [--stack=<value>]` | Re-run deterministic project adaptation |
-| `trellis services <start\|stop\|status\|ports> [phoenix]` | Manage the bundled Phoenix compose service |
+| `trellis services <start\|stop\|status\|ports> [phoenix]` | Manage only the pinned, digest-verified Phoenix compose payload |
 | `trellis version` / `trellis --version` | Print the version from `package.json` |
 
 `trellis help --ai` is the executable CLI reference. Documentation must not add
@@ -50,6 +52,7 @@ commands or options that help does not expose.
 | `.agents/skills/**` | Canonical Agent Skills | Hand edit |
 | `.claude/skills/**` | Claude compatibility | Generate; do not hand edit |
 | `.trellis/config.json` | Project-wide stacks and enabled integrations | Validate and write atomically; preserve unrelated fields |
+| setup answer file | Caller-owned temporary input | Validate up to 64 KiB; reject symlinks; never create, retain, or mutate it |
 | `.specify/specs/**` | Point-in-time delivery evidence | Append through the SDD workflow |
 | `docs/**` | Living and historical documentation | Route by audience; preserve breadcrumbs |
 | `.trellis/metrics/runs.jsonl` | Optional local ledger | Validate every nonblank record before summarizing |
@@ -62,6 +65,8 @@ commands or options that help does not expose.
   claim tests cover executable names, support labels, paths, and licensing text.
 - The aggregate gate exits non-zero when required evidence fails.
 - Optional evidence remains visible as optional `PASS`, `SKIP`, or `WARN`.
+- Managed writers reject symlinked policy/config/skill surfaces, and Docker
+  operations reject modified or symlinked compose payloads before execution.
 
 See [evals.md](./evals.md) for status semantics and
 [DESIGN.md](./DESIGN.md) for product boundaries. See

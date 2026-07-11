@@ -42,8 +42,8 @@ export function validateConfig(value) {
   if (value.schema_version !== 1) throw new ConfigError('schema_version must equal 1');
   if (typeof value.project_name !== 'string' || !value.project_name.trim()
     || value.project_name !== value.project_name.trim()
-    || value.project_name.length > 200 || /[\u0000-\u001f]/.test(value.project_name)) {
-    throw new ConfigError('project_name must be a trimmed non-empty display name without control characters');
+    || value.project_name.length > 200 || /[\\/\p{Cc}]/u.test(value.project_name)) {
+    throw new ConfigError('project_name must be a trimmed non-empty display name without slashes or control characters');
   }
   if (typeof value.project_slug !== 'string'
     || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value.project_slug)
