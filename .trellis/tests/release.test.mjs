@@ -47,7 +47,7 @@ test('the npm archive contains the adopter product and excludes maintainer histo
     '.trellis/tests/cli.test.mjs',
     '.trellis/tests/setup.test.mjs',
     'assets/brand/trellis-wordmark-light.svg',
-    'assets/readme/setup-demo.gif',
+    'assets/readme/setup-demo.svg',
     'assets/readme/sdd-workflow.svg',
     'README.md',
     'CONTRIBUTING.md',

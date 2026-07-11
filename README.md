@@ -20,12 +20,9 @@ workflow, structural orientation, and deterministic evidence with the code they
 govern. It is deliberately not a hosted agent runtime, model router, IDE, or
 promise that generated code is correct.
 
-<picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="./assets/readme/setup-demo.png">
-  <img src="./assets/readme/setup-demo.gif" width="1200" alt="Animated terminal showing mandatory setup questions, a validated plan, and an honest final evidence result.">
-</picture>
+<img src="./assets/readme/setup-demo.svg" width="1200" alt="Illustrative Trellis setup transcript: mandatory questions captured, a validated Core plus Graphify plan, and an honest final gate result.">
 
-The animation is an illustrative transcript, not captured proof. Images are explanatory; the commands and text are authoritative.
+This is an illustrative transcript, not captured proof. Any reveal animation respects reduced-motion and degrades to the same static frame. Images are explanatory; the commands and text are authoritative.
 
 ## What Trellis does
 

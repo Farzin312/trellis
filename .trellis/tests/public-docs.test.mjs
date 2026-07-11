@@ -212,18 +212,14 @@ test('AI and human setup guides share the mandatory validated planning contract'
 test('README visual identity is accessible, bounded, and supplementary', () => {
   const readme = read('README.md');
   const assets = [
-    'assets/brand/trellis-mark.png',
     'assets/brand/trellis-wordmark-light.svg',
     'assets/brand/trellis-wordmark-dark.svg',
     'assets/readme/setup-flow.svg',
     'assets/readme/sdd-workflow.svg',
-    'assets/readme/setup-demo.gif',
-    'assets/readme/setup-demo.png',
+    'assets/readme/setup-demo.svg',
   ];
   const budgets = {
-    '.png': 400_000,
     '.svg': 100_000,
-    '.gif': 2_000_000,
   };
   for (const path of assets) {
     const url = new URL(`../../${path}`, import.meta.url);
@@ -231,7 +227,8 @@ test('README visual identity is accessible, bounded, and supplementary', () => {
   }
   assert.match(readme, /<picture>/);
   assert.match(readme, /prefers-color-scheme: dark/);
-  assert.match(readme, /prefers-reduced-motion: reduce/);
+  // The setup demo's reveal is enhancement-only and must honor reduced motion.
+  assert.match(read('assets/readme/setup-demo.svg'), /prefers-reduced-motion: reduce/);
   assert.match(readme, /assets\/readme\/sdd-workflow\.svg/);
   assert.match(readme, /assets\/readme\/setup-flow\.svg/);
   const altText = [...readme.matchAll(/alt="([^"]+)"/g)].map((match) => match[1]);

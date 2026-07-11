@@ -1,6 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
   <title id="title">Illustrative Trellis guided setup session</title>
   <desc id="desc">A terminal transcript shows mandatory questions, a validated Core plus Graphify plan, and a final honest gate result.</desc>
+  <style>
+    /* ponytail: animation is enhancement only. Base opacity stays 1, so a
+       renderer that keeps this &lt;style&gt; but never runs the animation (or one
+       that ignores it entirely) shows the complete static frame. The hidden
+       start lives only in the keyframe via `backwards` fill; browsers play the
+       staggered reveal, everything else shows the final frame. */
+    .r { animation: reveal .55s cubic-bezier(.22,.61,.36,1) backwards; }
+    @keyframes reveal { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .r { animation: none; } }
+  </style>
   <rect width="1200" height="560" rx="24" fill="#0b1020"/>
   <rect width="1200" height="72" rx="24" fill="#101b31"/>
   <rect y="48" width="1200" height="24" fill="#101b31"/>
@@ -8,15 +18,15 @@
   <text x="128" y="44" fill="#f4f8ff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24" font-weight="700">TRELLIS / GUIDED SETUP</text>
   <text x="920" y="43" fill="#91a4c5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15">ILLUSTRATIVE SESSION</text>
   <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
-    <text x="55" y="126" fill="#62dcf5" font-size="24">$ trellis setup questions --json</text>
-    <text x="55" y="172" fill="#89efaa" font-size="22">✓ 11 mandatory decisions captured</text>
-    <text x="55" y="228" fill="#62dcf5" font-size="24">$ trellis setup plan --answers=/tmp/trellis.json</text>
-    <text x="55" y="274" fill="#aeb9ff" font-size="22">PROFILE  Trellis Core + Graphify</text>
-    <text x="88" y="320" fill="#d7e2f2" font-size="20">1  atomic core scaffold</text>
-    <text x="88" y="356" fill="#d7e2f2" font-size="20">2  complete check:project</text>
-    <text x="88" y="392" fill="#d7e2f2" font-size="20">3  install + verify selected add-on</text>
-    <text x="55" y="444" fill="#62dcf5" font-size="24">$ npm run check</text>
-    <text x="55" y="486" fill="#89efaa" font-size="19">PASS required framework-self-tests</text>
-    <text x="55" y="522" fill="#ffd48d" font-size="18">SKIP bounds reason=not-configured   required_fail=0</text>
+    <text class="r" style="animation-delay:.15s" x="55" y="126" fill="#62dcf5" font-size="24">$ trellis setup questions --json</text>
+    <text class="r" style="animation-delay:.45s" x="55" y="172" fill="#89efaa" font-size="22">✓ 11 mandatory decisions captured</text>
+    <text class="r" style="animation-delay:.85s" x="55" y="228" fill="#62dcf5" font-size="24">$ trellis setup plan --answers=/tmp/trellis.json</text>
+    <text class="r" style="animation-delay:1.1s" x="55" y="274" fill="#aeb9ff" font-size="22">PROFILE  Trellis Core + Graphify</text>
+    <text class="r" style="animation-delay:1.35s" x="88" y="320" fill="#d7e2f2" font-size="20">1  atomic core scaffold</text>
+    <text class="r" style="animation-delay:1.55s" x="88" y="356" fill="#d7e2f2" font-size="20">2  complete check:project</text>
+    <text class="r" style="animation-delay:1.75s" x="88" y="392" fill="#d7e2f2" font-size="20">3  install + verify selected add-on</text>
+    <text class="r" style="animation-delay:2.15s" x="55" y="444" fill="#62dcf5" font-size="24">$ npm run check</text>
+    <text class="r" style="animation-delay:2.5s" x="55" y="486" fill="#89efaa" font-size="19">PASS required framework-self-tests</text>
+    <text class="r" style="animation-delay:2.85s" x="55" y="522" fill="#ffd48d" font-size="18">SKIP bounds reason=not-configured   required_fail=0</text>
   </g>
 </svg>
