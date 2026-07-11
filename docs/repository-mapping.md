@@ -20,10 +20,12 @@ trellis map --json
 ```
 
 The command scans at most 100,000 accepted files, skips symlinks, dependencies,
-build output, VCS data, secrets, metrics, and active specification history, then
-reports manifests, configured stacks, aggregate top-level composition, tests,
-extensions, and subsystem documents under `docs/systems/`. It is read-only and
-does not cache, so it cannot become stale between runs.
+build output, VCS data, common environment/private-key/credential files and
+dot-directories, metrics, and active specification history, then reports
+manifests, configured stacks, aggregate top-level composition, tests,
+extensions, and subsystem documents under `docs/systems/`. It never reads more
+than 1 MB from configuration or a subsystem index. It is read-only and does not
+cache, so it cannot become stale between runs.
 
 This map is structural orientation, not semantic import analysis. It does not
 claim that two files depend on one another or that a documented subsystem is
@@ -57,14 +59,17 @@ contract:
 ```bash
 uv tool install graphifyy==0.9.10
 trellis config enable graphify
-trellis graph .
+trellis graph
 graphify query "where is request authorization enforced?" --budget 800
 npm run check:integrations
 ```
 
-`trellis graph [path]` validates that the path stays inside the project and runs
-`graphify update <path>`, which performs code extraction without an LLM. The
-integration check requires the command plus a valid, non-empty
+`trellis graph` runs `graphify update .`, which performs project-root code
+extraction without an LLM. Trellis intentionally does not expose a scoped path:
+Graphify writes scoped artifacts below that path while the project readiness
+gate owns the root `graphify-out/`. Use Graphify directly for an independent
+scoped graph that is not the configured project artifact. The integration check
+requires the command plus a valid, non-empty
 `graphify-out/graph.json`; it also rejects Graphify's pending semantic-update
 flag. The artifact schema does not contain reliable commit metadata, so the
 check does not claim code freshness. Run `trellis graph` before relying on the
@@ -79,11 +84,13 @@ tool or `graphify-out/` separately only when no user needs them.
 
 ## Bounds
 
-Compatibility was exercised with Bounds CLI 2026.6.47 on 2026-07-11. Bounds is
-useful only after maintainers define or review real subsystem ownership:
+Compatibility was exercised with Bounds CLI 2026.6.47 at commit
+`a504befeeea7448791538e2a6f8ad1f2259932eb` on 2026-07-11. Bounds had no PyPI
+release at that point, so the tested source commit is pinned explicitly. Bounds
+is useful only after maintainers define or review real subsystem ownership:
 
 ```bash
-pipx install bounds-cli==2026.6.47
+pipx install "git+https://github.com/Farzin312/bounds.git@a504befeeea7448791538e2a6f8ad1f2259932eb"
 trellis config enable bounds
 bounds guide
 bounds init --root
@@ -106,4 +113,6 @@ Enabling it before that review intentionally makes the aggregate gate fail.
 
 To stop requiring Bounds, run `trellis config disable bounds`. Trellis leaves
 `.bounds/` untouched because it is project-owned architecture data. See
-[Bounds upstream](https://github.com/Farzin312/bounds) for tool-specific details.
+[Bounds upstream](https://github.com/Farzin312/bounds) for newer installation
+channels and tool-specific details; upgrade only after reviewing its CLI
+contract against this readiness check.

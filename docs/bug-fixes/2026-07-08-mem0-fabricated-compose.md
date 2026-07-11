@@ -1,6 +1,3 @@
-# Bug Fix
-
-> Parent: [`docs/bug-fixes/README.md`](README.md)
 ---
 id: BUG-004
 title: Mem0 self-hosting was fabricated (404 image, wrong stack) — pointed upstream
@@ -20,6 +17,10 @@ files:
   - AGENTS.md
 fixed_by: Claude (user-requested)
 ---
+
+# Bug Fix
+
+> Parent: [`docs/bug-fixes/README.md`](README.md)
 
 ## Summary
 

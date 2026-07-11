@@ -31,7 +31,7 @@ only when explicitly requested or configured.
 | `trellis map [--json]` | Print a bounded read-only structural repository map |
 | `trellis config show` | Validate and display project configuration without writing |
 | `trellis config enable\|disable <graphify\|bounds>` | Atomically manage project-wide optional requirements |
-| `trellis graph [path]` | Run `graphify update` only when Graphify is configured and available |
+| `trellis graph` | Run `graphify update .` only when Graphify is configured and available |
 | `trellis metrics [--recent\|--raw]` | Validate and summarize the optional JSONL ledger |
 | `trellis evolve [--stack=<value>]` | Re-run deterministic project adaptation |
 | `trellis services <start\|stop\|status\|ports> [phoenix]` | Manage the bundled Phoenix compose service |
@@ -46,7 +46,7 @@ commands or options that help does not expose.
 |---|---|---|
 | `package.json` | Trellis release metadata | Version and executable mapping are canonical |
 | `AGENTS.md` | Maintainer-authored mandate | Hand edit |
-| `CLAUDE.md` | Compatibility bridge | Generate from the mandate contract |
+| `CLAUDE.md` | Compatibility bridge | Require `@AGENTS.md` first; preserve optional Claude-specific instructions below it |
 | `.agents/skills/**` | Canonical Agent Skills | Hand edit |
 | `.claude/skills/**` | Claude compatibility | Generate; do not hand edit |
 | `.trellis/config.json` | Project-wide stacks and enabled integrations | Validate and write atomically; preserve unrelated fields |

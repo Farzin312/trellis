@@ -80,6 +80,7 @@ test('repeated initialization preserves user configs, generated config, and Git 
 test('new initialization writes the canonical tierless config and honors explicit mixed stacks', () => {
   const project = fixture();
   try {
+    writeFileSync(join(project, '.trellis/config.json.tmp'), 'USER FILE\n');
     const result = run(
       project,
       'New Project',
@@ -99,6 +100,28 @@ test('new initialization writes the canonical tierless config and honors explici
     assert.equal(existsSync(join(project, 'pytest.ini')), false);
     assert.equal(existsSync(join(project, 'mutmut.ini')), false);
     assert.equal(existsSync(join(project, 'docs/eval-setup-go.md')), false);
+    assert.equal(readFileSync(join(project, '.trellis/config.json.tmp'), 'utf8'), 'USER FILE\n');
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+  }
+});
+
+test('repeated initialization rejects a conflicting project identity instead of ignoring it', () => {
+  const project = fixture();
+  try {
+    const config = `${JSON.stringify({
+      schema_version: 1,
+      project_name: 'Existing Project',
+      project_slug: 'existing-project',
+      stacks: ['javascript'],
+      enabled_integrations: [],
+    }, null, 2)}\n`;
+    writeFileSync(join(project, '.trellis/config.json'), config);
+
+    const result = run(project, 'Renamed Project');
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /identity.*already configured/i);
+    assert.equal(readFileSync(join(project, '.trellis/config.json'), 'utf8'), config);
   } finally {
     rmSync(project, { recursive: true, force: true });
   }

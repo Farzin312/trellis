@@ -23,8 +23,8 @@ and implementation stay project-owned.
 
 Reusable workflows are hand-edited under `.agents/skills/<name>/SKILL.md`.
 Claude Code receives a generated `.claude/skills/` mirror. Other platform copies
-are not generated. `AGENTS.md` is the durable mandate; `CLAUDE.md` is a minimal
-compatibility import.
+are not generated. `AGENTS.md` is the durable mandate; `CLAUDE.md` starts with a
+compatibility import and may keep Claude-specific instructions below it.
 
 ### A zero-dependency core
 

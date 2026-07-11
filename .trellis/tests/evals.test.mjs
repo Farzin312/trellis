@@ -83,3 +83,21 @@ test('missing commands skip while unconfigured test evidence warns', () => {
     rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+test('recursive project test configuration fails without spawning itself', () => {
+  const cwd = fixture();
+  try {
+    writeFileSync(join(cwd, 'package.json'), JSON.stringify({
+      scripts: {
+        test: 'node .trellis/scripts/run-evals.mjs',
+        'test:project': 'npm test',
+      },
+    }));
+    const result = run(cwd);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /FAIL required javascript-project-tests reason=recursive-test-command/);
+    assert.match(result.stdout, /required_fail=1/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});

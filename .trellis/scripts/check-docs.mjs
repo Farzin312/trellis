@@ -2,15 +2,15 @@
 /** Read-only documentation structure and local-link validation. */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const docsRoot = join(root, 'docs');
 const args = process.argv.slice(2);
 
-if (args.length > 1 || (args.length === 1 && args[0] !== '--check')) {
-  console.error('Usage: docs-sync.mjs [--check]');
+if (args.length > 0) {
+  console.error('Usage: check-docs.mjs');
   process.exit(2);
 }
 
@@ -48,24 +48,38 @@ function linkTarget(doc, rawTarget) {
 }
 
 let errors = 0;
-for (const doc of markdownFiles(docsRoot)) {
+const rootDocs = ['README.md', 'AGENTS.md', 'CLAUDE.md']
+  .map((path) => join(root, path))
+  .filter((path) => existsSync(path));
+for (const doc of [...rootDocs, ...markdownFiles(docsRoot)]) {
   const relativePath = relative(root, doc);
   const docsRelative = relative(docsRoot, doc);
   const content = readFileSync(doc, 'utf8');
-  const topLevelExempt = !docsRelative.includes('/') && ['README.md', 'STRUCTURE.md'].includes(docsRelative);
+  const insideDocs = !docsRelative.startsWith('..');
+  const topLevelExempt = insideDocs && !docsRelative.includes('/')
+    && ['README.md', 'STRUCTURE.md'].includes(docsRelative);
 
-  if (!topLevelExempt && !/^> Parent:\s+/m.test(content)) {
+  if (insideDocs && !topLevelExempt && !/^> Parent:\s+/m.test(content)) {
     console.error(`FAIL: ${relativePath} missing > Parent: breadcrumb`);
     errors++;
   }
 
   const text = withoutCode(content);
-  const linkPattern = /!?\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+  const linkPattern = /!?\[[^\]]*\]\((<[^>]+>|[^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
   for (const match of text.matchAll(linkPattern)) {
     const target = linkTarget(doc, match[1]);
     if (!target) continue;
-    const exists = existsSync(target)
-      && (statSync(target).isFile() || (statSync(target).isDirectory() && existsSync(join(target, 'README.md'))));
+    const rootRelative = relative(root, target);
+    if (rootRelative === '..' || rootRelative.startsWith(`..${sep}`) || isAbsolute(rootRelative)) {
+      console.error(`FAIL: ${relativePath} has non-portable link outside repository: ${match[1]}`);
+      errors++;
+      continue;
+    }
+    let exists = false;
+    try {
+      const stat = statSync(target);
+      exists = stat.isFile() || (stat.isDirectory() && existsSync(join(target, 'README.md')));
+    } catch { /* reported below */ }
     if (!exists) {
       console.error(`FAIL: ${relativePath} has broken link: ${match[1]}`);
       errors++;
@@ -78,4 +92,4 @@ if (errors > 0) {
   process.exit(1);
 }
 
-console.log('PASS: documentation structure and local links valid');
+console.log('PASS: documentation structure and local file links valid');

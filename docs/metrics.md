@@ -18,6 +18,10 @@ trellis metrics --raw     # validated JSONL output
 Every nonblank line is parsed and validated before any summary is printed. A
 malformed record exits non-zero and identifies its line.
 
+Records are limited to 64 KiB and the active ledger to 50 MiB. Archive older
+records before that bound; Trellis refuses an oversized ledger instead of
+loading unbounded history or emitting imprecise totals.
+
 ## Accepted record
 
 Each line is one JSON object. These string fields are optional:
@@ -43,7 +47,7 @@ table.
 Example:
 
 ```json
-{"ts":"2026-07-10T15:00:00Z","agent":"codex","model":"provider-model","phase":"verify","tokens_in":1200,"tokens_out":300,"est_cost_usd":0.01,"duration_ms":2400,"result":"pass"}
+{"ts":"2026-07-11T15:00:00Z","agent":"codex","model":"provider-model","phase":"verify","tokens_in":1200,"tokens_out":300,"est_cost_usd":0.01,"duration_ms":2400,"result":"pass"}
 ```
 
 The eval runner reports its own check counts and duration but does not append

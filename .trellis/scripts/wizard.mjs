@@ -2,10 +2,12 @@
 /** Interactive, dependency-free argument collector for init.sh. */
 
 import { spawnSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 import { stdin as input, stdout as output } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
+import { readProjectConfig } from './config-core.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -56,19 +58,23 @@ async function main() {
   }
 
   console.log('\n  Trellis — project setup\n  -----------------------');
-  const name = await ask('\nProject name', 'my-app');
+  const existing = existsSync(join(root, '.trellis', 'config.json'))
+    ? readProjectConfig(root)
+    : null;
+  const name = existing?.project_name || await ask('\nProject name', basename(root));
+  if (existing) console.log(`\n  Existing project identity: ${name}`);
 
   const stackLabel = await askChoice('Stack?', Object.keys(STACKS), 'auto-detect');
   const stack = STACKS[stackLabel];
-  const graphify = await askYesNo('Install Graphify (knowledge graph)?', false);
-  const bounds = await askYesNo('Install Bounds (boundary enforcement)?', false);
+  const graphify = await askYesNo('Enable Graphify as a project-wide requirement (installation is separate)?', false);
+  const bounds = await askYesNo('Enable Bounds as a project-wide requirement (installation is separate)?', false);
 
   console.log('\n  Plan');
   console.log('  ----');
   console.log(`  Project name : ${name}`);
   console.log(`  Stack        : ${stackLabel}`);
-  console.log(`  Graphify     : ${graphify ? 'yes' : 'no'}`);
-  console.log(`  Bounds       : ${bounds ? 'yes' : 'no'}`);
+  console.log(`  Graphify gate: ${graphify ? 'enabled' : 'disabled'}`);
+  console.log(`  Bounds gate  : ${bounds ? 'enabled' : 'disabled'}`);
   console.log('');
 
   if (!(await askYesNo('Proceed?', true))) {

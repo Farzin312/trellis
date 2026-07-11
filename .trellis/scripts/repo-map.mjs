@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateConfig } from './config-core.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const args = process.argv.slice(2);
@@ -13,12 +14,17 @@ if (args.length > 1 || (args.length === 1 && args[0] !== '--json')) {
 }
 
 const MAX_FILES = 100_000;
+const MAX_READ_BYTES = 1_000_000;
 const MAX_MANIFESTS = 100;
 const MAX_SYSTEMS = 50;
 const MAX_TOP_LEVEL = 100;
 const excludedDirectories = new Set([
   '.git',
+  '.aws',
+  '.gnupg',
+  '.kube',
   '.next',
+  '.ssh',
   '.specify/specs',
   '.trellis/metrics',
   '.vercel',
@@ -43,9 +49,11 @@ const manifestNames = new Set([
   'pom.xml',
   'pyproject.toml',
   'requirements.txt',
+  'tsconfig.json',
 ]);
-const sensitiveNames = /^(?:\.env(?:\..*)?|.*\.(?:key|pem|p12|pfx))$/i;
+const sensitiveNames = /^(?:\.env(?:\..*)?|\.netrc|\.npmrc|\.pypirc|credentials(?:\.json)?|id_(?:dsa|ecdsa|ed25519|rsa)|.*(?:service[-_]?account|credential).*\.json|.*\.(?:key|pem|p12|pfx))$/i;
 const testName = /(?:^|[._-])(?:test|spec)(?:[._-]|$)|^test_/i;
+const compare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
 let acceptedFiles = 0;
 let truncated = false;
@@ -54,7 +62,10 @@ const files = [];
 function excluded(relativePath, name, isDirectory) {
   if (sensitiveNames.test(name) && name !== '.env.example') return true;
   if (!isDirectory) return false;
-  return excludedDirectories.has(relativePath) || excludedDirectories.has(name);
+  return excludedDirectories.has(relativePath)
+    || excludedDirectories.has(name)
+    || /(?:^|\/)\.specify\/specs(?:\/|$)/.test(relativePath)
+    || /(?:^|\/)\.trellis\/metrics(?:\/|$)/.test(relativePath);
 }
 
 function walk(directory) {
@@ -65,7 +76,7 @@ function walk(directory) {
   let entries;
   try {
     entries = readdirSync(directory, { withFileTypes: true })
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => compare(a.name, b.name));
   } catch {
     return;
   }
@@ -97,9 +108,11 @@ let config = null;
 const configPath = join(root, '.trellis', 'config.json');
 if (existsSync(configPath)) {
   try {
-    config = JSON.parse(readFileSync(configPath, 'utf8'));
+    if (statSync(configPath).size > MAX_READ_BYTES) throw new Error(`file exceeds ${MAX_READ_BYTES} bytes`);
+    config = validateConfig(JSON.parse(readFileSync(configPath, 'utf8')));
   } catch (error) {
     warnings.push(`invalid .trellis/config.json: ${error.message}`);
+    config = null;
   }
 }
 
@@ -114,7 +127,9 @@ function detectedStacks() {
   }
   const names = new Set(manifests.map((path) => basename(path)));
   const stacks = [];
-  if (names.has('package.json') || names.has('deno.json') || names.has('deno.jsonc')) stacks.push('javascript');
+  if (names.has('package.json') || names.has('deno.json') || names.has('deno.jsonc') || names.has('tsconfig.json')) {
+    stacks.push(names.has('tsconfig.json') ? 'typescript' : 'javascript');
+  }
   if (names.has('pyproject.toml') || names.has('requirements.txt')) stacks.push('python');
   if (names.has('go.mod')) stacks.push('go');
   if (names.has('Cargo.toml')) stacks.push('rust');
@@ -161,6 +176,7 @@ function publicSurface(content) {
 }
 
 const systemsPrefix = 'docs/systems/';
+const fileSizes = new Map(files.map((file) => [file.path, file.size]));
 const systems = files
   .map(({ path }) => path)
   .filter((path) => path.startsWith(systemsPrefix) && path.endsWith('/README.md'))
@@ -168,7 +184,11 @@ const systems = files
   .slice(0, MAX_SYSTEMS)
   .map((path) => {
     let content = '';
-    try { content = readFileSync(join(root, path), 'utf8'); } catch { /* keep structural entry */ }
+    if ((fileSizes.get(path) || 0) > MAX_READ_BYTES) {
+      warnings.push(`${path} exceeds ${MAX_READ_BYTES} bytes; title and public surface were not read`);
+    } else {
+      try { content = readFileSync(join(root, path), 'utf8'); } catch { /* keep structural entry */ }
+    }
     const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() || basename(dirname(path));
     return {
       name: relative(join(root, 'docs', 'systems'), dirname(join(root, path))).split('\\').join('/'),
@@ -180,7 +200,7 @@ const systems = files
 
 const enabled = new Set(Array.isArray(config?.enabled_integrations) ? config.enabled_integrations : []);
 const orderedTopLevel = [...topLevel.values()]
-  .sort((a, b) => a.path.localeCompare(b.path));
+  .sort((a, b) => compare(a.path, b.path));
 const map = {
   schema_version: 1,
   root: basename(root),
@@ -194,7 +214,7 @@ const map = {
   },
   top_level: orderedTopLevel.slice(0, MAX_TOP_LEVEL),
   omitted_top_level: Math.max(0, orderedTopLevel.length - MAX_TOP_LEVEL),
-  extensions: Object.fromEntries([...extensions].sort(([a], [b]) => a.localeCompare(b))),
+  extensions: Object.fromEntries([...extensions].sort(([a], [b]) => compare(a, b))),
   systems,
   integrations: {
     bounds: enabled.has('bounds'),

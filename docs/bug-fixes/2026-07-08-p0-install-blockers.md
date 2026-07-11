@@ -1,6 +1,3 @@
-# Bug Fix
-
-> Parent: [`docs/bug-fixes/README.md`](README.md)
 ---
 id: BUG-001
 title: P0 install blockers — CLI/init.sh could not install or scaffold correctly
@@ -17,6 +14,10 @@ files:
   - pyproject.toml
 fixed_by: Claude (Trellis P0 install fix work)
 ---
+
+# Bug Fix
+
+> Parent: [`docs/bug-fixes/README.md`](README.md)
 
 ## Summary
 

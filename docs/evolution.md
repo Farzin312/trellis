@@ -24,8 +24,9 @@ npm run skills:health
 ```
 
 The health check validates canonical `.agents/skills/` metadata, names, size,
-references, direct SDD invocation, and generated `.claude/skills/` drift. It does
-not decide that a new skill is needed.
+file parity, and generated `.claude/skills/` drift. The aggregate test suite
+separately validates the complete SDD phase inventory and order. Neither check
+decides that a new skill is needed.
 
 ## When to change guidance
 

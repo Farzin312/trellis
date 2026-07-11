@@ -1,11 +1,3 @@
-# Bug Fix
-
-<!--
-Required frontmatter. Copy this template for every production-affecting fix.
-File name: docs/bug-fixes/YYYY-MM-DD-<slug>.md
--->
-
-> Parent: [`docs/bug-fixes/README.md`](README.md)
 ---
 id: BUG-NNN
 title: <one-line title>
@@ -19,6 +11,12 @@ files:
   - path/to/file.ts
 fixed_by: <name or agent>
 ---
+
+# Bug Fix
+
+> Parent: [`docs/bug-fixes/README.md`](README.md)
+
+<!-- Copy this template to docs/bug-fixes/YYYY-MM-DD-<slug>.md. -->
 
 ## Summary
 

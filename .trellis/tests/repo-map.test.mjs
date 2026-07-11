@@ -16,17 +16,21 @@ import test from 'node:test';
 
 const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const source = join(root, '.trellis', 'scripts', 'repo-map.mjs');
+const configSource = join(root, '.trellis', 'scripts', 'config-core.mjs');
 
 function fixture() {
   const project = mkdtempSync(join(tmpdir(), 'trellis map '));
   mkdirSync(join(project, '.trellis', 'scripts'), { recursive: true });
   copyFileSync(source, join(project, '.trellis', 'scripts', 'repo-map.mjs'));
+  copyFileSync(configSource, join(project, '.trellis', 'scripts', 'config-core.mjs'));
   mkdirSync(join(project, 'src'), { recursive: true });
   mkdirSync(join(project, 'path with spaces'), { recursive: true });
   mkdirSync(join(project, 'docs', 'systems', 'billing'), { recursive: true });
   mkdirSync(join(project, 'node_modules', 'leak'), { recursive: true });
+  mkdirSync(join(project, '.ssh'), { recursive: true });
   mkdirSync(join(project, 'dist'), { recursive: true });
   mkdirSync(join(project, '.specify', 'specs', 'secret-history'), { recursive: true });
+  mkdirSync(join(project, 'packages', 'nested', '.specify', 'specs', 'private-history'), { recursive: true });
   writeFileSync(join(project, 'package.json'), '{"name":"fixture","scripts":{"test:project":"node --test"}}\n');
   writeFileSync(join(project, '.trellis', 'config.json'), JSON.stringify({
     schema_version: 1,
@@ -39,9 +43,12 @@ function fixture() {
   writeFileSync(join(project, 'src', 'a.test.js'), 'export const test = true;\n');
   writeFileSync(join(project, 'path with spaces', 'worker.py'), 'value = 1\n');
   writeFileSync(join(project, '.env'), 'SECRET=do-not-map\n');
+  writeFileSync(join(project, '.npmrc'), '//registry.example/:_authToken=secret\n');
+  writeFileSync(join(project, '.ssh', 'id_rsa'), 'private\n');
   writeFileSync(join(project, 'node_modules', 'leak', 'secret.js'), 'secret\n');
   writeFileSync(join(project, 'dist', 'generated.js'), 'generated\n');
   writeFileSync(join(project, '.specify', 'specs', 'secret-history', 'spec.md'), 'history\n');
+  writeFileSync(join(project, 'packages', 'nested', '.specify', 'specs', 'private-history', 'spec.md'), 'nested history\n');
   writeFileSync(
     join(project, 'docs', 'systems', 'billing', 'README.md'),
     '# Billing system\n\n> Parent: [systems](../README.md)\n\n## Public Surface\n\n- `charge()`\n',
@@ -85,9 +92,33 @@ test('JSON map is stable, bounded, read-only, and excludes non-source trees', ()
     }]);
     assert.deepEqual(map.integrations, { bounds: false, graphify: false });
     const serialized = JSON.stringify(map);
-    for (const excluded of ['SECRET', 'node_modules', 'generated.js', 'secret-history', 'outside.pem']) {
+    for (const excluded of ['SECRET', '.npmrc', '.ssh', 'node_modules', 'generated.js', 'secret-history', 'private-history', 'outside.pem']) {
       assert.doesNotMatch(serialized, new RegExp(excluded));
     }
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('invalid configuration is reported and never trusted as map state', () => {
+  const { project, outside } = fixture();
+  try {
+    writeFileSync(join(project, '.trellis', 'config.json'), JSON.stringify({
+      schema_version: 99,
+      project_name: 'Fixture',
+      project_slug: 'fixture',
+      stacks: ['invented'],
+      enabled_integrations: ['bounds'],
+    }));
+    writeFileSync(join(project, 'tsconfig.json'), '{}\n');
+    const result = run(project, ['--json']);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const map = JSON.parse(result.stdout);
+    assert.deepEqual(map.stacks, ['typescript']);
+    assert.deepEqual(map.manifests, ['package.json', 'tsconfig.json']);
+    assert.deepEqual(map.integrations, { bounds: false, graphify: false });
+    assert.match(map.warnings.join('\n'), /invalid \.trellis\/config\.json/i);
   } finally {
     rmSync(project, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });

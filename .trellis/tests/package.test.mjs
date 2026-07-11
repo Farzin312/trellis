@@ -14,6 +14,8 @@ test('package metadata has one publish-ready identity', () => {
   assert.match(pkg.repository?.url || '', /Farzin312\/trellis/);
   assert.match(pkg.homepage || '', /Farzin312\/trellis/);
   assert.match(pkg.bugs?.url || '', /Farzin312\/trellis/);
+  assert.ok(pkg.files.includes('SECURITY.md'));
+  assert.ok(pkg.files.includes('CHANGELOG.md'));
 });
 
 test('core is dependency-free and has one aggregate gate', () => {
@@ -22,4 +24,7 @@ test('core is dependency-free and has one aggregate gate', () => {
   assert.ok(pkg.scripts?.check);
   assert.ok(pkg.scripts?.['test:self']);
   assert.equal(pkg.scripts?.test, 'node .trellis/scripts/run-evals.mjs');
+  for (const retired of ['lint', 'docs:sync', 'eval', 'evolve', 'services:start', 'services:stop', 'services:status']) {
+    assert.equal(pkg.scripts?.[retired], undefined, `${retired} is a misleading duplicate`);
+  }
 });

@@ -39,4 +39,6 @@ test('wizard maps optional integrations to explicit init flags without tiers', (
 test('wizard does not expose no-op agent or tier selection', () => {
   const source = readFileSync(new URL('../scripts/wizard.mjs', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /--agents|Which AI agents|--tier|Tier\?/);
+  assert.doesNotMatch(source, /Install (?:Graphify|Bounds)/);
+  assert.match(source, /project-wide requirement/i);
 });

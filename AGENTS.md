@@ -80,7 +80,7 @@ Phoenix is an explicit local service, not part of core verification.
 - `npm run docs:check` — read-only breadcrumb and local-link validation
 - `npm run skills:generate` — update the Claude compatibility mirror
 - `npm run skills:health` — validate canonical skills and mirror parity
-- `npm run metrics` — summarize only provider-supplied local metrics
+- `trellis metrics` — summarize only provider-supplied local metrics
 
 Use `trellis help --ai` or `TRELLIS_AI=1` for the terse executable command
 contract. Never describe `SKIP` or `WARN` as passed evidence.

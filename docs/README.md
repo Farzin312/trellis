@@ -11,6 +11,8 @@ project policy, and historical evidence have separate routes.
   troubleshooting, licensing, and contribution path
 - [Language support](./language-support.md) — tested automation versus manual
   integration
+- [Existing repository adoption](./adopting-existing-projects.md) — safe,
+  reviewed brownfield merge
 - [Repository mapping](./repository-mapping.md) — dependency-free orientation
   and explicit Graphify/Bounds setup
 - [Optional Phoenix service](./self-hosted-services.md) — Docker setup and
@@ -29,6 +31,7 @@ project policy, and historical evidence have separate routes.
 - [Evolution](./evolution.md) — explicit adaptation and deterministic health checks
 - [Documentation rules](./STRUCTURE.md) — ownership, breadcrumbs, and audiences
 - [Contributing](./contributing.md) — repository change process
+- [Security policy](../SECURITY.md) — private reporting and supported scope
 
 ## Generated project guidance
 
@@ -47,6 +50,7 @@ placeholder product identity.
 ## History and evidence
 
 - [Bug-fix register](./bug-fixes/README.md) — append-only maintainer history
+- [Changelog](../CHANGELOG.md) — adopter-facing release summary
 - `.specify/specs/` — point-in-time delivery records, not living adopter
   guidance
 

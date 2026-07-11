@@ -1,6 +1,3 @@
-# Bug Fix
-
-> Parent: [`docs/bug-fixes/README.md`](README.md)
 ---
 id: BUG-002
 title: Advertised features that never fired + unpinned/silent dependencies
@@ -18,6 +15,10 @@ files:
   - .trellis/services/docker-compose.phoenix.yml
 fixed_by: Claude (Trellis truthfulness + dependency fix work)
 ---
+
+# Bug Fix
+
+> Parent: [`docs/bug-fixes/README.md`](README.md)
 
 ## Summary
 

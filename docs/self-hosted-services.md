@@ -14,7 +14,8 @@ Claude, Codex, OpenCode, Copilot, or application code.
 Prerequisites:
 
 - Docker with Compose support
-- port 6006 available, or a reviewed compose override
+- ports 6006 (UI and OTLP HTTP) and 4317 (OTLP gRPC) available, or a
+  reviewed compose override
 - project-owned OpenTelemetry or Phoenix SDK instrumentation if traces are needed
 
 Commands:
@@ -30,8 +31,17 @@ An explicitly requested service action returns non-zero when Docker, the compose
 file, the service name, or the Docker operation fails. Use the printed cause and
 next action; do not treat an unavailable requested service as a successful skip.
 
-The dashboard is available at `http://localhost:6006` after the container is
-healthy.
+The bundled compose file pins Phoenix 17.26.0 by immutable multi-platform image
+digest, persists SQLite state through `PHOENIX_WORKING_DIR`, disables Phoenix UI
+telemetry and external resources, and binds both ports to `127.0.0.1`. `start`
+uses Docker Compose's wait mode and the `/healthz` container health check; the
+dashboard is available at `http://localhost:6006` after the command passes.
+
+This is a local single-user default, not a production deployment. Before
+exposing Phoenix beyond localhost, configure authentication, TLS, database
+backups, retention, and network policy from current upstream guidance. Review
+and update the pinned version and digest together rather than switching to
+`latest`.
 
 ## License and boundary
 

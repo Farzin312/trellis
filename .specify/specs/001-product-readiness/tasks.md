@@ -35,7 +35,7 @@
 | T029 | [TEST] Prove migration adapters require unambiguous evidence and filename patterns match exactly | test | `.trellis/tests/migrations.test.mjs` | FR-003, FR-006, VAL-002, EDGE-005 | — | [P] |
 | T030 | Remove ambiguous migration detection and overclaimed pass summaries | impl | `.trellis/scripts/check-migration-safety.mjs` | FR-006, VAL-002 | T029 | [P] |
 | T031 | [TEST] Prove doc checks fail broken links/breadcrumbs in both modes and never claim semantic truth | test | `.trellis/tests/docs.test.mjs` | FR-003, FR-007, VAL-002, VAL-004, EDGE-008 | — | [P] |
-| T032 | Make documentation automation a deterministic read-only structure/link check | impl | `.trellis/scripts/docs-sync.mjs` | FR-007, VAL-002, VAL-004 | T031 | [P] |
+| T032 | Make documentation automation a deterministic read-only structure/link check | impl | `.trellis/scripts/check-docs.mjs` | FR-007, VAL-002, VAL-004 | T031 | [P] |
 | T033 | [TEST] Lock the zero-dependency package identity, engine, bin, scripts, files, repository, and license metadata | test | `.trellis/tests/package.test.mjs` | FR-001, FR-009, FR-010, VAL-003 | — | [P] |
 | T034 | Align package metadata and make one `npm run check` the gate source of truth | impl | `package.json` | FR-001, FR-009, FR-010, VAL-003 | T033 | — |
 | T035 | [TEST] Prove CI invokes only the aggregate gate with no ignored failures or nonexistent paths | test | `.trellis/tests/ci.test.mjs` | FR-002, FR-009, INV-002 | — | [P] |
@@ -54,7 +54,7 @@
 | T048 | Generate and commit the deterministic lockfile | impl | `package-lock.json` | FR-001, FR-009, VAL-003 | T047 | — |
 | T049 | [TEST] Verify removed legacy mirrors, fake tiers, golden freezing, unused pricing, and obsolete workflows are absent | test | `.trellis/tests/release.test.mjs` | FR-004, FR-007, FR-010, INV-001 | T048 | — |
 | T050 | Prune only obsolete Trellis-owned generated and unsupported files | cleanup | legacy generated paths and retired scripts | FR-004, FR-007, FR-010, INV-001 | T049 | — |
-| T051 | Document the root-cause fixes and migration impact in the append-only bug register | docs | `docs/bug-fixes/2026-07-10-product-readiness.md` | FR-007, FR-010 | T050 | — |
+| T051 | Document the root-cause fixes and migration impact in the append-only bug register | docs | `docs/bug-fixes/2026-07-11-product-readiness.md` | FR-007, FR-010 | T050 | — |
 | T052 | Generate the Claude mirror and update all artifact references | generated | `.claude/skills/**` and documentation references | FR-004, INV-001 | T018, T020, T044, T050 | — |
 | T053 | Run formatter-free syntax checks, self-tests, `npm ci`, `npm run check`, package dry-run, scaffold smoke, and configured-integration readiness | verify | repository | FR-001–FR-013, SC-001–SC-003, VAL-001–VAL-006, INV-001–INV-005 | T051, T052, T057, T061 | — |
 | T054 | [TEST] Prove repository mapping is read-only, bounded, stable, excludes sensitive/generated trees, and reports documented systems | test | `.trellis/tests/repo-map.test.mjs` | FR-012, SC-001, VAL-005, EDGE-001, EDGE-009 | — | [P] |

@@ -21,8 +21,9 @@ integration can fail and block when its configuration promises that capability.
 ## Commands
 
 ```bash
-npm test          # repository standard-library self-tests
-trellis eval      # toolkit self-tests plus configured project tests
+npm run test:self # toolkit standard-library self-tests only
+npm test          # toolkit self-tests plus configured project tests
+trellis eval      # same evidence runner as npm test
 npm run check     # single maintainer/release gate
 ```
 

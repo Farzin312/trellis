@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
@@ -8,9 +8,12 @@ const [executable] = Object.keys(packageJson.bin ?? {});
 
 const publicDocs = [
   'README.md',
+  'SECURITY.md',
+  'CHANGELOG.md',
   'docs/README.md',
   'docs/DESIGN.md',
   'docs/SYSTEM.md',
+  'docs/adopting-existing-projects.md',
   'docs/evals.md',
   'docs/language-support.md',
   'docs/metrics.md',
@@ -51,11 +54,13 @@ test('README is a complete, executable adopter journey', () => {
     '## First successful workflow',
     '## Troubleshooting',
     '## License',
+    '## Security',
     '## Contributing',
   ]);
   assert.match(readme, new RegExp(`npm install -g \\.`));
   assert.match(readme, new RegExp(`${executable} --version`));
-  assert.match(readme, /Compatibility reviewed: 2026-07-10/);
+  assert.match(readme, /Compatibility reviewed: 2026-07-11/);
+  assert.match(readme, /WSL or Git Bash/);
   assert.match(readme, /does not configure application authentication/i);
   assert.match(readme, /copyright and permission notice/i);
 });
@@ -115,10 +120,21 @@ test('capability docs describe only configured or implemented behavior', () => {
   assert.match(mapping, /trellis map --json/);
   assert.match(mapping, /trellis config enable graphify/);
   assert.match(mapping, /graphify update/);
+  assert.match(mapping, /graphifyy==0\.9\.10/);
   assert.match(mapping, /trellis config enable bounds/);
+  assert.match(mapping, /git\+https:\/\/github\.com\/Farzin312\/bounds\.git@a504bef/);
+  assert.doesNotMatch(mapping, /pipx install bounds-cli/);
   assert.match(mapping, /bounds preflight --fail-on-unowned/);
   assert.match(mapping, /does not install/i);
   assert.match(mapping, /project-wide requirement/i);
+
+  const compose = read('.trellis/services/docker-compose.phoenix.yml');
+  assert.match(compose, /version-17\.26\.0@sha256:/);
+  assert.match(compose, /127\.0\.0\.1:6006:6006/);
+  assert.match(compose, /127\.0\.0\.1:4317:4317/);
+  assert.match(compose, /PHOENIX_TELEMETRY_ENABLED=false/);
+  assert.match(compose, /PHOENIX_WORKING_DIR=\/mnt\/data/);
+  assert.doesNotMatch(compose, /:latest|PHOENIX_SQL_DATABASE_URL/);
 });
 
 test('Agent Skills paths use the canonical source and Claude mirror only', () => {
@@ -141,4 +157,19 @@ test('durable guidance shares one stack-agnostic nine-phase contract', () => {
   assert.match(guidance, /does not configure application authentication/i);
   assert.match(read('AGENTS.md'), /npm run check/);
   assert.doesNotMatch(read('AGENTS.md'), /npm run (?:test:mutation|check:all)/);
+});
+
+test('dated bug records have parseable leading frontmatter and required routing fields', () => {
+  const records = readdirSync(new URL('../../docs/bug-fixes/', import.meta.url))
+    .filter((name) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(name));
+  assert.ok(records.length > 0);
+  for (const name of records) {
+    const content = read(`docs/bug-fixes/${name}`);
+    const frontmatter = content.match(/^---\n([\s\S]*?)\n---\n/)?.[1];
+    assert.ok(frontmatter, `${name} must start with frontmatter`);
+    for (const field of ['id', 'date_fixed', 'severity', 'area', 'category']) {
+      assert.match(frontmatter, new RegExp(`^${field}:\\s*\\S+`, 'm'), `${name} missing ${field}`);
+    }
+    assert.match(content, /^> Parent:/m, `${name} missing breadcrumb`);
+  }
 });

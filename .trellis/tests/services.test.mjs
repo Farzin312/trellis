@@ -39,16 +39,64 @@ test('unknown or missing actions and targets are usage errors', () => {
   }
 });
 
-test('ports is available without Docker while requested starts fail', () => {
+test('ports is available without Docker while requested operations fail', () => {
   const cwd = fixture();
   try {
     const ports = run(cwd, ['ports'], { PATH: '' });
     assert.equal(ports.status, 0, ports.stdout + ports.stderr);
     assert.match(ports.stdout, /phoenix: 6006/);
+    assert.match(ports.stdout, /4317/);
 
-    const start = run(cwd, ['start'], { PATH: '' });
-    assert.equal(start.status, 1, start.stdout + start.stderr);
-    assert.match(start.stderr, /FAIL: Docker is not installed or not running/);
+    for (const action of ['start', 'stop', 'status']) {
+      const result = run(cwd, [action], { PATH: '' });
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stderr, /FAIL: Docker is not installed or not running/);
+    }
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('status accepts Docker Compose JSON arrays and reports a running service', () => {
+  const cwd = fixture();
+  try {
+    const bin = join(cwd, 'bin');
+    mkdirSync(bin);
+    const docker = join(bin, 'docker');
+    writeFileSync(docker, `#!${process.execPath}
+if (process.argv[2] === 'info') process.exit(0);
+if (process.argv.includes('ps')) {
+  console.log(JSON.stringify([{ Service: 'phoenix', State: 'running' }]));
+  process.exit(0);
+}
+process.exit(9);
+`);
+    chmodSync(docker, 0o755);
+
+    const result = run(cwd, ['status', 'phoenix'], { PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /phoenix: running/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('malformed Docker status output fails instead of reporting stopped', () => {
+  const cwd = fixture();
+  try {
+    const bin = join(cwd, 'bin');
+    mkdirSync(bin);
+    const docker = join(bin, 'docker');
+    writeFileSync(docker, `#!${process.execPath}
+if (process.argv[2] === 'info') process.exit(0);
+console.log('{broken');
+process.exit(0);
+`);
+    chmodSync(docker, 0o755);
+
+    const result = run(cwd, ['status', 'phoenix'], { PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /invalid status output/i);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }

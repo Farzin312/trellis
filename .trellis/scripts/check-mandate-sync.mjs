@@ -23,8 +23,23 @@ if (!existsSync(agentsFile)) {
 }
 
 if (fix) {
-  writeFileSync(claudeFile, '@AGENTS.md\n');
-  console.log('FIXED: CLAUDE.md imports AGENTS.md');
+  if (!existsSync(claudeFile)) {
+    writeFileSync(claudeFile, '@AGENTS.md\n');
+    console.log('FIXED: created CLAUDE.md with AGENTS.md import');
+    process.exit(0);
+  }
+  const current = readFileSync(claudeFile, 'utf8');
+  if (current.split(/\r?\n/, 1)[0] === '@AGENTS.md') {
+    console.log('KEEP: CLAUDE.md already imports AGENTS.md first');
+    process.exit(0);
+  }
+  const body = current
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== '@AGENTS.md')
+    .join('\n')
+    .replace(/^\n+/, '');
+  writeFileSync(claudeFile, `@AGENTS.md\n${body ? `\n${body}` : ''}`);
+  console.log('FIXED: prepended AGENTS.md import and preserved Claude-specific instructions');
   process.exit(0);
 }
 
@@ -34,11 +49,11 @@ if (!existsSync(claudeFile)) {
   process.exit(1);
 }
 
-if (readFileSync(claudeFile, 'utf8').trim() === '@AGENTS.md') {
-  console.log('PASS: CLAUDE.md imports AGENTS.md');
+if (readFileSync(claudeFile, 'utf8').split(/\r?\n/, 1)[0] === '@AGENTS.md') {
+  console.log('PASS: CLAUDE.md imports AGENTS.md first');
   process.exit(0);
 } else {
-  console.error('FAIL: CLAUDE.md must contain only @AGENTS.md');
+  console.error('FAIL: CLAUDE.md must import @AGENTS.md on its first line');
   console.error('       Run: npm run check:mandates -- --fix');
   process.exit(1);
 }

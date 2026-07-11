@@ -84,11 +84,20 @@ if (existsSync(packagePath)) {
   if (!pkg) {
     report('FAIL', 'required', 'javascript-project-tests', 'invalid-package-json');
   } else if (typeof pkg.scripts?.['test:project'] === 'string' && pkg.scripts['test:project'].trim()) {
-    runRequired(
-      'javascript-project-tests',
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'test:project'],
-    );
+    const projectCommand = pkg.scripts['test:project'];
+    const testCommand = typeof pkg.scripts.test === 'string' ? pkg.scripts.test : '';
+    const recursive = /(?:^|\s)trellis\s+eval(?:\s|$)|\.trellis\/scripts\/run-evals\.mjs/.test(projectCommand)
+      || (/\bnpm\s+(?:run\s+)?test(?:\s|$)/.test(projectCommand)
+        && /\.trellis\/scripts\/run-evals\.mjs/.test(testCommand));
+    if (recursive) {
+      report('FAIL', 'required', 'javascript-project-tests', 'recursive-test-command');
+    } else {
+      runRequired(
+        'javascript-project-tests',
+        process.platform === 'win32' ? 'npm.cmd' : 'npm',
+        ['run', 'test:project'],
+      );
+    }
   } else if (jsTests.length > 0) {
     report('WARN', 'optional', 'javascript-project-tests', 'test-files-without-test:project');
   } else {

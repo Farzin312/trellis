@@ -11,7 +11,7 @@ const services = {
   phoenix: {
     compose: join(root, '.trellis', 'services', 'docker-compose.phoenix.yml'),
     label: 'Arize Phoenix',
-    port: 6006,
+    ports: [6006, 4317],
   },
 };
 
@@ -26,7 +26,7 @@ if (rest.length || !['start', 'stop', 'status', 'ports'].includes(action)
 
 const keys = target === 'all' ? Object.keys(services) : [target];
 if (action === 'ports') {
-  for (const key of keys) console.log(`${key}: ${services[key].port} (${services[key].label})`);
+  for (const key of keys) console.log(`${key}: ${services[key].ports.join(', ')} (${services[key].label})`);
   process.exit(0);
 }
 
@@ -36,10 +36,6 @@ function docker(args, options = {}) {
 
 const info = docker(['info']);
 if (info.error || info.status !== 0) {
-  if (action === 'status') {
-    console.log('SKIP: Docker is unavailable; optional services were not inspected');
-    process.exit(0);
-  }
   console.error('FAIL: Docker is not installed or not running');
   process.exit(1);
 }
@@ -59,16 +55,30 @@ for (const key of keys) {
       console.error(`FAIL: could not inspect ${key}`);
       failures++;
     } else {
-      const running = result.stdout.split('\n').filter(Boolean).some((line) => {
-        try { return JSON.parse(line).State === 'running'; } catch { return false; }
-      });
+      let rows = [];
+      const output = result.stdout.trim();
+      let malformed = false;
+      try {
+        const parsed = JSON.parse(output || '[]');
+        rows = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        for (const line of output.split('\n').filter(Boolean)) {
+          try { rows.push(JSON.parse(line)); } catch { malformed = true; }
+        }
+      }
+      if (malformed || rows.some((row) => !row || typeof row !== 'object' || typeof row.State !== 'string')) {
+        console.error(`FAIL: Docker returned invalid status output for ${key}`);
+        failures++;
+        continue;
+      }
+      const running = rows.some((row) => row.State === 'running');
       console.log(`${key}: ${running ? 'running' : 'stopped'}`);
     }
     continue;
   }
 
   const composeArgs = ['compose', '-f', service.compose, action === 'start' ? 'up' : 'down'];
-  if (action === 'start') composeArgs.push('-d');
+  if (action === 'start') composeArgs.push('-d', '--wait', '--wait-timeout', '60');
   const result = docker(composeArgs);
   if (result.error || result.status !== 0) {
     console.error(`FAIL: could not ${action} ${key}`);

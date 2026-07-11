@@ -18,6 +18,12 @@ test('CLI exposes one canonical version', () => {
   assert.equal(result.stdout.trim(), '0.1.0');
 });
 
+test('help supports the conventional --help alias', () => {
+  const result = run(['--help']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Usage:/);
+});
+
 test('Graphify wrapper requires project configuration and uses the current update contract', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'trellis-graph-'));
   try {
@@ -49,6 +55,26 @@ test('Graphify wrapper requires project configuration and uses the current updat
 
     const retiredFlag = run(['graph', '--update'], cwd, { ...process.env, PATH: `${bin}:${process.env.PATH}` });
     assert.equal(retiredFlag.status, 2, retiredFlag.stdout + retiredFlag.stderr);
+
+    const scopedPath = run(['graph', 'src'], cwd, { ...process.env, PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(scopedPath.status, 2, scopedPath.stdout + scopedPath.stderr);
+    assert.match(scopedPath.stderr, /accepts no operands/i);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('init accepts a display name with spaces and preserves it as one argument', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'trellis-init-name-'));
+  try {
+    mkdirSync(join(cwd, '.trellis'), { recursive: true });
+    writeFileSync(
+      join(cwd, '.trellis', 'init.sh'),
+      '#!/usr/bin/env bash\nprintf "%s\\n" "$@"\n',
+    );
+    const result = run(['init', 'My Project'], cwd);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(result.stdout.trim(), 'My Project');
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }

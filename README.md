@@ -53,20 +53,24 @@ Core use requires:
 
 - Git
 - Node.js 20 or newer
-- a shell supported by Node and Git
+- npm
+- Bash (macOS or Linux; on Windows use WSL or Git Bash)
 - at least one AI coding agent if you want to run the Agent Skills
 
 Core initialization, help, checks, and documentation verification need no LLM
 credential or paid service. Graphify and Bounds additionally require Python
-3.10+ and an installer such as `uv` or `pip`; Phoenix requires Docker. Graphify
+3.10+ and an installer such as `uv` or `pipx`; Phoenix requires Docker. Graphify
 can index code without an LLM key, while its document extraction features may
 require a supported provider credential.
 
-Compatibility reviewed: 2026-07-10.
+The release checks run on macOS and CI targets Ubuntu. Native PowerShell and
+`cmd.exe` initialization are not claimed; Windows users need WSL or Git Bash.
+
+Compatibility reviewed: 2026-07-11.
 
 | Agent surface | Trellis path | Status and source |
 |---|---|---|
-| Codex | `.agents/skills/` and `AGENTS.md` | Native project paths; see [OpenAI's customization guide](https://developers.openai.com/codex/concepts/customization) |
+| Codex | `.agents/skills/` and `AGENTS.md` | Native project paths; see [OpenAI's skill guide](https://learn.chatgpt.com/docs/build-skills) |
 | OpenCode | `.agents/skills/` and `AGENTS.md` | Native shared skill path; see [OpenCode Agent Skills](https://opencode.ai/docs/skills/) |
 | GitHub Copilot | `.agents/skills/` and `AGENTS.md` | Supported project skill path; see [GitHub Agent Skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) |
 | Claude Code | `.claude/skills/` and `CLAUDE.md` | Generated compatibility files; see [Claude Code skills](https://code.claude.com/docs/en/skills) |
@@ -126,17 +130,27 @@ To configure a checkout that already contains Trellis:
 trellis init "My Project" --stack=typescript
 ```
 
+For an unrelated existing repository, follow the
+[brownfield adoption guide](docs/adopting-existing-projects.md). Trellis does
+not overwrite an existing mandate, package script, CI workflow, or agent setup
+to automate that merge.
+
 Add `--with-graphify` or `--with-bounds` only when you want that integration to
 become a project-wide requirement; these flags enable but do not install it. Run
 `trellis help --ai` for the exact current CLI contract.
 
 ## First successful workflow
 
-Open the generated project in a compatible agent and invoke the first SDD skill:
+Open the generated project in a compatible agent and ask it to use the first
+SDD skill:
 
 ```text
-/speckit-specify "Add a password reset flow"
+Use the speckit-specify skill to specify: Add a password reset flow.
 ```
+
+That wording is portable. Native shorthand differs by agent (`$skill` in
+Codex, `/skill` in Claude Code and Copilot CLI, and the skill tool or a direct
+request in OpenCode); see [Agent Skills](docs/skills.md).
 
 Continue in this order:
 
@@ -176,9 +190,16 @@ third-party integrations keep their own licenses; Phoenix is distributed under
 the Elastic License 2.0 and is source-available rather than OSI-certified open
 source. See [credits and licenses](docs/credits.md).
 
+## Security
+
+Report path traversal, command execution, secret exposure, unsafe overwrite, or
+gate-bypass concerns through the [security policy](SECURITY.md). Do not place
+sensitive reproduction details in a public issue.
+
 ## Contributing
 
 Read [the contribution guide](docs/contributing.md), run `npm run check`, and
-submit a focused pull request. Historical fixes and active specifications are
+review the [changelog](CHANGELOG.md) before submitting a focused pull request.
+Historical fixes and active specifications are
 maintainer evidence, not setup instructions; the documentation index routes to
 both deliberately.

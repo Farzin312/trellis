@@ -19,11 +19,11 @@ mirror paths and preserves unrelated user files.
 
 ## Compatibility
 
-Compatibility reviewed: 2026-07-10.
+Compatibility reviewed: 2026-07-11.
 
 | Agent | Project skill path used by Trellis | Evidence |
 |---|---|---|
-| Codex | `.agents/skills/<name>/SKILL.md` | [OpenAI Codex customization](https://developers.openai.com/codex/concepts/customization) |
+| Codex | `.agents/skills/<name>/SKILL.md` | [OpenAI Codex skills](https://learn.chatgpt.com/docs/build-skills) |
 | OpenCode | `.agents/skills/<name>/SKILL.md` | [OpenCode Agent Skills](https://opencode.ai/docs/skills/) |
 | GitHub Copilot | `.agents/skills/<name>/SKILL.md` | [GitHub Agent Skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) |
 | Claude Code | `.claude/skills/<name>/SKILL.md` | [Claude Code skills](https://code.claude.com/docs/en/skills) |
@@ -36,6 +36,11 @@ shared `.agents/skills/` tree and `AGENTS.md`. Trellis does not generate legacy
 custom-prompt or command mirrors. Claude is the only listed platform requiring a
 separate project skill directory, so it is the only generated compatibility
 copy.
+
+Invocation syntax is a platform surface, not part of the Agent Skills file
+format. Use `$skill-name` in Codex, `/skill-name` in Claude Code and Copilot CLI,
+and a direct request or OpenCode's native skill tool in OpenCode. The portable
+form is “Use the `skill-name` skill to …”.
 
 ## Minimum format
 

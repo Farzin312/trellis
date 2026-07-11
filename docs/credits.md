@@ -18,7 +18,7 @@ optional integrations retain their own licenses.
 
 | Project | How Trellis relates | License |
 |---|---|---|
-| [Graphify](https://github.com/safishamsi/graphify) | Explicit opt-in code graph integration; installed separately | MIT |
+| [Graphify](https://github.com/Graphify-Labs/graphify) | Explicit opt-in code graph integration; installed separately | MIT |
 | [Bounds](https://github.com/Farzin312/bounds) | Explicit opt-in boundary integration; installed separately | MIT |
 | [Arize Phoenix](https://github.com/Arize-ai/phoenix) | Optional bundled Docker Compose service; instrumentation is project-owned | Elastic License 2.0 |
 

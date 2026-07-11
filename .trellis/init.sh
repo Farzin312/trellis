@@ -15,6 +15,7 @@ if [ "$#" -eq 0 ] && [ -t 0 ] && [ -z "${TRELLIS_WIZARD:-}" ]; then
 fi
 
 PROJECT_NAME=""
+NAME_SET=false
 STACK=""
 STACK_SET=false
 WITH_GRAPHIFY=false
@@ -29,6 +30,7 @@ for arg in "$@"; do
     *)
       [ -z "$PROJECT_NAME" ] || usage
       PROJECT_NAME="$arg"
+      NAME_SET=true
       ;;
   esac
 done
@@ -43,9 +45,15 @@ NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
   exit 1
 }
 
+CONFIG_EXISTS=false
+[ -f .trellis/config.json ] && CONFIG_EXISTS=true
+
 if [ -z "$PROJECT_NAME" ]; then
-  if [ -f .trellis/config.json ]; then
-    PROJECT_NAME="$(node -e 'const c=require("./.trellis/config.json"); process.stdout.write(c.project_name || "")')"
+  if [ "$CONFIG_EXISTS" = true ]; then
+    PROJECT_NAME="$(node --input-type=module -e '
+      import { readProjectConfig } from "./.trellis/scripts/config-core.mjs";
+      process.stdout.write(readProjectConfig(process.cwd()).project_name);
+    ')"
   fi
   [ -n "$PROJECT_NAME" ] || PROJECT_NAME="$(basename "$PWD")"
 fi
@@ -53,6 +61,17 @@ fi
 case "$PROJECT_NAME" in
   *[\\/]*|*[$'\n\r\t']*) usage ;;
 esac
+
+if [ "$CONFIG_EXISTS" = true ] && [ "$NAME_SET" = true ]; then
+  EXISTING_NAME="$(node --input-type=module -e '
+    import { readProjectConfig } from "./.trellis/scripts/config-core.mjs";
+    process.stdout.write(readProjectConfig(process.cwd()).project_name);
+  ')"
+  if [ "$PROJECT_NAME" != "$EXISTING_NAME" ]; then
+    echo "FAIL: project identity is already configured as '$EXISTING_NAME'; rename project-owned metadata explicitly." >&2
+    exit 1
+  fi
+fi
 
 normalize_csv() {
   node -e '
@@ -89,17 +108,14 @@ SLUG="$(node -e '
   process.stdout.write(value);
 ' "$PROJECT_NAME")" || usage
 
-CONFIG_EXISTS=false
-[ -f .trellis/config.json ] && CONFIG_EXISTS=true
-
 if [ "$CONFIG_EXISTS" = false ]; then
   INTEGRATIONS=""
   [ "$WITH_GRAPHIFY" = true ] && INTEGRATIONS="graphify"
   if [ "$WITH_BOUNDS" = true ]; then
     [ -n "$INTEGRATIONS" ] && INTEGRATIONS="$INTEGRATIONS,bounds" || INTEGRATIONS="bounds"
   fi
-  node -e '
-    const fs = require("node:fs");
+  node --input-type=module -e '
+    import { writeProjectConfig } from "./.trellis/scripts/config-core.mjs";
     const [name, slug, stacks, integrations] = process.argv.slice(1);
     const config = {
       schema_version: 1,
@@ -108,13 +124,18 @@ if [ "$CONFIG_EXISTS" = false ]; then
       stacks: stacks.split(","),
       enabled_integrations: integrations ? integrations.split(",") : [],
     };
-    fs.writeFileSync(".trellis/config.json.tmp", `${JSON.stringify(config, null, 2)}\n`);
-    fs.renameSync(".trellis/config.json.tmp", ".trellis/config.json");
+    writeProjectConfig(process.cwd(), config);
   ' "$PROJECT_NAME" "$SLUG" "$STACK" "$INTEGRATIONS"
   echo "CREATE .trellis/config.json"
 
   node -e '
     const fs = require("node:fs");
+    const path = require("node:path");
+    function writeAtomic(file, content) {
+      const temporary = path.join(path.dirname(file), `.${path.basename(file)}.tmp-${process.pid}-${Date.now()}`);
+      fs.writeFileSync(temporary, content);
+      fs.renameSync(temporary, file);
+    }
     if (!fs.existsSync("package.json")) process.exit(0);
     const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
     if (pkg.name === "trellis-agent-toolkit") {
@@ -129,7 +150,7 @@ if [ "$CONFIG_EXISTS" = false ]; then
       delete pkg.repository;
       delete pkg.homepage;
       delete pkg.bugs;
-      fs.writeFileSync("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
+      writeAtomic("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
       const packageEntry = {
         name: pkg.name,
         version: pkg.version,
@@ -143,7 +164,7 @@ if [ "$CONFIG_EXISTS" = false ]; then
         requires: true,
         packages: { "": packageEntry },
       };
-      fs.writeFileSync("package-lock.json", `${JSON.stringify(lock, null, 2)}\n`);
+      writeAtomic("package-lock.json", `${JSON.stringify(lock, null, 2)}\n`);
     }
   ' "$SLUG"
 
@@ -198,8 +219,8 @@ fi
 
 echo "PASS: Trellis configured for $PROJECT_NAME ($STACK)"
 if [ "$WITH_GRAPHIFY" = true ]; then
-  echo "NEXT: install Graphify, then run graphify install --project"
+  echo "NEXT: install Graphify, then run trellis graph"
 fi
 if [ "$WITH_BOUNDS" = true ]; then
-  echo "NEXT: install Bounds, then run bounds init and assign subsystem ownership"
+  echo "NEXT: install Bounds, then run bounds guide and review discovered ownership"
 fi

@@ -1,6 +1,3 @@
-# Bug Fix
-
-> Parent: [`docs/bug-fixes/README.md`](README.md)
 ---
 id: BUG-003
 title: init.sh fabricated a fake .git/hooks in projects with no git repo
@@ -14,6 +11,10 @@ files:
   - init.sh
 fixed_by: Claude (curated-download work)
 ---
+
+# Bug Fix
+
+> Parent: [`docs/bug-fixes/README.md`](README.md)
 
 ## Summary
 

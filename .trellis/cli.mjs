@@ -10,9 +10,9 @@ import {
   renameSync,
   rmSync,
 } from 'node:fs';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateConfig } from './scripts/config-core.mjs';
+import { ConfigError, readProjectConfig } from './scripts/config-core.mjs';
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = process.cwd();
@@ -81,7 +81,7 @@ check             run the repository's single aggregate gate.
 eval              run required framework tests and configured project evals.
 map [--json]      print a bounded, read-only structural repository map.
 config show|enable|disable [integration] inspect or manage optional integrations.
-graph [path]       build or refresh the configured Graphify code graph.
+graph              build or refresh the configured project-root Graphify code graph.
 metrics [--recent|--raw] summarize the optional local run ledger.
 evolve [--stack=x]       re-run deterministic project adaptation.
 services start|stop|status|ports [phoenix] manage the optional service.
@@ -160,8 +160,13 @@ function parseSetupArgs(input, { requireName = false } = {}) {
   }
 
   if (requireName && !name) return { error: 'new requires a project name' };
-  if (name && (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name) || name === '.' || name === '..')) {
+  if (name && requireName
+    && (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name) || name === '.' || name === '..')) {
     return { error: 'project name must be one safe child-directory basename' };
+  }
+  if (name && !requireName
+    && (!name.trim() || name.length > 200 || /[\\/\u0000-\u001f]/.test(name))) {
+    return { error: 'project display name must be 1-200 characters without slashes or control characters' };
   }
   if (stack !== null) {
     const values = stack.split(',').map((value) => value.trim());
@@ -177,7 +182,6 @@ function parseSetupArgs(input, { requireName = false } = {}) {
 function copyScaffold(target) {
   for (const path of SCAFFOLD_PATHS) {
     const source = join(packageRoot, path);
-    if (!existsSync(source)) continue;
     const destination = join(target, path);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(source, destination, { recursive: true, preserveTimestamps: true });
@@ -214,6 +218,7 @@ switch (command) {
     break;
 
   case 'help':
+  case '--help':
   case undefined:
     if (args.length) usage('help accepts no operands');
     else process.stdout.write(HELP);
@@ -232,8 +237,9 @@ switch (command) {
       break;
     }
 
-    const temporary = mkdtempSync(join(projectRoot, `.${parsed.name}.trellis-`));
+    let temporary;
     try {
+      temporary = mkdtempSync(join(projectRoot, `.${parsed.name}.trellis-`));
       copyScaffold(temporary);
       const initArgs = [join(temporary, '.trellis', 'init.sh'), parsed.name];
       if (parsed.stack) initArgs.push(`--stack=${parsed.stack}`);
@@ -246,7 +252,7 @@ switch (command) {
       renameSync(temporary, target);
       console.log(AI ? `OK: project=${target}` : `Created ${target}`);
     } catch {
-      rmSync(temporary, { recursive: true, force: true });
+      if (temporary) rmSync(temporary, { recursive: true, force: true });
       fail(`project creation failed; no target was published`);
     }
     break;
@@ -255,7 +261,7 @@ switch (command) {
   case 'init': {
     const init = join(projectRoot, '.trellis', 'init.sh');
     if (!existsSync(init)) {
-      fail('not a Trellis checkout; see docs/adopting-existing-projects.md');
+      fail('not a Trellis checkout; brownfield adoption requires a reviewed merge: https://github.com/Farzin312/trellis/blob/main/docs/adopting-existing-projects.md');
       break;
     }
     if (process.stdin.isTTY && args.length === 0) {
@@ -267,7 +273,8 @@ switch (command) {
       usage(parsed.error);
       break;
     }
-    const initArgs = [init, parsed.name || basename(projectRoot)];
+    const initArgs = [init];
+    if (parsed.name) initArgs.push(parsed.name);
     if (parsed.stack) initArgs.push(`--stack=${parsed.stack}`);
     for (const integration of parsed.integrations) initArgs.push(`--with-${integration}`);
     run('bash', initArgs);
@@ -318,33 +325,26 @@ switch (command) {
   }
 
   case 'graph': {
-    if (args.some((arg) => arg.startsWith('-')) || args.length > 1) {
-      usage('graph accepts at most one project-relative path');
-      break;
-    }
-    const path = args[0] || '.';
-    const resolved = resolve(projectRoot, path);
-    if (isAbsolute(path) || relative(projectRoot, resolved).startsWith('..')) {
-      usage('graph path must stay inside the current project');
+    if (args.length) {
+      usage('graph accepts no operands; it builds the project-root graph');
       break;
     }
     try {
-      const config = validateConfig(JSON.parse(
-        readFileSync(join(projectRoot, '.trellis', 'config.json'), 'utf8'),
-      ));
+      const config = readProjectConfig(projectRoot);
       if (!config.enabled_integrations?.includes('graphify')) {
         fail('graphify is not enabled in .trellis/config.json');
         break;
       }
-    } catch {
-      fail('cannot read .trellis/config.json');
+    } catch (error) {
+      const detail = error instanceof ConfigError ? error.message : error.message;
+      fail(`cannot read .trellis/config.json: ${detail}`);
       break;
     }
     if (!hasExecutable('graphify')) {
       fail('graphify is enabled but not installed');
       break;
     }
-    run('graphify', ['update', path]);
+    run('graphify', ['update', '.']);
     break;
   }
 

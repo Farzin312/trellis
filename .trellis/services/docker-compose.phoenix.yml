@@ -7,17 +7,26 @@
 #   docker compose -f docker-compose.phoenix.yml up -d
 #   Phoenix UI: http://localhost:6006
 #
-# Phoenix traces agent sessions: token cost, tool calls, failures, time per task.
+# Phoenix can receive traces after the adopting project adds instrumentation.
 
 services:
   phoenix:
-    image: arizephoenix/phoenix:17.20.0
+    image: arizephoenix/phoenix:version-17.26.0@sha256:adf850ae51707fc739abd0271fb57661fc1006c204d7eeeb62fa39f7fbc1c3a7
     ports:
-      - "6006:6006"
+      - "127.0.0.1:6006:6006"
+      - "127.0.0.1:4317:4317"
     volumes:
-      - phoenix-data:/data
+      - phoenix-data:/mnt/data
     environment:
-      - PHOENIX_SQL_DATABASE_URL=sqlite:///data/phoenix.db
+      - PHOENIX_WORKING_DIR=/mnt/data
+      - PHOENIX_TELEMETRY_ENABLED=false
+      - PHOENIX_ALLOW_EXTERNAL_RESOURCES=false
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6006/healthz', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
     restart: unless-stopped
 
 volumes:

@@ -36,13 +36,13 @@ if (!enabled.includes('graphify')) {
 } else {
   const version = run('graphify', ['--version']);
   if (version.error?.code === 'ENOENT') {
-    fail('graphify', 'missing-command', 'install the configured Graphify version');
+    fail('graphify', 'missing-command', 'install Graphify 0.9.10 or another reviewed compatible version');
   } else if (version.status !== 0) {
     fail('graphify', 'command-failed', 'repair the Graphify installation');
   } else {
     const graphPath = join(root, 'graphify-out', 'graph.json');
     if (!existsSync(graphPath)) {
-      fail('graphify', 'missing-artifact', 'run graphify .');
+      fail('graphify', 'missing-artifact', 'run trellis graph');
     } else {
       let graph;
       try {
@@ -71,11 +71,11 @@ if (!enabled.includes('bounds')) {
 } else {
   const version = run('bounds', ['--version']);
   if (version.error?.code === 'ENOENT') {
-    fail('bounds', 'missing-command', 'install the configured Bounds version');
+    fail('bounds', 'missing-command', 'install the tested Bounds commit or another reviewed compatible version');
   } else if (version.status !== 0) {
     fail('bounds', 'command-failed', 'repair the Bounds installation');
   } else if (!existsSync(join(root, '.bounds', 'root.yaml'))) {
-    fail('bounds', 'missing-config', 'run bounds init and configure subsystem ownership');
+    fail('bounds', 'missing-config', 'run bounds init --root and configure subsystem ownership');
   } else {
     const coverageResult = run('bounds', ['coverage']);
     let coverage;
@@ -95,7 +95,7 @@ if (!enabled.includes('bounds')) {
         fail('bounds', `partial-coverage-${mapped}-of-${total}`, 'assign every supported source file');
       } else {
         const validation = run('bounds', ['preflight', '--fail-on-unowned']);
-        if (validation.status !== 0) fail('bounds', 'validation-failed', 'run bounds validate -H and resolve every error');
+        if (validation.status !== 0) fail('bounds', 'validation-failed', 'run bounds preflight --fail-on-unowned -H and resolve every error');
         else console.log(`PASS integration=bounds coverage=${mapped}-of-${total}`);
       }
     }

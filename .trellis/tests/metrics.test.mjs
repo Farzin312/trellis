@@ -52,6 +52,22 @@ test('invalid numeric usage fails instead of corrupting totals', () => {
   }
 });
 
+test('unknown fields and unsafe integers fail the stable ledger schema', () => {
+  for (const line of [
+    '{"agent":"codex","invented":true}',
+    `{"tokens_in":${Number.MAX_SAFE_INTEGER + 1}}`,
+  ]) {
+    const cwd = fixture([line]);
+    try {
+      const result = run(cwd);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stderr, /runs\.jsonl:1/);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  }
+});
+
 test('summary uses only supplied usage and cost values', () => {
   const cwd = fixture([
     '{"agent":"codex","phase":"plan","tokens_in":10,"tokens_out":4}',

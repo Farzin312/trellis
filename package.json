@@ -60,7 +60,10 @@
     "CLAUDE.md",
     "LICENSE",
     "README.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
     "docs/_subsystem-template.md",
+    "docs/adopting-existing-projects.md",
     "docs/bug-fixes/README.md",
     "docs/bug-fixes/_template.md",
     "docs/coding-standards.md",
@@ -85,25 +88,16 @@
     "docs/systems/verification/README.md"
   ],
   "scripts": {
-    "init": "bash .trellis/init.sh",
-    "lint": "npm run check",
     "test:self": "node --test .trellis/tests/*.test.mjs",
     "test": "node .trellis/scripts/run-evals.mjs",
     "check": "npm run check:mandates && npm run skills:health && npm run docs:check && npm run check:agnostic && npm run check:migrations && npm run check:integrations && npm test",
-    "docs:sync": "node .trellis/scripts/docs-sync.mjs",
-    "docs:check": "node .trellis/scripts/docs-sync.mjs --check",
+    "docs:check": "node .trellis/scripts/check-docs.mjs",
     "check:mandates": "node .trellis/scripts/check-mandate-sync.mjs",
     "check:agnostic": "node .trellis/scripts/check-agnostic.mjs",
     "check:migrations": "node .trellis/scripts/check-migration-safety.mjs",
     "check:integrations": "node .trellis/scripts/check-integrations.mjs",
-    "eval": "node .trellis/scripts/run-evals.mjs",
-    "metrics": "node .trellis/scripts/metrics.mjs",
-    "evolve": "node .trellis/scripts/adapt-to-project.mjs",
     "skills:generate": "node .trellis/scripts/generate-skills.mjs",
-    "skills:health": "node .trellis/scripts/evolve-skills.mjs",
-    "services:start": "node .trellis/scripts/services.mjs start all",
-    "services:stop": "node .trellis/scripts/services.mjs stop all",
-    "services:status": "node .trellis/scripts/services.mjs status"
+    "skills:health": "node .trellis/scripts/evolve-skills.mjs"
   },
   "dependencies": {},
   "devDependencies": {}

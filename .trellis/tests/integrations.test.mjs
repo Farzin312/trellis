@@ -82,6 +82,20 @@ test('configured Graphify rejects a corrupt graph', () => {
   }
 });
 
+test('configured Graphify points a missing artifact to the Trellis root-graph command', () => {
+  const cwd = fixture(['graphify']);
+  try {
+    const bin = fakeCommand(cwd, 'graphify', "console.log('graphify 1.0');");
+    const result = run(cwd, { PATH: `${bin}:${process.env.PATH}` });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /missing-artifact/);
+    assert.match(result.stderr, /trellis graph/);
+    assert.doesNotMatch(result.stderr, /graphify \\./);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test('configured Graphify accepts a structurally valid non-empty artifact without inventing freshness metadata', () => {
   const cwd = fixture(['graphify']);
   try {
